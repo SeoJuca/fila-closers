@@ -10,7 +10,6 @@
 :root {
   --accent: #033517;
   --bg: #f5f4f0;
-  --text: #111;
 }
 
 body {
@@ -48,7 +47,7 @@ label {
   margin-top: 8px;
 }
 
-input {
+input, select {
   width: 100%;
   padding: 10px;
   margin-bottom: 8px;
@@ -84,8 +83,8 @@ button {
 
   <div class="closer" id="closer">Carregando...</div>
 
-  <label>Nome do SDR</label>
-  <input id="sdr" placeholder="Digite o nome do SDR">
+  <label>SDR</label>
+  <select id="sdr"></select>
 
   <label>Nome do Lead</label>
   <input id="lead" placeholder="Digite o nome do Lead">
@@ -100,26 +99,46 @@ button {
 
 <script>
 
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1mJ2X-Mf_EzgrCBoLt_t7leS7yI1cw_C2_g_iAc19TjHypB69AlKmR9v5Ay5Nn8g6G55o/pub?output=csv";
+const CLOSERS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1mJ2X-Mf_EzgrCBoLt_t7leS7yI1cw_C2_g_iAc19TjHypB69AlKmR9v5Ay5Nn8g6G55o/pub?output=csv";
+const SDR_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1mJ2X-Mf_EzgrCBoLt_t7leS7yI1cw_C2_g_iAc19TjHypB69AlKmR9v5Ay5Nn8g6G55o/pub?gid=1360192723&output=csv";
 const WEBHOOK_URL = "https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda";
 
 let closers = [];
+let sdrs = [];
 let index = 0;
 
-// carregar closers (CORRIGIDO)
+// carregar closers
 async function loadClosers() {
-  const res = await fetch(SHEET_URL);
+  const res = await fetch(CLOSERS_URL);
   const text = await res.text();
 
   closers = text.split("\n")
-    .slice(1) // remove header
+    .slice(1)
     .map(l => l.replace(/"/g,"").trim())
     .filter(l => l);
 
   render();
 }
 
-// mostrar closer atual
+// carregar SDRs
+async function loadSDRs() {
+  const res = await fetch(SDR_URL);
+  const text = await res.text();
+
+  sdrs = text.split("\n")
+    .slice(1)
+    .map(l => l.replace(/"/g,"").trim())
+    .filter(l => l);
+
+  const select = document.getElementById("sdr");
+
+  select.innerHTML = `
+    <option value="">Selecione um SDR</option>
+    ${sdrs.map(s => `<option value="${s}">${s}</option>`).join("")}
+  `;
+}
+
+// render closer atual
 function render() {
   const el = document.getElementById("closer");
 
@@ -139,7 +158,7 @@ function nextCloser() {
 
 // agendar reunião
 async function agendar() {
-  const sdr = document.getElementById("sdr").value.trim();
+  const sdr = document.getElementById("sdr").value;
   const lead = document.getElementById("lead").value.trim();
   const dataReuniao = document.getElementById("data_reuniao").value;
 
@@ -177,8 +196,9 @@ async function agendar() {
   }
 }
 
-// iniciar
+// init
 loadClosers();
+loadSDRs();
 
 </script>
 
