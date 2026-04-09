@@ -41,10 +41,17 @@ h1 {
   margin-bottom: 20px;
 }
 
+label {
+  font-size: 12px;
+  display: block;
+  text-align: left;
+  margin-top: 8px;
+}
+
 input {
   width: 100%;
   padding: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   border: 1px solid #ddd;
   border-radius: 6px;
 }
@@ -77,8 +84,14 @@ button {
 
   <div class="closer" id="closer">Carregando...</div>
 
-  <input id="sdr" placeholder="Nome do SDR">
-  <input id="lead" placeholder="Nome do Lead">
+  <label>Nome do SDR</label>
+  <input id="sdr" placeholder="Digite o nome do SDR">
+
+  <label>Nome do Lead</label>
+  <input id="lead" placeholder="Digite o nome do Lead">
+
+  <label>Data da Reunião</label>
+  <input type="date" id="data_reuniao">
 
   <button class="secondary" onclick="nextCloser()">Pular</button>
   <button class="primary" onclick="agendar()">Reunião Agendada</button>
@@ -93,14 +106,15 @@ const WEBHOOK_URL = "https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda"
 let closers = [];
 let index = 0;
 
-// carregar closers
+// carregar closers (CORRIGIDO)
 async function loadClosers() {
   const res = await fetch(SHEET_URL);
   const text = await res.text();
 
   closers = text.split("\n")
+    .slice(1) // remove header
     .map(l => l.replace(/"/g,"").trim())
-    .filter(l => l && l.toLowerCase() !== "name");
+    .filter(l => l);
 
   render();
 }
@@ -127,9 +141,10 @@ function nextCloser() {
 async function agendar() {
   const sdr = document.getElementById("sdr").value.trim();
   const lead = document.getElementById("lead").value.trim();
+  const dataReuniao = document.getElementById("data_reuniao").value;
 
-  if (!sdr || !lead) {
-    alert("Preencha Nome do SDR e Nome do Lead");
+  if (!sdr || !lead || !dataReuniao) {
+    alert("Preencha todos os campos");
     return;
   }
 
@@ -144,14 +159,13 @@ async function agendar() {
       body: JSON.stringify({
         closer: closer,
         sdr: sdr,
-        lead: lead
+        lead: lead,
+        data_reuniao: dataReuniao
       })
     });
 
-    // limpa lead (pra próximo atendimento)
     document.getElementById("lead").value = "";
 
-    // avança fila
     index++;
     render();
 
