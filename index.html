@@ -24,6 +24,8 @@
       --green-bg: #e1f5ee;
       --green-dark: #085041;
       --red: #E24B4A;
+      --red-bg: #fcebeb;
+      --red-dark: #501313;
       --radius: 14px;
       --radius-sm: 8px;
       --radius-pill: 100px;
@@ -42,96 +44,55 @@
     }
 
     .header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 2rem;
-      opacity: 0;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 2rem; opacity: 0;
       animation: fadeUp 0.5s 0.1s forwards;
     }
-
     .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
-
-    .header-label {
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
+    .header-label { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
 
     .card {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2.5rem 2rem 2rem;
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      opacity: 0;
-      animation: fadeUp 0.5s 0.2s forwards;
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem 2rem 2rem;
+      width: 100%; max-width: 440px;
+      display: flex; flex-direction: column; align-items: center;
+      opacity: 0; animation: fadeUp 0.5s 0.2s forwards;
     }
 
     .card-label { font-size: 12px; color: var(--text-hint); letter-spacing: 0.05em; margin-bottom: 0.5rem; }
 
     .closer-name {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(2.2rem, 9vw, 3.4rem);
-      font-weight: 800;
-      color: var(--text);
-      text-align: center;
-      line-height: 1.05;
-      min-height: 4rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 2rem;
-      transition: opacity 0.15s, transform 0.15s;
+      font-size: clamp(2.2rem, 9vw, 3.4rem); font-weight: 800;
+      color: var(--text); text-align: center; line-height: 1.05;
+      min-height: 4rem; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 2rem; transition: opacity 0.15s, transform 0.15s;
     }
-
     .closer-name.transitioning { opacity: 0; transform: translateY(6px); }
-
-    .closer-name.muted {
-      font-size: 1rem;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 400;
-      color: var(--text-hint);
-      font-style: italic;
-    }
+    .closer-name.muted { font-size: 1rem; font-family: 'DM Sans', sans-serif; font-weight: 400; color: var(--text-hint); font-style: italic; }
 
     .queue-section { width: 100%; display: flex; align-items: center; gap: 10px; }
     .queue-section-label { font-size: 11px; color: var(--text-hint); white-space: nowrap; flex-shrink: 0; }
     .pills { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; flex: 1; }
-
-    .pill {
-      font-size: 11px; font-weight: 500;
-      padding: 3px 10px; border-radius: var(--radius-pill);
-      background: transparent; color: var(--text-muted);
-      border: 0.5px solid var(--border);
-      transition: background 0.2s, color 0.2s, border-color 0.2s;
-    }
-
+    .pill { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: var(--radius-pill); background: transparent; color: var(--text-muted); border: 0.5px solid var(--border); transition: background 0.2s, color 0.2s, border-color 0.2s; }
     .pill.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 
     .divider { width: 100%; height: 0.5px; background: var(--border); margin: 1.5rem 0; }
 
     .btn-row { display: flex; gap: 10px; width: 100%; }
-
     .btn {
       flex: 1; padding: 13px 10px; border-radius: var(--radius-sm);
       font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
       cursor: pointer; border: 0.5px solid var(--border-strong);
       background: var(--surface); color: var(--text);
-      transition: background 0.12s, transform 0.1s, opacity 0.12s;
-      white-space: nowrap;
+      transition: background 0.12s, transform 0.1s, opacity 0.12s; white-space: nowrap;
     }
-
     .btn:hover { background: #f5f4f0; }
     .btn:active { transform: scale(0.97); }
     .btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
     .btn-primary:hover { opacity: 0.82; background: var(--accent); }
+    .btn-danger { color: var(--red); border-color: rgba(226,75,74,0.3); }
+    .btn-danger:hover { background: var(--red-bg); }
 
     .status { font-size: 12px; color: var(--text-hint); margin-top: 12px; text-align: center; min-height: 16px; }
     .status.success { color: var(--green); }
@@ -142,7 +103,6 @@
       width: 100%; max-width: 440px; margin-top: 12px;
       opacity: 0; animation: fadeUp 0.5s 0.35s forwards;
     }
-
     .stats-toggle {
       width: 100%; background: none; border: none; padding: 10px 0;
       font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-hint);
@@ -150,103 +110,140 @@
       gap: 6px; transition: color 0.15s;
     }
     .stats-toggle:hover { color: var(--text-muted); }
-
     .stats-panel { display: none; flex-direction: column; gap: 10px; }
     .stats-panel.open { display: flex; }
 
-    /* filter card */
-    .filter-card {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .filter-top {
-      padding: 14px 16px 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      border-bottom: 0.5px solid var(--border);
-    }
-
+    .filter-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .filter-top { padding: 14px 16px 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-bottom: 0.5px solid var(--border); }
     .filter-label { font-size: 11px; color: var(--text-hint); white-space: nowrap; }
-
     .ftabs { display: flex; gap: 5px; }
-
-    .ftab {
-      font-size: 12px; font-weight: 500;
-      padding: 4px 13px; border-radius: var(--radius-pill);
-      border: 0.5px solid var(--border); background: transparent;
-      color: var(--text-muted); cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      transition: background 0.12s, color 0.12s, border-color 0.12s;
-    }
+    .ftab { font-size: 12px; font-weight: 500; padding: 4px 13px; border-radius: var(--radius-pill); border: 0.5px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.12s, color 0.12s, border-color 0.12s; }
     .ftab:hover { background: var(--bg); }
     .ftab.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-
-    .filter-bottom {
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 44px;
-    }
-
-    .filter-bottom select {
-      font-family: 'DM Sans', sans-serif; font-size: 13px;
-      padding: 5px 10px; border-radius: var(--radius-sm);
-      border: 0.5px solid var(--border-strong);
-      background: var(--bg); color: var(--text);
-      cursor: pointer; outline: none; flex: 1;
-    }
-
+    .filter-bottom { padding: 10px 16px; display: flex; align-items: center; gap: 8px; min-height: 44px; }
+    .filter-bottom select { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 5px 10px; border-radius: var(--radius-sm); border: 0.5px solid var(--border-strong); background: var(--bg); color: var(--text); cursor: pointer; outline: none; flex: 1; }
     .filter-hint { font-size: 12px; color: var(--text-hint); font-style: italic; }
 
-    /* summary banner */
-    .summary-banner {
-      background: var(--green-bg);
-      border-radius: var(--radius-sm);
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .summary-left {}
-
+    .summary-banner { background: var(--green-bg); border-radius: var(--radius-sm); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .summary-period { font-size: 11px; color: var(--green); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 2px; }
     .summary-desc   { font-size: 13px; color: var(--green-dark); }
-
-    .summary-right { display: flex; align-items: baseline; gap: 4px; flex-shrink: 0; }
+    .summary-right  { display: flex; align-items: baseline; gap: 4px; flex-shrink: 0; }
     .summary-number { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--green-dark); line-height: 1; }
     .summary-unit   { font-size: 11px; color: var(--green); }
 
-    /* grid */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
-
-    .stat-card {
-      background: var(--surface); border: 0.5px solid var(--border);
-      border-radius: var(--radius-sm); padding: 10px 12px;
-      display: flex; flex-direction: column; gap: 2px;
-    }
-
+    .stat-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
     .stat-name { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .stat-count { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text); }
     .stat-count.zero { color: var(--text-hint); }
-
     .no-data { grid-column: 1 / -1; text-align: center; font-size: 13px; color: var(--text-hint); font-style: italic; padding: 1rem 0; }
 
-    .reload-btn {
-      margin-top: 1.5rem; font-size: 11px; color: var(--text-hint);
-      background: none; border: none; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; letter-spacing: 0.03em;
-      transition: color 0.15s; opacity: 0;
-      animation: fadeUp 0.5s 0.45s forwards;
+    /* ── Bottom actions ── */
+    .bottom-actions {
+      width: 100%; max-width: 440px; margin-top: 6px;
+      display: flex; justify-content: center; gap: 16px;
+      opacity: 0; animation: fadeUp 0.5s 0.45s forwards;
     }
-    .reload-btn:hover { color: var(--text-muted); }
+
+    .link-btn {
+      font-size: 11px; color: var(--text-hint); background: none; border: none;
+      cursor: pointer; font-family: 'DM Sans', sans-serif; letter-spacing: 0.03em;
+      transition: color 0.15s; padding: 6px 0;
+    }
+    .link-btn:hover { color: var(--text-muted); }
+    .link-btn.danger:hover { color: var(--red); }
+
+    /* ══════════════════════════════════════
+       MODAL OVERLAY
+    ══════════════════════════════════════ */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+      z-index: 100;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 0.5px solid var(--border);
+      width: 100%; max-width: 400px;
+      padding: 2rem;
+      display: flex; flex-direction: column; gap: 1.25rem;
+      transform: translateY(12px);
+      transition: transform 0.2s;
+    }
+    .overlay.open .modal { transform: translateY(0); }
+
+    .modal-header { display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; }
+    .modal-close { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-hint); line-height: 1; padding: 4px; transition: color 0.15s; }
+    .modal-close:hover { color: var(--text); }
+
+    .modal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+    /* password step */
+    .pwd-field { display: flex; flex-direction: column; gap: 8px; }
+    .pwd-label { font-size: 12px; color: var(--text-hint); }
+    .pwd-input-row { display: flex; gap: 8px; }
+    .pwd-input {
+      flex: 1; padding: 10px 12px; border-radius: var(--radius-sm);
+      border: 0.5px solid var(--border-strong);
+      font-family: 'DM Sans', sans-serif; font-size: 15px;
+      background: var(--bg); color: var(--text); outline: none;
+      letter-spacing: 0.15em;
+      transition: border-color 0.15s;
+    }
+    .pwd-input:focus { border-color: var(--accent); }
+    .pwd-input.wrong { border-color: var(--red); }
+    .pwd-error { font-size: 12px; color: var(--red); min-height: 16px; }
+
+    .btn-full {
+      width: 100%; padding: 13px; border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      cursor: pointer; border: 0.5px solid var(--border-strong);
+      background: var(--accent); color: var(--accent-fg);
+      transition: opacity 0.12s, transform 0.1s;
+    }
+    .btn-full:hover { opacity: 0.85; }
+    .btn-full:active { transform: scale(0.98); }
+    .btn-full.secondary { background: var(--surface); color: var(--text); }
+    .btn-full.secondary:hover { background: var(--bg); opacity: 1; }
+    .btn-full.danger-full { background: var(--red); color: #fff; border-color: var(--red); }
+
+    /* edit step */
+    .edit-scroll { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; padding-right: 4px; }
+    .edit-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg); border-radius: var(--radius-sm); }
+    .edit-closer-name { flex: 1; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .edit-date-label { font-size: 11px; color: var(--text-hint); white-space: nowrap; }
+    .edit-count {
+      width: 60px; text-align: center; padding: 5px 8px;
+      border-radius: var(--radius-sm); border: 0.5px solid var(--border-strong);
+      font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--surface); color: var(--text); outline: none;
+    }
+    .edit-count:focus { border-color: var(--accent); }
+
+    .edit-date-row { display: flex; align-items: center; gap: 8px; }
+    .edit-date-row label { font-size: 12px; color: var(--text-hint); }
+    .edit-date-row select {
+      font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 8px;
+      border-radius: var(--radius-sm); border: 0.5px solid var(--border-strong);
+      background: var(--bg); color: var(--text); cursor: pointer; outline: none; flex: 1;
+    }
+
+    .modal-btn-row { display: flex; gap: 8px; }
+    .modal-btn-row .btn-full { flex: 1; }
+
+    .divider-modal { height: 0.5px; background: var(--border); }
+
+    .reset-zone { display: flex; flex-direction: column; gap: 8px; }
+    .reset-label { font-size: 12px; color: var(--text-hint); }
+    .reset-warning { font-size: 12px; color: var(--red); background: var(--red-bg); padding: 8px 12px; border-radius: var(--radius-sm); line-height: 1.5; }
 
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(10px); }
@@ -270,31 +267,25 @@
   <div class="card">
     <div class="card-label">Próximo closer:</div>
     <div class="closer-name muted" id="closer-name">Carregando...</div>
-
     <div class="queue-section">
       <span class="queue-section-label">Fila</span>
       <div class="pills" id="pills"></div>
     </div>
-
     <div class="divider"></div>
-
     <div class="btn-row">
       <button class="btn" onclick="skipCloser()">Próximo closer</button>
       <button class="btn btn-primary" onclick="scheduledMeeting()">Reunião Agendada</button>
     </div>
-
     <div class="status" id="status"></div>
   </div>
 
+  <!-- Stats -->
   <div class="stats-section">
     <button class="stats-toggle" onclick="toggleStats()">
       <span id="stats-arrow">▾</span>
       <span>Ver reuniões agendadas</span>
     </button>
-
     <div class="stats-panel" id="stats-panel">
-
-      <!-- filter card -->
       <div class="filter-card">
         <div class="filter-top">
           <span class="filter-label">Filtrar por</span>
@@ -305,52 +296,101 @@
             <button class="ftab"        data-mode="all"   onclick="setMode('all')">Tudo</button>
           </div>
         </div>
-        <div class="filter-bottom" id="filter-bottom">
-          <!-- select injected by JS -->
-        </div>
+        <div class="filter-bottom" id="filter-bottom"></div>
       </div>
-
-      <!-- summary banner -->
       <div class="summary-banner">
-        <div class="summary-left">
+        <div>
           <div class="summary-period" id="summary-period">Hoje</div>
-          <div class="summary-desc"  id="summary-desc">reuniões agendadas</div>
+          <div class="summary-desc"   id="summary-desc">reuniões agendadas no dia</div>
         </div>
         <div class="summary-right">
           <span class="summary-number" id="summary-number">0</span>
           <span class="summary-unit">reuniões</span>
         </div>
       </div>
-
-      <!-- per-closer grid -->
       <div class="stats-grid" id="stats-grid"></div>
-
     </div>
   </div>
 
-  <button class="reload-btn" onclick="fetchSheet()">↻ Recarregar planilha</button>
+  <!-- Bottom actions -->
+  <div class="bottom-actions">
+    <button class="link-btn" onclick="fetchSheet()">↻ Recarregar planilha</button>
+    <button class="link-btn danger" onclick="openAdminModal()">✎ Reiniciar contagem</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       MODAL
+  ═══════════════════════════════════════ -->
+  <div class="overlay" id="overlay" onclick="overlayClick(event)">
+    <div class="modal" id="modal">
+
+      <!-- Step 1: password -->
+      <div id="step-pwd">
+        <div class="modal-header">
+          <span class="modal-title">Área restrita</span>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-desc">Digite a senha para editar ou reiniciar as contagens.</div>
+        <div class="pwd-field">
+          <span class="pwd-label">Senha</span>
+          <div class="pwd-input-row">
+            <input class="pwd-input" type="password" id="pwd-input" placeholder="········" onkeydown="if(event.key==='Enter')checkPwd()" />
+          </div>
+          <div class="pwd-error" id="pwd-error"></div>
+        </div>
+        <button class="btn-full" onclick="checkPwd()">Entrar</button>
+      </div>
+
+      <!-- Step 2: edit/reset -->
+      <div id="step-edit" style="display:none; flex-direction:column; gap:1.25rem;">
+
+        <div class="modal-header">
+          <span class="modal-title">Editar contagens</span>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+
+        <!-- date picker for edit -->
+        <div class="edit-date-row">
+          <label>Editar dia:</label>
+          <select id="edit-date-select" onchange="renderEditRows()"></select>
+        </div>
+
+        <!-- rows per closer -->
+        <div class="edit-scroll" id="edit-scroll"></div>
+
+        <div class="modal-btn-row">
+          <button class="btn-full secondary" onclick="closeModal()">Cancelar</button>
+          <button class="btn-full" onclick="saveEdits()">Salvar alterações</button>
+        </div>
+
+        <div class="divider-modal"></div>
+
+        <!-- reset zone -->
+        <div class="reset-zone">
+          <span class="reset-label">Reiniciar contagem</span>
+          <div class="reset-warning">⚠ Isso apagará <strong>todas</strong> as reuniões registradas permanentemente.</div>
+          <button class="btn-full danger-full" onclick="confirmReset()">Zerar tudo</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <script>
-    // ── CONFIG ─────────────────────────────────────────
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1mJ2X-Mf_EzgrCBoLt_t7leS7yI1cw_C2_g_iAc19TjHypB69AlKmR9v5Ay5Nn8g6G55o/pub?output=csv';
     const STATE_KEY = 'cq_state_v4';
-    // ───────────────────────────────────────────────────
+    const PASSWORD  = '38264020';
+    const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
     let closers  = [];
     let index    = 0;
-    let meetings = []; // [{ closer: string, ts: 'YYYY-MM-DD' }]
+    let meetings = []; // [{ closer, ts:'YYYY-MM-DD' }]
 
-    let filterMode  = 'day';
+    let filterMode = 'day';
     let filterDay, filterMonth, filterYear;
 
-    const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const MONTH_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-
-    function todayStr() {
-      const d = new Date();
-      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    }
     function pad(n) { return String(n).padStart(2,'0'); }
+    function todayStr() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 
     function initFilter() {
       const d = new Date();
@@ -373,6 +413,7 @@
       } catch(e) {}
     }
 
+    /* ── Filters ── */
     function filteredMeetings() {
       return meetings.filter(m => {
         if (filterMode === 'all')   return true;
@@ -392,40 +433,24 @@
 
     /* ── Main render ── */
     function render() {
-      const nameEl  = document.getElementById('closer-name');
+      const nameEl = document.getElementById('closer-name');
       const pillsEl = document.getElementById('pills');
-
-      if (!closers.length) {
-        nameEl.textContent = 'Nenhum closer encontrado';
-        nameEl.classList.add('muted');
-        pillsEl.innerHTML = '';
-        renderStats();
-        return;
-      }
-
+      if (!closers.length) { nameEl.textContent = 'Nenhum closer encontrado'; nameEl.classList.add('muted'); pillsEl.innerHTML = ''; renderStats(); return; }
       const idx = index % closers.length;
       nameEl.classList.remove('muted');
       nameEl.textContent = closers[idx];
-
-      pillsEl.innerHTML = closers.map((c, i) =>
-        `<span class="pill${i === idx ? ' active' : ''}">${c.split(' ')[0]}</span>`
-      ).join('');
-
+      pillsEl.innerHTML = closers.map((c, i) => `<span class="pill${i===idx?' active':''}">${c.split(' ')[0]}</span>`).join('');
       renderStats();
     }
 
     /* ── Stats render ── */
     function renderStats() {
       buildFilterSelect();
-
       const filtered = filteredMeetings();
       const counts   = countsByCloser(filtered);
       const total    = filtered.length;
-
-      // period label
       const periodEl = document.getElementById('summary-period');
       const descEl   = document.getElementById('summary-desc');
-
       if (filterMode === 'day') {
         const [y,m,d] = filterDay.split('-');
         periodEl.textContent = filterDay === todayStr() ? 'Hoje' : `${d}/${m}/${y}`;
@@ -441,79 +466,48 @@
         periodEl.textContent = 'Todos os períodos';
         descEl.textContent   = 'reuniões agendadas no total';
       }
-
       document.getElementById('summary-number').textContent = total;
-
-      // grid
       const grid = document.getElementById('stats-grid');
       if (!closers.length) { grid.innerHTML = ''; return; }
-
       const hasAny = Object.values(counts).some(v => v > 0);
-      if (!hasAny) {
-        grid.innerHTML = `<div class="no-data">Nenhuma reunião neste período.</div>`;
-        return;
-      }
-
+      if (!hasAny) { grid.innerHTML = `<div class="no-data">Nenhuma reunião neste período.</div>`; return; }
       grid.innerHTML = closers.map(c => `
         <div class="stat-card">
           <div class="stat-name">${c.split(' ')[0]}</div>
-          <div class="stat-count${counts[c] === 0 ? ' zero' : ''}">${counts[c]}</div>
-        </div>
-      `).join('');
+          <div class="stat-count${counts[c]===0?' zero':''}">${counts[c]}</div>
+        </div>`).join('');
     }
 
     function buildFilterSelect() {
       const container = document.getElementById('filter-bottom');
-
-      if (filterMode === 'all') {
-        container.innerHTML = `<span class="filter-hint">Exibindo todos os registros</span>`;
-        return;
-      }
-
-      // build unique sorted lists
-      const allTs = meetings.map(m => m.ts);
+      if (filterMode === 'all') { container.innerHTML = `<span class="filter-hint">Exibindo todos os registros</span>`; return; }
+      const allTs  = meetings.map(m => m.ts);
       const days   = [...new Set(allTs)].sort().reverse();
       const months = [...new Set(allTs.map(t => t.slice(0,7)))].sort().reverse();
       const years  = [...new Set(allTs.map(t => t.slice(0,4)))].sort().reverse();
-
-      // always include current period
-      if (!days.includes(todayStr())) days.unshift(todayStr());
-      if (!months.includes(filterMonth)) months.unshift(filterMonth);
-      if (!years.includes(filterYear))   years.unshift(filterYear);
-
+      if (!days.includes(todayStr()))      days.unshift(todayStr());
+      if (!months.includes(filterMonth))  months.unshift(filterMonth);
+      if (!years.includes(filterYear))    years.unshift(filterYear);
       let html = '';
-
       if (filterMode === 'day') {
         html = `<select onchange="filterDay=this.value;renderStats()">`;
-        days.forEach(d => {
-          const [y,m,dd] = d.split('-');
-          const label = d === todayStr() ? `Hoje — ${dd}/${m}/${y}` : `${dd}/${m}/${y}`;
-          html += `<option value="${d}" ${d===filterDay?'selected':''}>${label}</option>`;
-        });
+        days.forEach(d => { const [y,m,dd]=d.split('-'); html += `<option value="${d}" ${d===filterDay?'selected':''}>${d===todayStr()?`Hoje — ${dd}/${m}/${y}`:`${dd}/${m}/${y}`}</option>`; });
         html += `</select>`;
       } else if (filterMode === 'month') {
         html = `<select onchange="filterMonth=this.value;renderStats()">`;
-        months.forEach(mo => {
-          const [y,m] = mo.split('-');
-          html += `<option value="${mo}" ${mo===filterMonth?'selected':''}>${MONTH_NAMES[parseInt(m)-1]} ${y}</option>`;
-        });
+        months.forEach(mo => { const [y,m]=mo.split('-'); html += `<option value="${mo}" ${mo===filterMonth?'selected':''}>${MONTH_NAMES[parseInt(m)-1]} ${y}</option>`; });
         html += `</select>`;
       } else if (filterMode === 'year') {
         html = `<select onchange="filterYear=this.value;renderStats()">`;
-        years.forEach(y => {
-          html += `<option value="${y}" ${y===filterYear?'selected':''}>${y}</option>`;
-        });
+        years.forEach(y => { html += `<option value="${y}" ${y===filterYear?'selected':''}>${y}</option>`; });
         html += `</select>`;
       }
-
       container.innerHTML = html;
     }
 
     function setMode(mode) {
       filterMode = mode;
-      document.querySelectorAll('.ftab').forEach(b =>
-        b.classList.toggle('active', b.dataset.mode === mode)
-      );
+      document.querySelectorAll('.ftab').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
       renderStats();
     }
 
@@ -521,25 +515,18 @@
     function animateName(name) {
       const el = document.getElementById('closer-name');
       el.classList.add('transitioning');
-      setTimeout(() => {
-        el.textContent = name;
-        el.classList.remove('muted','transitioning');
-      }, 150);
+      setTimeout(() => { el.textContent = name; el.classList.remove('muted','transitioning'); }, 150);
     }
 
     function renderPills() {
       const idx = index % closers.length;
-      document.getElementById('pills').innerHTML = closers.map((c, i) =>
-        `<span class="pill${i === idx ? ' active' : ''}">${c.split(' ')[0]}</span>`
-      ).join('');
+      document.getElementById('pills').innerHTML = closers.map((c,i) => `<span class="pill${i===idx?' active':''}">${c.split(' ')[0]}</span>`).join('');
     }
 
     function skipCloser() {
       if (!closers.length) return;
       index = (index + 1) % closers.length;
-      persist();
-      animateName(closers[index]);
-      renderPills();
+      persist(); animateName(closers[index]); renderPills();
       showStatus('Próximo closer selecionado.', '');
     }
 
@@ -548,10 +535,7 @@
       const name = closers[index % closers.length];
       meetings.push({ closer: name, ts: todayStr() });
       index = (index + 1) % closers.length;
-      persist();
-      animateName(closers[index % closers.length]);
-      renderPills();
-      renderStats();
+      persist(); animateName(closers[index % closers.length]); renderPills(); renderStats();
       showStatus(`Reunião agendada para ${name}!`, 'success');
     }
 
@@ -565,38 +549,135 @@
 
     function showStatus(msg, type) {
       const el = document.getElementById('status');
-      el.textContent = msg;
-      el.className   = 'status ' + type;
-      if (type !== 'error') setTimeout(() => {
-        if (el.textContent === msg) { el.textContent = ''; el.className = 'status'; }
-      }, 3000);
+      el.textContent = msg; el.className = 'status ' + type;
+      if (type !== 'error') setTimeout(() => { if (el.textContent===msg) { el.textContent=''; el.className='status'; } }, 3000);
     }
 
     async function fetchSheet() {
       const nameEl = document.getElementById('closer-name');
-      nameEl.textContent = 'Carregando...';
-      nameEl.classList.add('muted');
+      nameEl.textContent = 'Carregando...'; nameEl.classList.add('muted');
       showStatus('Buscando planilha...', '');
       try {
         const res = await fetch(SHEET_URL);
         if (!res.ok) throw new Error('Não foi possível acessar a planilha');
         const text = await res.text();
-        const names = text.split('\n')
-          .map(l => l.split(',')[0].replace(/"/g,'').trim())
-          .filter(n => n && !/^(nome|closer|name|sdr)$/i.test(n));
+        const names = text.split('\n').map(l => l.split(',')[0].replace(/"/g,'').trim()).filter(n => n && !/^(nome|closer|name|sdr)$/i.test(n));
         if (!names.length) throw new Error('Nenhum nome encontrado');
         closers = names;
         if (index >= closers.length) index = 0;
-        persist();
-        render();
+        persist(); render();
         showStatus(`${names.length} closers carregados.`, 'success');
       } catch(e) {
         showStatus('Erro: ' + e.message, 'error');
-        nameEl.textContent = 'Erro ao carregar';
-        nameEl.classList.add('muted');
+        nameEl.textContent = 'Erro ao carregar'; nameEl.classList.add('muted');
       }
     }
 
+    /* ══════════════════════════════════════
+       MODAL LOGIC
+    ══════════════════════════════════════ */
+    function openAdminModal() {
+      document.getElementById('step-pwd').style.display = 'flex';
+      document.getElementById('step-pwd').style.flexDirection = 'column';
+      document.getElementById('step-pwd').style.gap = '1.25rem';
+      document.getElementById('step-edit').style.display = 'none';
+      const inp = document.getElementById('pwd-input');
+      inp.value = ''; inp.classList.remove('wrong');
+      document.getElementById('pwd-error').textContent = '';
+      document.getElementById('overlay').classList.add('open');
+      setTimeout(() => inp.focus(), 200);
+    }
+
+    function closeModal() {
+      document.getElementById('overlay').classList.remove('open');
+    }
+
+    function overlayClick(e) {
+      if (e.target === document.getElementById('overlay')) closeModal();
+    }
+
+    function checkPwd() {
+      const val = document.getElementById('pwd-input').value;
+      const inp = document.getElementById('pwd-input');
+      const err = document.getElementById('pwd-error');
+      if (val === PASSWORD) {
+        inp.classList.remove('wrong');
+        err.textContent = '';
+        showEditStep();
+      } else {
+        inp.classList.add('wrong');
+        err.textContent = 'Senha incorreta. Tente novamente.';
+        inp.value = '';
+        setTimeout(() => inp.classList.remove('wrong'), 800);
+      }
+    }
+
+    function showEditStep() {
+      document.getElementById('step-pwd').style.display = 'none';
+      const editEl = document.getElementById('step-edit');
+      editEl.style.display = 'flex';
+      buildEditDateSelect();
+      renderEditRows();
+    }
+
+    function buildEditDateSelect() {
+      const sel = document.getElementById('edit-date-select');
+      const allTs = meetings.map(m => m.ts);
+      const days = [...new Set(allTs)].sort().reverse();
+      if (!days.includes(todayStr())) days.unshift(todayStr());
+      sel.innerHTML = days.map(d => {
+        const [y,m,dd] = d.split('-');
+        return `<option value="${d}" ${d===todayStr()?'selected':''}>${d===todayStr()?`Hoje — ${dd}/${m}/${y}`:`${dd}/${m}/${y}`}</option>`;
+      }).join('');
+    }
+
+    function renderEditRows() {
+      const day  = document.getElementById('edit-date-select').value || todayStr();
+      const counts = {};
+      closers.forEach(c => counts[c] = 0);
+      meetings.filter(m => m.ts === day).forEach(m => { if (counts[m.closer] !== undefined) counts[m.closer]++; });
+
+      document.getElementById('edit-scroll').innerHTML = closers.map(c => `
+        <div class="edit-row">
+          <span class="edit-closer-name">${c}</span>
+          <input class="edit-count" type="number" min="0" max="999" value="${counts[c]}" data-closer="${c}" />
+        </div>`).join('');
+    }
+
+    function saveEdits() {
+      const day    = document.getElementById('edit-date-select').value || todayStr();
+      const inputs = document.querySelectorAll('.edit-count');
+
+      // remove all meetings for that day
+      meetings = meetings.filter(m => m.ts !== day);
+
+      // re-add based on input values
+      inputs.forEach(inp => {
+        const closer = inp.dataset.closer;
+        const count  = Math.max(0, parseInt(inp.value) || 0);
+        for (let i = 0; i < count; i++) {
+          meetings.push({ closer, ts: day });
+        }
+      });
+
+      persist();
+      renderStats();
+      closeModal();
+      showStatus('Contagens atualizadas!', 'success');
+    }
+
+    function confirmReset() {
+      const confirmed = window.confirm('Tem certeza? Isso vai apagar TODAS as reuniões registradas.');
+      if (!confirmed) return;
+      meetings = [];
+      index = 0;
+      persist();
+      render();
+      closeModal();
+      showStatus('Contagem zerada com sucesso.', 'success');
+    }
+
+    /* ── Init ── */
     initFilter();
     restore();
     fetchSheet();
