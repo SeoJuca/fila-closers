@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fila de Closers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.1);
+      --border-strong: rgba(0,0,0,0.18);
+      --text: #111110;
+      --text-muted: #888780;
+      --text-hint: #b4b2a9;
+      --accent: #111110;
+      --accent-fg: #ffffff;
+      --green: #1D9E75;
+      --red: #E24B4A;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --radius-pill: 100px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.1s forwards;
+    }
+
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .header-label {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ── Main card ── */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem 2rem;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.2s forwards;
+    }
+
+    .card-label {
+      font-size: 12px;
+      color: var(--text-hint);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .closer-name {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.2rem, 9vw, 3.4rem);
+      font-weight: 800;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.05;
+      min-height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2rem;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .closer-name.transitioning {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    .closer-name.muted {
+      font-size: 1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      color: var(--text-hint);
+      font-style: italic;
+    }
+
+    /* ── Queue pills ── */
+    .queue-section {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+
+    .queue-section-label {
+      font-size: 11px;
+      color: var(--text-hint);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: flex-end;
+      flex: 1;
+    }
+
+    .pill {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--text-muted);
+      border: 0.5px solid var(--border);
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .pill.active {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-color: var(--accent);
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      height: 0.5px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 13px 10px;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      transition: background 0.12s, transform 0.1s, opacity 0.12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { background: #f5f4f0; }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover { opacity: 0.82; background: var(--accent); }
+
+    /* ── Status ── */
+    .status {
+      font-size: 12px;
+      color: var(--text-hint);
+      margin-top: 12px;
+      text-align: center;
+      min-height: 16px;
+      transition: opacity 0.3s;
+    }
+
+    .status.success { color: var(--green); }
+    .status.error   { color: var(--red); }
+
+    /* ── Stats ── */
+    .stats-section {
+      width: 100%;
+      max-width: 440px;
+      margin-top: 12px;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.35s forwards;
+    }
+
+    .stats-toggle {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 10px 0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--text-hint);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: color 0.15s;
+    }
+
+    .stats-toggle:hover { color: var(--text-muted); }
+
+    .stats-grid {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stats-grid.open { display: grid; }
+
+    .stat-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-name {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stat-count {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ── Reload ── */
+    .reload-btn {
+      margin-top: 1.5rem;
+      font-size: 11px;
+      color: var(--text-hint);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.03em;
+      transition: color 0.15s;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.45s forwards;
+    }
+
+    .reload-btn:hover { color: var(--text-muted); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 400px) {
+      .card { padding: 2rem 1.25rem 1.5rem; }
+      .btn-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo-dot"></div>
+    <span class="header-label">Fila de Closers</span>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Próximo closer:</div>
+    <div class="closer-name muted" id="closer-name">Carregando...</div>
+
+    <div class="queue-section">
+      <span class="queue-section-label">Fila</span>
+      <div class="pills" id="pills"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="skipCloser()">Próximo closer</button>
+      <button class="btn btn-primary" onclick="scheduledMeeting()">Reunião Agendada</button>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="stats-section">
+    <button class="stats-toggle" onclick="toggleStats()">
+      <span id="stats-arrow">▾</span>
+      <span>Ver reuniões agendadas</span>
+    </button>
+    <div class="stats-grid" id="stats-grid"></div>
+  </div>
+
+  <button class="reload-btn" onclick="fetchSheet()">↻ Recarregar planilha</button>
+
+  <script>
+    // ── CONFIGURAÇÃO ──────────────────────────────────────────────
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1mJ2X-Mf_EzgrCBoLt_t7leS7yI1cw_C2_g_iAc19TjHypB69AlKmR9v5Ay5Nn8g6G55o/pub?output=csv';
+    // ─────────────────────────────────────────────────────────────
+
+    const STATE_KEY = 'cq_state_v3';
+    let closers = [];
+    let index = 0;
+    let meetings = {};
+
+    function persist() {
+      try { localStorage.setItem(STATE_KEY, JSON.stringify({ index, meetings })); } catch(e) {}
+    }
+
+    function restore() {
+      try {
+        const s = localStorage.getItem(STATE_KEY);
+        if (s) { const d = JSON.parse(s); index = d.index || 0; meetings = d.meetings || {}; }
+      } catch(e) {}
+    }
+
+    function render() {
+      const nameEl = document.getElementById('closer-name');
+      const pillsEl = document.getElementById('pills');
+
+      if (!closers.length) {
+        nameEl.textContent = 'Nenhum closer encontrado';
+        nameEl.classList.add('muted');
+        pillsEl.innerHTML = '';
+        return;
+      }
+
+      const idx = index % closers.length;
+      nameEl.classList.remove('muted');
+      nameEl.textContent = closers[idx];
+
+      pillsEl.innerHTML = closers.map((c, i) =>
+        `<span class="pill${i === idx ? ' active' : ''}">${c.split(' ')[0]}</span>`
+      ).join('');
+
+      renderStats();
+    }
+
+    function renderStats() {
+      const grid = document.getElementById('stats-grid');
+      if (!closers.length) { grid.innerHTML = ''; return; }
+      grid.innerHTML = closers.map(c => `
+        <div class="stat-card">
+          <div class="stat-name">${c.split(' ')[0]}</div>
+          <div class="stat-count">${meetings[c] || 0}</div>
+        </div>
+      `).join('');
+    }
+
+    function animateName(newName) {
+      const el = document.getElementById('closer-name');
+      el.classList.add('transitioning');
+      setTimeout(() => {
+        el.textContent = newName;
+        el.classList.remove('muted', 'transitioning');
+      }, 150);
+    }
+
+    function skipCloser() {
+      if (!closers.length) return;
+      index = (index + 1) % closers.length;
+      persist();
+      animateName(closers[index]);
+      renderPills();
+      showStatus('Próximo closer selecionado.', '');
+    }
+
+    function renderPills() {
+      const pillsEl = document.getElementById('pills');
+      const idx = index % closers.length;
+      pillsEl.innerHTML = closers.map((c, i) =>
+        `<span class="pill${i === idx ? ' active' : ''}">${c.split(' ')[0]}</span>`
+      ).join('');
+    }
+
+    function scheduledMeeting() {
+      if (!closers.length) return;
+      const name = closers[index % closers.length];
+      meetings[name] = (meetings[name] || 0) + 1;
+      index = (index + 1) % closers.length;
+      persist();
+      animateName(closers[index % closers.length]);
+      renderPills();
+      renderStats();
+      showStatus(`Reunião agendada para ${name}! 🎯`, 'success');
+    }
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+      if (type !== 'error') setTimeout(() => { if (el.textContent === msg) { el.textContent = ''; el.className = 'status'; } }, 3000);
+    }
+
+    function toggleStats() {
+      const grid = document.getElementById('stats-grid');
+      const arrow = document.getElementById('stats-arrow');
+      const open = grid.classList.toggle('open');
+      arrow.textContent = open ? '▴' : '▾';
+    }
+
+    async function fetchSheet() {
+      document.getElementById('closer-name').textContent = 'Carregando...';
+      document.getElementById('closer-name').classList.add('muted');
+      showStatus('Buscando planilha...', '');
+      try {
+        const res = await fetch(SHEET_URL);
+        if (!res.ok) throw new Error('Não foi possível acessar a planilha');
+        const text = await res.text();
+        const names = text.split('\n')
+          .map(l => l.split(',')[0].replace(/"/g, '').trim())
+          .filter(n => n && !/^(nome|closer|name|sdr)$/i.test(n));
+        if (!names.length) throw new Error('Nenhum nome encontrado');
+        closers = names;
+        if (index >= closers.length) index = 0;
+        persist();
+        render();
+        showStatus(`${names.length} closers carregados.`, 'success');
+      } catch(e) {
+        showStatus('Erro: ' + e.message, 'error');
+        document.getElementById('closer-name').textContent = 'Erro ao carregar';
+        document.getElementById('closer-name').classList.add('muted');
+      }
+    }
+
+    restore();
+    fetchSheet();
+  </script>
+</body>
+</html>
