@@ -446,7 +446,7 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Carimbo</th>
+              <th>Data do Agendamento</th>
               <th>SDR</th>
               <th>Data Reunião</th>
               <th>Closer</th>
@@ -467,27 +467,25 @@
 
 <script>
 const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1mJ2X-Mf_EzgrCBoLt_t7leS7yI1cw_C2_g_iAc19TjHypB69AlKmR9v5Ay5Nn8g6G55o/pub';
-const GID_AGEND  = '1127809379';
-const GID_SDR    = '1360192723';
-const WEBHOOK    = 'https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda';
+const GID_CLOSERS = '0';           // aba "closers", col A, cabeçalho "Closer"
+const GID_AGEND   = '1127809379'; // aba agendamentos
+const GID_SDR     = '1360192723'; // aba SDR
+const WEBHOOK     = 'https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda';
 
+// ── ESTADO ──
 let closers       = [];
 let closersLoaded = false;
-let closerIndex   = 0;
+let closerIndex   = 0;   // sempre lido da planilha antes de usar
 let agendamentos  = [];
-let filterDate    = new Date();       // filtro tabela
-let scoreDate     = new Date();       // filtro placar
+let filterDate    = new Date();
+let scoreDate     = new Date();
 
 // ── UTILS ──
 function fmtDate(d) {
   return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
 }
-function fmtMonthYear(d) {
-  return d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-}
 function isoDate(d) { return d.toISOString().split('T')[0]; }
 
-// Extrai DD/MM/YYYY de qualquer formato
 function extractDatePart(str) {
   if (!str) return '';
   const m1 = str.match(/(\d{2}\/\d{2}\/\d{4})/);
@@ -497,18 +495,16 @@ function extractDatePart(str) {
   return str;
 }
 
-// Converte DD/MM/YYYY → Date
 function parseBRDate(str) {
-  const [d,m,y] = str.split('/');
-  return new Date(+y, +m-1, +d);
+  const p = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!p) return new Date(NaN);
+  return new Date(+p[3], +p[2]-1, +p[1]);
 }
 
-// Formata data ISO input (YYYY-MM-DD) → DD/MM/YYYY para exibição
 function isoToBR(str) {
-  if (!str) return '—';
-  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const m = (str||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (m) return `${m[3]}/${m[2]}/${m[1]}`;
-  return str;
+  return str || '—';
 }
 
 function parseCSVRaw(text) {
@@ -532,13 +528,13 @@ function initials(name) {
 function toast(msg, ok=true) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.style.background = ok ? 'var(--yellow)' : '#1a5c30';
-  t.style.color = ok ? 'var(--dark)' : 'var(--white)';
+  t.style.background = ok ? 'var(--yellow)' : '#b71c1c';
+  t.style.color = ok ? 'var(--dark)' : '#fff';
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-// ── FETCH ──
+// ── FETCH CSV ──
 async function fetchRaw(gid) {
   const url = `${SHEET_BASE}?gid=${gid}&single=true&output=csv&cb=${Date.now()}`;
   const r = await fetch(url);
@@ -546,7 +542,40 @@ async function fetchRaw(gid) {
   return r.text();
 }
 
-// ── LOAD SDRs (col A da aba SDR) ──
+// ══════════════════════════════════════════════════════════
+//  ÍNDICE COMPARTILHADO — lido e escrito via webhook/planilha
+//
+//  Estratégia: o índice atual do closer fica salvo na PRÓPRIA
+//  planilha (o Make grava em uma célula da aba closers).
+//  A cada carregamento buscamos o valor.
+//  Enquanto o Make não implementar a escrita, usamos o último
+//  agendamento do dia para deduzir qual é o próximo.
+// ══════════════════════════════════════════════════════════
+
+// Deduz o próximo índice olhando o último closer que recebeu
+// agendamento hoje — o próximo é o seguinte na lista circular.
+function deduceIndexFromAgendamentos() {
+  if (!closers.length || !agendamentos.length) return 0;
+  const todayBR = fmtDate(new Date());
+
+  // Pega todos agendamentos de hoje, ordena pelo carimbo (mais recente último)
+  const hoje = agendamentos
+    .filter(r => extractDatePart(r.carimbo) === todayBR && r.closer)
+    .sort((a, b) => {
+      // Ordena por carimbo texto — funciona para DD/MM/YYYY HH:MM:SS
+      return (a.carimbo > b.carimbo) ? 1 : -1;
+    });
+
+  if (!hoje.length) return 0; // nenhum agendamento hoje → começa no 0
+
+  const ultimoCloser = hoje[hoje.length - 1].closer;
+  const idx = closers.findIndex(c => c.name === ultimoCloser);
+  if (idx === -1) return 0;
+  // Próximo é o seguinte ao último que recebeu
+  return (idx + 1) % closers.length;
+}
+
+// ── LOAD SDRs ──
 async function loadSDRs() {
   try {
     const rows = parseCSVRaw(await fetchRaw(GID_SDR));
@@ -563,33 +592,25 @@ async function loadSDRs() {
   } catch(e) { console.error('SDR:', e); toast('Erro ao carregar SDRs', false); }
 }
 
-// ── LOAD CLOSERS ──
-// Tenta col B da aba SDR primeiro; se vazia, usa col A como closers.
-// A lista é carregada UMA ÚNICA VEZ e nunca sobrescrita.
+// ── LOAD CLOSERS — aba "closers", gid=0, col A, pula cabeçalho ──
 async function loadClosers() {
   if (closersLoaded) return;
   try {
-    const rows = parseCSVRaw(await fetchRaw(GID_SDR));
-    const dataRows = rows.slice(1);
-
-    // Tenta col B (índice 1)
-    let names = [...new Set(dataRows.map(c => (c[1]||'').trim()).filter(Boolean))];
-
-    // Se col B vazia, usa col A (os SDRs também são closers? Fallback)
-    if (!names.length) {
-      names = [...new Set(dataRows.map(c => (c[0]||'').trim()).filter(Boolean))];
-    }
-
+    const rows = parseCSVRaw(await fetchRaw(GID_CLOSERS));
+    // Linha 0 = cabeçalho "Closer", linha 1..N = nomes
+    const names = rows.slice(1).map(c => (c[0]||'').trim()).filter(Boolean);
     if (names.length) {
       closers = names.map(n => ({name: n, initials: initials(n)}));
       closersLoaded = true;
       console.log('Closers carregados:', closers.map(c=>c.name));
+    } else {
+      console.warn('Aba closers vazia ou sem dados na col A');
     }
-  } catch(e) { console.error('Closers:', e); }
+  } catch(e) { console.error('Closers:', e); toast('Erro ao carregar closers', false); }
 }
 
 // ── LOAD AGENDAMENTOS ──
-// Cols fixas: A=Carimbo | B=SDR | C=Data 1ª Reunião | D=Closer | E=Lead
+// Cols: A=Carimbo(data/hora) | B=SDR | C=Data 1ª Reunião | D=Closer | E=Lead
 async function loadAgendamentos() {
   try {
     const rows = parseCSVRaw(await fetchRaw(GID_AGEND));
@@ -601,15 +622,10 @@ async function loadAgendamentos() {
       lead:     (cols[4]||'').trim(),
     })).filter(r => r.sdr || r.carimbo);
 
-    // Fallback closers da col D — só se ainda não carregados
-    if (!closersLoaded) {
-      const names = [...new Set(agendamentos.map(r => r.closer).filter(Boolean))];
-      if (names.length) {
-        closers = names.map(n => ({name: n, initials: initials(n)}));
-        closersLoaded = true;
-        console.log('Closers (fallback agend):', closers.map(c=>c.name));
-      }
-    }
+    // Deduz o índice correto a partir dos agendamentos reais de hoje
+    // Isso garante sincronização entre computadores diferentes!
+    closerIndex = deduceIndexFromAgendamentos();
+    console.log('Índice deduzido:', closerIndex, '→', closers[closerIndex]?.name);
 
     updateNextCloser();
     renderScoreboard();
@@ -621,7 +637,7 @@ async function loadAgendamentos() {
   }
 }
 
-// ── SCOREBOARD — navegável por dia e com acumulado mensal ──
+// ── SCOREBOARD ──
 function renderScoreboard() {
   const board    = document.getElementById('scoreboard');
   const totalEl  = document.getElementById('total-today');
@@ -629,11 +645,10 @@ function renderScoreboard() {
   const scoreM   = scoreDate.getMonth();
   const scoreY   = scoreDate.getFullYear();
 
-  // Atualiza label do placar
   document.getElementById('score-date-label').textContent = scoreBR;
 
   if (!closers.length) {
-    board.innerHTML = '<div class="empty-state">Nenhum closer encontrado na planilha</div>';
+    board.innerHTML = '<div class="empty-state">Nenhum closer encontrado na planilha (aba "closers")</div>';
     totalEl.textContent = '0'; return;
   }
 
@@ -648,15 +663,11 @@ function renderScoreboard() {
     const dt = parseBRDate(dp);
     if (isNaN(dt)) return;
 
-    // Acumulado do dia selecionado
     if (dp === scoreBR) {
-      if (countDay.hasOwnProperty(row.closer)) countDay[row.closer]++;
-      else countDay[row.closer] = 1;
+      countDay[row.closer]  = (countDay[row.closer]  || 0) + 1;
     }
-    // Acumulado do mês do dia selecionado
     if (dt.getMonth() === scoreM && dt.getFullYear() === scoreY) {
-      if (countMonth.hasOwnProperty(row.closer)) countMonth[row.closer]++;
-      else countMonth[row.closer] = 1;
+      countMonth[row.closer] = (countMonth[row.closer] || 0) + 1;
     }
   });
 
@@ -687,7 +698,10 @@ function renderTable() {
   const filterBR = fmtDate(filterDate);
   document.getElementById('filter-date-label').textContent = filterBR;
 
-  const filtered = agendamentos.filter(row => extractDatePart(row.dataReun) === filterBR);
+  const filtered = agendamentos.filter(row => {
+    const dr = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+    return dr === filterBR;
+  });
 
   if (!filtered.length) {
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum agendamento em ${filterBR}</td></tr>`;
@@ -696,12 +710,15 @@ function renderTable() {
 
   tbody.innerHTML = '';
   filtered.forEach((row, i) => {
-    // dataReun pode vir como DD/MM/YYYY ou YYYY-MM-DD
-    const dataExib = extractDatePart(row.dataReun) || isoToBR(row.dataReun) || row.dataReun || '—';
+    const dataExib = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+    // Carimbo: mostra só DD/MM/YYYY HH:MM
+    const carimboExib = row.carimbo
+      .replace(/^(\d{2}\/\d{2}\/\d{4})[, ]+(\d{2}:\d{2}).*$/, '$1 $2')
+      || row.carimbo || '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${i+1}</td>
-      <td>${extractDatePart(row.carimbo) || '—'}</td>
+      <td>${carimboExib}</td>
       <td><span class="badge-sdr">${row.sdr || '—'}</span></td>
       <td>${dataExib}</td>
       <td><span class="badge-closer">${row.closer || '—'}</span></td>
@@ -713,12 +730,8 @@ function renderTable() {
 // ── PRÓXIMO CLOSER ──
 function updateNextCloser() {
   const el = document.getElementById('next-closer-name');
-  if (closers.length === 0) { el.textContent = 'Carregando...'; return; }
-  if (closers.length === 1) {
-    el.textContent = closers[0].name + ' (único closer)';
-  } else {
-    el.textContent = closers[closerIndex].name;
-  }
+  if (!closers.length) { el.textContent = 'Carregando...'; return; }
+  el.textContent = closers[closerIndex].name;
 }
 
 // ── AGENDAR ──
@@ -748,15 +761,11 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
 
   try {
     await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
-
     toast(`✅ Agendado! ${closer} recebeu a reunião de ${lead}.`);
-
-    if (closers.length > 1) {
-      closerIndex = (closerIndex + 1) % closers.length;
-    }
-    updateNextCloser();
-    renderScoreboard();
     document.getElementById('lead-name').value = '';
+
+    // Aguarda o Make gravar na planilha e recarrega — o índice será
+    // deduzido automaticamente dos agendamentos reais
     setTimeout(loadAgendamentos, 4000);
   } catch(e) {
     toast('Erro ao enviar. Verifique a conexão.', false);
@@ -765,25 +774,43 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   }
 });
 
-// ── PULAR CLOSER ──
-document.getElementById('btn-skip').addEventListener('click', () => {
+// ── PULAR CLOSER — grava o pulo via webhook para sincronizar ──
+document.getElementById('btn-skip').addEventListener('click', async () => {
   if (!closers.length) return;
   if (closers.length === 1) { toast('Apenas 1 closer cadastrado — impossível pular.', false); return; }
-  const pulado = closers[closerIndex].name;
-  closerIndex = (closerIndex + 1) % closers.length;
-  const proximo = closers[closerIndex].name;
+
+  const pulado  = closers[closerIndex].name;
+  const novoIdx = (closerIndex + 1) % closers.length;
+  const proximo = closers[novoIdx].name;
+
+  // Grava pulo como agendamento especial com tipo "pulo" para que
+  // o índice seja deduzido corretamente nos outros computadores
+  const fd = new FormData();
+  fd.append('sdr',          document.getElementById('sdr-select').value || 'Sistema');
+  fd.append('closer',       pulado);
+  fd.append('data_reuniao', fmtDate(new Date()));
+  fd.append('nome_lead',    '__PULO__');
+  fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
+  fd.append('tipo',         'pulo');
+
+  try {
+    await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
+  } catch(e) { /* silencioso */ }
+
+  closerIndex = novoIdx;
   updateNextCloser();
   renderScoreboard();
   toast(`⏭ ${pulado} pulado. Próximo: ${proximo}`);
+
+  // Recarrega após Make processar
+  setTimeout(loadAgendamentos, 4000);
 });
 
-// ── NAVEGAÇÃO TABELA ──
-document.getElementById('btn-prev').addEventListener('click', () => { filterDate.setDate(filterDate.getDate()-1); renderTable(); });
-document.getElementById('btn-next').addEventListener('click', () => { filterDate.setDate(filterDate.getDate()+1); renderTable(); });
-
-// ── NAVEGAÇÃO PLACAR ──
-document.getElementById('score-prev').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()-1); renderScoreboard(); });
-document.getElementById('score-next').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()+1); renderScoreboard(); });
+// ── NAVEGAÇÃO ──
+document.getElementById('btn-prev').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()-1); renderTable(); });
+document.getElementById('btn-next').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()+1); renderTable(); });
+document.getElementById('score-prev').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()-1);  renderScoreboard(); });
+document.getElementById('score-next').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()+1);  renderScoreboard(); });
 
 document.getElementById('btn-refresh').addEventListener('click', async () => {
   const btn = document.getElementById('btn-refresh');
@@ -800,7 +827,8 @@ document.getElementById('meeting-date').value = isoDate(new Date());
   await loadAgendamentos();
 })();
 
-setInterval(loadAgendamentos, 60000);
+// Auto-refresh a cada 30s para manter sincronizado entre computadores
+setInterval(loadAgendamentos, 30000);
 </script>
 </body>
 </html>
