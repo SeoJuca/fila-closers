@@ -475,6 +475,7 @@ const WEBHOOK     = 'https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda'
 let closers       = [];
 let closersLoaded = false;
 let agendamentos  = [];
+let skippedThisSession = new Set(); // closers pulados nesta sessão (só local)
 let filterDate    = new Date();
 let scoreDate     = new Date();
 
@@ -532,49 +533,55 @@ async function fetchRaw(gid) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  ALGORITMO DE FILA JUSTO
+//  ALGORITMO DE FILA — HISTÓRICO TOTAL
 //
-//  Em vez de guardar um índice (que dessincroniza entre
-//  computadores), calculamos o próximo closer a partir dos
-//  dados reais da planilha usando duas regras:
+//  Conta todas as reuniões de cada closer no histórico completo
+//  da planilha (sem filtro de data). O que tem menos recebe.
+//  Empate → quem aparece primeiro na lista da aba "closers".
 //
-//  1. MENOR CONTAGEM HOJE: o closer com menos reuniões no dia
-//     recebe a próxima — garante distribuição equilibrada.
+//  Isso garante continuidade entre dias: se o dia terminou com
+//  C e D sem receber, eles ficam na frente para o dia seguinte.
 //
-//  2. ORDEM DA LISTA como critério de desempate: se dois têm
-//     igual contagem, o que aparece primeiro na lista (por
-//     ordem de cadastro na aba "closers") vai na frente.
-//
-//  Isso é determinístico: qualquer computador com os mesmos
-//  dados chega ao mesmo resultado. Sem índice para sincronizar.
+//  "Pular" funciona só localmente na sessão: marca o closer
+//  como pulado temporariamente e o próximo elegível recebe.
+//  Não afeta o histórico real — ao recarregar a página o pulo
+//  some, mas o histórico da planilha já avançou corretamente.
 // ══════════════════════════════════════════════════════════
 function calcNextCloser() {
   if (!closers.length) return { index: 0, name: '—' };
 
-  const todayBR = fmtDate(new Date());
-
-  // Conta reuniões reais de cada closer hoje (ignora pulos)
+  // Conta total histórico por closer (ignora registros de pulo)
   const counts = {};
   closers.forEach(c => counts[c.name] = 0);
 
   agendamentos.forEach(row => {
-    if (!row.closer || row.lead === '__PULO__') return;
-    if (extractDatePart(row.carimbo) === todayBR) {
-      if (counts.hasOwnProperty(row.closer)) counts[row.closer]++;
-    }
+    if (!row.closer) return;
+    if (counts.hasOwnProperty(row.closer)) counts[row.closer]++;
+    else counts[row.closer] = 1;
   });
 
-  // Encontra a menor contagem
-  const min = Math.min(...Object.values(counts));
-
-  // Pega o primeiro closer (por ordem na lista) com contagem mínima
-  const idx = closers.findIndex(c => counts[c.name] === min);
-  return { index: idx === -1 ? 0 : idx, name: closers[idx === -1 ? 0 : idx].name };
-}
-
-function getNextCloser() {
-  const { index, name } = calcNextCloser();
-  return { index, name };
+  // Menor contagem, respeitando pulos locais da sessão
+  // Tenta até passar por todos (caso todos estejam pulados)
+  const total = closers.length;
+  for (let attempt = 0; attempt < total; attempt++) {
+    const minCount = Math.min(...closers
+      .filter(c => !skippedThisSession.has(c.name))
+      .map(c => counts[c.name] ?? 0)
+    );
+    const eligible = closers.filter(c =>
+      !skippedThisSession.has(c.name) &&
+      (counts[c.name] ?? 0) === minCount
+    );
+    if (eligible.length > 0) {
+      const chosen = eligible[0]; // ordem da lista = desempate
+      const idx = closers.indexOf(chosen);
+      return { index: idx, name: chosen.name };
+    }
+    // Se todos pulados, reseta e começa de novo
+    skippedThisSession.clear();
+  }
+  // Fallback
+  return { index: 0, name: closers[0].name };
 }
 
 // ── LOAD SDRs ──
@@ -607,7 +614,7 @@ async function loadClosers() {
   } catch(e) { console.error('Closers:', e); toast('Erro ao carregar closers', false); }
 }
 
-// ── LOAD AGENDAMENTOS ──
+// ── LOAD AGENDAMENTOS — histórico completo ──
 async function loadAgendamentos() {
   try {
     const rows = parseCSVRaw(await fetchRaw(GID_AGEND));
@@ -633,7 +640,7 @@ async function loadAgendamentos() {
 function updateNextCloserDisplay() {
   const el = document.getElementById('next-closer-name');
   if (!closers.length) { el.textContent = 'Carregando...'; return; }
-  const { name } = getNextCloser();
+  const { name } = calcNextCloser();
   el.textContent = name;
 }
 
@@ -655,12 +662,12 @@ function renderScoreboard() {
   closers.forEach(c => { countDay[c.name] = 0; countMonth[c.name] = 0; });
 
   agendamentos.forEach(row => {
-    if (!row.closer || row.lead === '__PULO__') return;
+    if (!row.closer) return;
     const dp = extractDatePart(row.carimbo);
     if (!dp) return;
     const dt = parseBRDate(dp);
     if (dp === scoreBR)
-      countDay[row.closer]   = (countDay[row.closer]   || 0) + 1;
+      countDay[row.closer] = (countDay[row.closer] || 0) + 1;
     if (!isNaN(dt) && dt.getMonth() === scoreM && dt.getFullYear() === scoreY)
       countMonth[row.closer] = (countMonth[row.closer] || 0) + 1;
   });
@@ -669,15 +676,16 @@ function renderScoreboard() {
   totalEl.textContent = totalDay;
   document.getElementById('today-label').textContent = scoreBR;
 
-  const { index: nextIdx } = getNextCloser();
+  const { index: nextIdx } = calcNextCloser();
 
   board.innerHTML = '';
   closers.forEach((c, i) => {
+    const isPulado = skippedThisSession.has(c.name);
     const div = document.createElement('div');
-    div.className = 'closer-card' + (i === nextIdx ? ' next-up' : '');
+    div.className = 'closer-card' + (i === nextIdx ? ' next-up' : '') + (isPulado ? ' pulado' : '');
     div.innerHTML = `
       <div class="closer-avatar">${c.initials}</div>
-      <div class="closer-name">${c.name}</div>
+      <div class="closer-name">${c.name}${isPulado ? ' <span style="font-size:.6rem;opacity:.6">(pulado)</span>' : ''}</div>
       <div class="closer-count">${countDay[c.name] ?? 0}</div>
       <div class="closer-count-label">reuniões hoje</div>
       <div class="closer-month">
@@ -695,7 +703,6 @@ function renderTable() {
   document.getElementById('filter-date-label').textContent = filterBR;
 
   const filtered = agendamentos.filter(row => {
-    if (row.lead === '__PULO__') return false;
     const dr = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
     return dr === filterBR;
   });
@@ -731,7 +738,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   if (!data) { toast('Escolha a data da reunião!', false); return; }
   if (!closers.length) { toast('Closers não carregados!', false); return; }
 
-  const { name: closer } = getNextCloser();
+  const { name: closer } = calcNextCloser();
   const btn = document.getElementById('btn-schedule');
   btn.disabled = true; btn.textContent = '⏳ Enviando...';
 
@@ -748,19 +755,18 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
     toast(`✅ Agendado! ${closer} recebeu a reunião de ${lead}.`);
     document.getElementById('lead-name').value = '';
 
-    // Optimistic update: adiciona localmente para o cálculo já refletir
-    // enquanto o Make ainda não gravou na planilha
+    // Reseta pulos da sessão após agendar — o closer pulado volta à fila
+    skippedThisSession.clear();
+
+    // Optimistic update: insere localmente para refletir imediatamente
     agendamentos.push({
       carimbo:  new Date().toLocaleString('pt-BR'),
-      sdr,
-      dataReun: `${d}/${m}/${y}`,
-      closer,
-      lead,
+      sdr, dataReun: `${d}/${m}/${y}`, closer, lead,
     });
     updateNextCloserDisplay();
     renderScoreboard();
 
-    // Confirma com dados reais após 5s
+    // Confirma com dados reais após o Make processar
     setTimeout(loadAgendamentos, 5000);
   } catch(e) {
     toast('Erro ao enviar. Verifique a conexão.', false);
@@ -769,40 +775,18 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   }
 });
 
-// ── PULAR CLOSER ──
-document.getElementById('btn-skip').addEventListener('click', async () => {
+// ── PULAR CLOSER — apenas local, sem webhook ──
+document.getElementById('btn-skip').addEventListener('click', () => {
   if (!closers.length) return;
   if (closers.length === 1) { toast('Apenas 1 closer cadastrado — impossível pular.', false); return; }
 
-  const { name: pulado } = getNextCloser();
+  const { name: pulado } = calcNextCloser();
+  skippedThisSession.add(pulado);
 
-  // Grava pulo como registro real para que TODOS os computadores
-  // enxerguem que este closer "foi pulado" hoje
-  const fd = new FormData();
-  fd.append('sdr',          document.getElementById('sdr-select').value || 'Sistema');
-  fd.append('closer',       pulado);
-  fd.append('data_reuniao', fmtDate(new Date()));
-  fd.append('nome_lead',    '__PULO__');
-  fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
-  fd.append('tipo',         'pulo');
-
-  try { await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd }); } catch(e) {}
-
-  // Optimistic update
-  agendamentos.push({
-    carimbo:  new Date().toLocaleString('pt-BR'),
-    sdr:      'Sistema',
-    dataReun: fmtDate(new Date()),
-    closer:   pulado,
-    lead:     '__PULO__',
-  });
-
-  const { name: proximo } = getNextCloser();
+  const { name: proximo } = calcNextCloser();
   updateNextCloserDisplay();
   renderScoreboard();
   toast(`⏭ ${pulado} pulado. Próximo: ${proximo}`);
-
-  setTimeout(loadAgendamentos, 5000);
 });
 
 // ── NAVEGAÇÃO ──
