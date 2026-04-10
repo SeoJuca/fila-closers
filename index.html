@@ -444,141 +444,145 @@
 //  CONFIG
 // ══════════════════════════════════════════════
 const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1mJ2X-Mf_EzgrCBoLt_t7leS7yI1cw_C2_g_iAc19TjHypB69AlKmR9v5Ay5Nn8g6G55o/pub';
-const GID_AGEND = '1127809379';
-const GID_SDR   = '1360192723';
-const WEBHOOK   = 'https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda';
+const GID_AGEND  = '1127809379';
+const GID_SDR    = '1360192723';
+const WEBHOOK    = 'https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda';
 
-// ══════════════════════════════════════════════
-//  ESTADO
-// ══════════════════════════════════════════════
-let closers        = [];   // [{name, initials}]
-let closerIndex    = 0;    // próximo closer
-let agendamentos   = [];   // linhas brutas
-let filterDate     = new Date();
+let closers      = [];
+let closerIndex  = 0;
+let agendamentos = [];
+let filterDate   = new Date();
 
-// ══════════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════════
+// ── UTILS ──
 function fmtDate(d) {
   return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
 }
-function isoDate(d) {
-  return d.toISOString().split('T')[0];
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+
+// Extrai DD/MM/YYYY de qualquer formato
+function extractDatePart(str) {
+  if (!str) return '';
+  const m1 = str.match(/^(\d{2}\/\d{2}\/\d{4})/);
+  if (m1) return m1[1];
+  const m2 = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m2) { const [y,mo,d] = m2[1].split('-'); return `${d}/${mo}/${y}`; }
+  return str;
 }
-function parseCSV(text) {
+
+function parseCSVRaw(text) {
   const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
-  return lines.slice(1).map(line => {
-    // handle quoted commas
-    const cols = [];
-    let cur = '', inQ = false;
+  return lines.map(line => {
+    const cols = []; let cur = '', inQ = false;
     for (let ch of line) {
       if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else if (ch === ',' && !inQ) { cols.push(cur.replace(/"/g,'').trim()); cur = ''; }
       else cur += ch;
     }
-    cols.push(cur.trim());
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = (cols[i] || '').replace(/"/g,''));
-    return obj;
+    cols.push(cur.replace(/"/g,'').trim());
+    return cols;
   });
 }
+
 function initials(name) {
-  return name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+  return (name||'').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
 }
+
 function toast(msg, ok=true) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.style.background = ok ? 'var(--yellow)' : '#2d6e1a';
+  t.style.background = ok ? 'var(--yellow)' : '#1a5c30';
   t.style.color = ok ? 'var(--dark)' : 'var(--white)';
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3200);
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-// ══════════════════════════════════════════════
-//  BUSCAR DADOS
-// ══════════════════════════════════════════════
-async function fetchCSV(gid) {
-  const url = `${SHEET_BASE}?gid=${gid}&single=true&output=csv&t=${Date.now()}`;
+// ── FETCH ──
+async function fetchRaw(gid) {
+  const url = `${SHEET_BASE}?gid=${gid}&single=true&output=csv&cb=${Date.now()}`;
   const r = await fetch(url);
-  if (!r.ok) throw new Error('Erro ao buscar planilha');
-  return parseCSV(await r.text());
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.text();
 }
 
+// ── LOAD SDRs (col A da aba SDR) ──
 async function loadSDRs() {
   try {
-    const rows = await fetchCSV(GID_SDR);
+    const rows = parseCSVRaw(await fetchRaw(GID_SDR));
     const sel = document.getElementById('sdr-select');
     sel.innerHTML = '<option value="">Selecione seu nome</option>';
-    // espera coluna "nome" ou primeira coluna
-    rows.forEach(row => {
-      const name = row['nome'] || row['Nome'] || row['SDR'] || Object.values(row)[0];
+    rows.slice(1).forEach(cols => {
+      const name = cols[0];
       if (name) {
         const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
+        opt.value = name; opt.textContent = name;
         sel.appendChild(opt);
       }
     });
-  } catch(e) {
-    toast('Erro ao carregar SDRs', false);
-  }
+  } catch(e) { console.error('SDR:', e); toast('Erro ao carregar SDRs', false); }
 }
 
+// ── LOAD CLOSERS (col B da aba SDR) ──
+async function loadClosers() {
+  try {
+    const rows = parseCSVRaw(await fetchRaw(GID_SDR));
+    const names = [...new Set(rows.slice(1).map(c => c[1]).filter(Boolean))];
+    if (names.length) closers = names.map(n => ({name: n, initials: initials(n)}));
+  } catch(e) { console.error('Closers:', e); }
+}
+
+// ── LOAD AGENDAMENTOS ──
+// Cols: A=Carimbo | B=SDR | C=Data Reunião | D=Closer | E=Lead
 async function loadAgendamentos() {
   try {
-    const rows = await fetchCSV(GID_AGEND);
-    agendamentos = rows;
-    // extrair closers únicos se ainda não carregados via planilha dedicada
+    const rows = parseCSVRaw(await fetchRaw(GID_AGEND));
+    agendamentos = rows.slice(1).map(cols => ({
+      carimbo:  cols[0] || '',
+      sdr:      cols[1] || '',
+      dataReun: cols[2] || '',
+      closer:   cols[3] || '',
+      lead:     cols[4] || '',
+    })).filter(r => r.carimbo || r.sdr);
+
+    // Fallback: extrair closers da col D se não vieram da aba SDR
     if (closers.length === 0) {
-      const names = [...new Set(rows.map(r => r['closer'] || r['Closer'] || r['CLOSER']).filter(Boolean))];
-      if (names.length) {
-        closers = names.map(n => ({name: n, initials: initials(n)}));
-      }
+      const names = [...new Set(agendamentos.map(r => r.closer).filter(Boolean))];
+      closers = names.map(n => ({name: n, initials: initials(n)}));
     }
+
+    updateNextCloser();
     renderScoreboard();
     renderTable();
   } catch(e) {
-    console.error(e);
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="empty-state">Erro ao carregar dados</td></tr>';
+    console.error('Agend:', e);
+    document.getElementById('table-body').innerHTML =
+      '<tr><td colspan="6" class="empty-state">⚠️ Erro ao carregar agendamentos</td></tr>';
   }
 }
 
-// ══════════════════════════════════════════════
-//  RENDER SCOREBOARD
-// ══════════════════════════════════════════════
+// ── SCOREBOARD ──
 function renderScoreboard() {
-  const todayStr = isoDate(new Date());
-  const board = document.getElementById('scoreboard');
+  const board   = document.getElementById('scoreboard');
   const totalEl = document.getElementById('total-today');
+  const todayBR = fmtDate(new Date());
 
   if (!closers.length) {
-    board.innerHTML = '<div class="empty-state">Nenhum closer encontrado</div>';
-    return;
+    board.innerHTML = '<div class="empty-state">Nenhum closer encontrado na planilha</div>';
+    totalEl.textContent = '0'; return;
   }
 
-  // contar agendamentos do dia por closer
   const counts = {};
   closers.forEach(c => counts[c.name] = 0);
 
   agendamentos.forEach(row => {
-    const closer = row['closer'] || row['Closer'] || row['CLOSER'] || '';
-    const dataCad = row['data_cadastro'] || row['Data Cadastro'] || row['timestamp'] || row['Timestamp'] || '';
-    // verifica se é do dia de hoje
-    if (closer && dataCad) {
-      const rowDate = dataCad.substring(0, 10); // YYYY-MM-DD
-      if (rowDate === todayStr || dataCad.includes(new Date().toLocaleDateString('pt-BR').split('/').reverse().join('-'))) {
-        if (counts.hasOwnProperty(closer)) counts[closer]++;
-        else counts[closer] = 1;
-      }
-    } else if (closer) {
-      // fallback: sem data, conta tudo para exibição
+    const dataPart = extractDatePart(row.carimbo);
+    if (dataPart === todayBR && row.closer) {
+      counts.hasOwnProperty(row.closer) ? counts[row.closer]++ : (counts[row.closer] = 1);
     }
   });
 
-  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
   totalEl.textContent = total;
-  document.getElementById('today-label').textContent = `hoje – ${fmtDate(new Date())}`;
+  document.getElementById('today-label').textContent = `hoje – ${todayBR}`;
 
   board.innerHTML = '';
   closers.forEach((c, i) => {
@@ -587,103 +591,81 @@ function renderScoreboard() {
     div.innerHTML = `
       <div class="closer-avatar">${c.initials}</div>
       <div class="closer-name">${c.name}</div>
-      <div class="closer-count">${counts[c.name] || 0}</div>
-      <div class="closer-count-label">reuniões hoje</div>
-    `;
+      <div class="closer-count">${counts[c.name] ?? 0}</div>
+      <div class="closer-count-label">reuniões hoje</div>`;
     board.appendChild(div);
   });
 }
 
-// ══════════════════════════════════════════════
-//  RENDER TABLE
-// ══════════════════════════════════════════════
+// ── TABELA (filtra por col C = Data Reunião) ──
 function renderTable() {
-  const tbody = document.getElementById('table-body');
-  const filterStr = isoDate(filterDate);
-  document.getElementById('filter-date-label').textContent = fmtDate(filterDate);
+  const tbody    = document.getElementById('table-body');
+  const filterBR = fmtDate(filterDate);
+  document.getElementById('filter-date-label').textContent = filterBR;
 
-  // filtrar por data
-  const filtered = agendamentos.filter(row => {
-    const data = row['data_reuniao'] || row['Data Reunião'] || row['data'] || row['Data'] || '';
-    const cad  = row['data_cadastro'] || row['Data Cadastro'] || row['timestamp'] || '';
-    return data.includes(filterStr) || cad.includes(filterStr) ||
-           data.includes(filterDate.toLocaleDateString('pt-BR')) ||
-           cad.includes(filterDate.toLocaleDateString('pt-BR'));
-  });
+  const filtered = agendamentos.filter(row => extractDatePart(row.dataReun) === filterBR);
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhum agendamento em ${fmtDate(filterDate)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum agendamento em ${filterBR}</td></tr>`;
     return;
   }
 
   tbody.innerHTML = '';
   filtered.forEach((row, i) => {
-    const sdr    = row['sdr']    || row['SDR']    || row['Nome SDR'] || '—';
-    const closer = row['closer'] || row['Closer'] || row['CLOSER']   || '—';
-    const dataR  = row['data_reuniao'] || row['Data Reunião'] || row['data'] || '—';
-    const cad    = row['data_cadastro'] || row['Data Cadastro'] || row['timestamp'] || '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${i+1}</td>
-      <td><span class="badge-sdr">${sdr}</span></td>
-      <td><span class="badge-closer">${closer}</span></td>
-      <td>${dataR}</td>
-      <td>${cad}</td>
-    `;
+      <td>${extractDatePart(row.carimbo) || '—'}</td>
+      <td><span class="badge-sdr">${row.sdr || '—'}</span></td>
+      <td>${row.dataReun || '—'}</td>
+      <td><span class="badge-closer">${row.closer || '—'}</span></td>
+      <td>${row.lead || '—'}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-// ══════════════════════════════════════════════
-//  PRÓXIMO CLOSER
-// ══════════════════════════════════════════════
+// ── PRÓXIMO CLOSER ──
 function updateNextCloser() {
   const el = document.getElementById('next-closer-name');
-  if (closers.length) {
-    el.textContent = closers[closerIndex].name;
-  } else {
-    el.textContent = 'Carregando...';
-  }
+  el.textContent = closers.length ? closers[closerIndex].name : 'Carregando...';
 }
 
-// ══════════════════════════════════════════════
-//  AGENDAR
-// ══════════════════════════════════════════════
+// ── AGENDAR ──
 document.getElementById('btn-schedule').addEventListener('click', async () => {
   const sdr  = document.getElementById('sdr-select').value;
   const data = document.getElementById('meeting-date').value;
+  const lead = document.getElementById('lead-name').value.trim();
 
-  if (!sdr) { toast('Selecione seu nome!', false); return; }
+  if (!sdr)  { toast('Selecione seu nome!', false); return; }
+  if (!lead) { toast('Informe o nome do lead!', false); return; }
   if (!data) { toast('Escolha a data da reunião!', false); return; }
   if (!closers.length) { toast('Closers não carregados!', false); return; }
 
   const closer = closers[closerIndex].name;
   const btn = document.getElementById('btn-schedule');
-  btn.disabled = true;
-  btn.textContent = '⏳ Enviando...';
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+  const [y,m,d] = data.split('-');
+  const dataFormatada = `${d}/${m}/${y}`;
 
   try {
     await fetch(WEBHOOK, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       mode: 'no-cors',
-      body: JSON.stringify({ sdr, closer, data_reuniao: data, timestamp: new Date().toISOString() })
+      body: JSON.stringify({ sdr, closer, data_reuniao: dataFormatada, nome_lead: lead, timestamp: new Date().toLocaleString('pt-BR') })
     });
 
-    toast(`✅ Agendado! ${closer} recebeu a reunião.`);
-    // avança o índice
+    toast(`✅ Agendado! ${closer} recebeu a reunião de ${lead}.`);
     closerIndex = (closerIndex + 1) % closers.length;
     updateNextCloser();
     renderScoreboard();
-
-    // aguarda 3s e atualiza tabela
-    setTimeout(async () => { await loadAgendamentos(); }, 3000);
-
+    document.getElementById('lead-name').value = '';
+    setTimeout(loadAgendamentos, 4000);
   } catch(e) {
-    toast('Erro ao enviar. Tente novamente.', false);
+    toast('Erro ao enviar. Verifique a conexão.', false);
   } finally {
-    btn.disabled = false;
-    btn.textContent = '✅ Agendar Reunião';
+    btn.disabled = false; btn.textContent = '✅ Agendar Reunião';
   }
 });
 
@@ -692,39 +674,27 @@ document.getElementById('btn-skip').addEventListener('click', () => {
   if (!closers.length) return;
   const pulado = closers[closerIndex].name;
   closerIndex = (closerIndex + 1) % closers.length;
-  updateNextCloser();
-  renderScoreboard();
+  updateNextCloser(); renderScoreboard();
   toast(`⏭ ${pulado} pulado. Próximo: ${closers[closerIndex].name}`);
 });
 
-// Navegar datas
-document.getElementById('btn-prev').addEventListener('click', () => {
-  filterDate.setDate(filterDate.getDate() - 1);
-  renderTable();
-});
-document.getElementById('btn-next').addEventListener('click', () => {
-  filterDate.setDate(filterDate.getDate() + 1);
-  renderTable();
-});
+document.getElementById('btn-prev').addEventListener('click', () => { filterDate.setDate(filterDate.getDate()-1); renderTable(); });
+document.getElementById('btn-next').addEventListener('click', () => { filterDate.setDate(filterDate.getDate()+1); renderTable(); });
 document.getElementById('btn-refresh').addEventListener('click', async () => {
-  document.getElementById('btn-refresh').textContent = '⟳ Atualizando...';
+  const btn = document.getElementById('btn-refresh');
+  btn.textContent = '⟳ Atualizando...';
   await loadAgendamentos();
-  document.getElementById('btn-refresh').textContent = '⟳ Atualizar';
+  btn.textContent = '⟳ Atualizar';
 });
 
-// data padrão
 document.getElementById('meeting-date').value = isoDate(new Date());
 
-// ══════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════
+// INIT
 (async () => {
-  await loadSDRs();
+  await Promise.all([loadSDRs(), loadClosers()]);
   await loadAgendamentos();
-  updateNextCloser();
 })();
 
-// Auto-refresh a cada 60s
 setInterval(loadAgendamentos, 60000);
 </script>
 </body>
