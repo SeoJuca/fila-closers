@@ -304,23 +304,64 @@
       text-transform: uppercase;
     }
 
-    /* total badge */
-    .total-bar {
-      background: linear-gradient(90deg, var(--red-dk), var(--red));
-      border-radius: 12px;
-      padding: 16px 24px;
+    /* ── STATS ROW ── */
+    .stats-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border: 1px solid rgba(110,177,80,0.25);
+      align-items: stretch;
+      gap: 0;
+      background: linear-gradient(135deg, var(--red-dk) 0%, #044520 50%, var(--red) 100%);
+      border-radius: 16px;
+      border: 1px solid rgba(110,177,80,0.3);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
     }
-    .total-bar .tb-label { font-size: .85rem; font-weight: 700; color: rgba(255,255,255,0.7); letter-spacing: 1px; text-transform: uppercase; }
-    .total-bar .tb-num {
+    .stat-card {
+      flex: 1;
+      padding: 20px 16px 18px;
+      text-align: center;
+      position: relative;
+    }
+    .stat-divider {
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, rgba(110,177,80,0.4), transparent);
+      margin: 12px 0;
+    }
+    .stat-icon {
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+      display: block;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    .stat-num {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 2.2rem;
+      font-size: 3.2rem;
+      line-height: 1;
       color: var(--yellow);
+      text-shadow: 0 2px 12px rgba(110,177,80,0.4);
+      transition: all .3s;
     }
-    .total-bar .tb-sub { font-size: .7rem; color: rgba(255,255,255,0.5); }
+    .stat-month .stat-num {
+      font-size: 3.2rem;
+      background: linear-gradient(135deg, var(--yellow), #a8e063);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 8px rgba(110,177,80,0.3));
+    }
+    .stat-label {
+      font-size: .72rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-top: 4px;
+    }
+    .stat-sub {
+      font-size: .65rem;
+      color: rgba(255,255,255,0.35);
+      margin-top: 2px;
+      letter-spacing: .5px;
+    }
 
     /* ── AGENDAMENTOS TABLE ── */
     .date-nav {
@@ -470,12 +511,20 @@
         <div class="date-display" id="score-date-label" style="min-width:130px;text-align:center;"></div>
         <button class="nav-btn" id="score-next">▶</button>
       </div>
-      <div class="total-bar" style="margin-bottom:20px">
-        <div>
-          <div class="tb-label">Total de agendamentos</div>
-          <div class="tb-sub" id="today-label">hoje</div>
+      <div class="stats-row" style="margin-bottom:20px">
+        <div class="stat-card stat-day">
+          <div class="stat-icon">📅</div>
+          <div class="stat-num" id="total-today">0</div>
+          <div class="stat-label">Agendamentos</div>
+          <div class="stat-sub" id="today-label">hoje</div>
         </div>
-        <div class="tb-num" id="total-today">0</div>
+        <div class="stat-divider"></div>
+        <div class="stat-card stat-month">
+          <div class="stat-icon">🗓️</div>
+          <div class="stat-num" id="total-month">0</div>
+          <div class="stat-label">Total do Mês</div>
+          <div class="stat-sub" id="month-label">este mês</div>
+        </div>
       </div>
       <div class="scoreboard" id="scoreboard">
         <div class="empty-state"><span class="spin">⏳</span> Carregando...</div>
@@ -745,9 +794,13 @@ function renderScoreboard() {
       countMonth[row.closer] = (countMonth[row.closer] || 0) + 1;
   });
 
-  const totalDay = Object.values(countDay).reduce((a,b)=>a+b, 0);
+  const totalDay   = Object.values(countDay).reduce((a,b)=>a+b, 0);
+  const totalMonth = Object.values(countMonth).reduce((a,b)=>a+b, 0);
+
   totalEl.textContent = totalDay;
+  document.getElementById('total-month').textContent = totalMonth;
   document.getElementById('today-label').textContent = scoreBR;
+  document.getElementById('month-label').textContent = scoreDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
 
   const { index: nextIdx } = calcNextCloser();
 
