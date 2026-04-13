@@ -448,6 +448,18 @@
     .spin { animation: spin 1s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── HEADER CENTER TITLE ── */
+    .header-center-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 4px;
+      color: var(--yellow);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+    }
+    header { position: relative; }
+
     /* ── NAV TABS ── */
     .header-nav { display: flex; gap: 8px; }
     .nav-tab {
@@ -831,6 +843,156 @@
 
     @media (max-width: 900px) {
       .sdr-screen-wrap { padding: 20px; }
+      .header-center-title { display: none; }
+    }
+
+    /* ── TELA INDICADORES ── */
+    .ind-wrap {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 28px 40px 48px;
+    }
+    .ind-top-row {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+    }
+    .ind-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem; letter-spacing: 3px;
+      color: var(--yellow);
+    }
+    .ind-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px; margin-bottom: 20px;
+    }
+    .ind-card-wide { grid-column: 1 / 2; }
+    .ind-card-full { grid-column: 1 / -1; }
+    .ind-card {
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .ind-card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.05rem; letter-spacing: 2px;
+      color: var(--yellow);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(110,177,80,0.15);
+    }
+    .ind-formula {
+      font-family: 'Nunito', sans-serif;
+      font-size: .65rem; color: #555;
+      letter-spacing: .5px; font-weight: 600;
+      text-transform: none;
+    }
+
+    /* Pódio */
+    .podium-wrap {
+      display: flex; align-items: flex-end;
+      justify-content: center; gap: 12px;
+      padding: 10px 0 0;
+    }
+    .podium-item {
+      display: flex; flex-direction: column;
+      align-items: center; flex: 1; max-width: 140px;
+    }
+    .podium-avatar {
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; color: #fff;
+      margin-bottom: 8px; flex-shrink: 0;
+    }
+    .podium-1 .podium-avatar { width: 68px; height: 68px; font-size: 1.4rem; background: linear-gradient(135deg, #FFD700, #FFA500); box-shadow: 0 4px 20px rgba(255,215,0,0.4); }
+    .podium-2 .podium-avatar { width: 56px; height: 56px; font-size: 1.1rem; background: linear-gradient(135deg, #C0C0C0, #909090); box-shadow: 0 4px 16px rgba(192,192,192,0.3); }
+    .podium-3 .podium-avatar { width: 50px; height: 50px; font-size: 1rem;  background: linear-gradient(135deg, #CD7F32, #A0522D); box-shadow: 0 4px 14px rgba(205,127,50,0.3); }
+    .podium-name { font-size: .78rem; font-weight: 800; text-align: center; margin-bottom: 6px; line-height: 1.2; }
+    .podium-count {
+      font-family: 'Bebas Neue', sans-serif; font-size: 2rem; line-height: 1;
+    }
+    .podium-1 .podium-count { color: #FFD700; }
+    .podium-2 .podium-count { color: #C0C0C0; }
+    .podium-3 .podium-count { color: #CD7F32; }
+    .podium-label { font-size: .6rem; color: #555; letter-spacing: 1px; text-transform: uppercase; }
+    .podium-block {
+      width: 100%; border-radius: 10px 10px 0 0;
+      margin-top: 8px;
+    }
+    .podium-1 .podium-block { height: 60px; background: linear-gradient(180deg, rgba(255,215,0,0.2), rgba(255,215,0,0.05)); border: 1px solid rgba(255,215,0,0.3); }
+    .podium-2 .podium-block { height: 44px; background: linear-gradient(180deg, rgba(192,192,192,0.15), rgba(192,192,192,0.03)); border: 1px solid rgba(192,192,192,0.2); }
+    .podium-3 .podium-block { height: 32px; background: linear-gradient(180deg, rgba(205,127,50,0.15), rgba(205,127,50,0.03)); border: 1px solid rgba(205,127,50,0.2); }
+    .podium-medal { font-size: 1.1rem; margin-bottom: 4px; }
+
+    /* Closer rate bars */
+    .rate-row {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    .rate-name { font-size: .82rem; font-weight: 800; min-width: 130px; }
+    .rate-bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
+    .rate-bar-fill { height: 100%; border-radius: 99px; transition: width .7s cubic-bezier(.34,1.56,.64,1); }
+    .rate-bar-ef  { background: linear-gradient(90deg, #4a9e30, #6EB150); }
+    .rate-bar-ns  { background: linear-gradient(90deg, #cc3333, #ff6b6b); }
+    .rate-pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; min-width: 50px; text-align: right; }
+    .rate-pct-ef { color: #6EB150; }
+    .rate-pct-ns { color: #ff6b6b; }
+    .rate-detail { font-size: .68rem; color: #555; min-width: 70px; text-align: right; }
+
+    /* SDR Campeão */
+    .sdr-champ-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .sdr-champ-item:last-child { border-bottom: none; }
+    .sdr-champ-rank {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem; min-width: 28px;
+      color: #444;
+    }
+    .sdr-champ-rank.r1 { color: #FFD700; }
+    .sdr-champ-rank.r2 { color: #C0C0C0; }
+    .sdr-champ-rank.r3 { color: #CD7F32; }
+    .sdr-champ-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--yellow));
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem; font-weight: 900; color: #fff; flex-shrink: 0;
+    }
+    .sdr-champ-info { flex: 1; }
+    .sdr-champ-name { font-size: .88rem; font-weight: 900; }
+    .sdr-champ-sub  { font-size: .68rem; color: #666; margin-top: 2px; }
+    .sdr-champ-days {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem; color: var(--yellow);
+      line-height: 1;
+    }
+    .sdr-champ-days-label { font-size: .6rem; color: #555; text-align: right; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* Ranking SDR */
+    .ranking-row {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    .ranking-pos { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; min-width: 28px; color: #444; }
+    .ranking-name { font-size: .82rem; font-weight: 800; min-width: 130px; }
+    .ranking-bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
+    .ranking-bar-fill { height: 100%; border-radius: 99px; transition: width .7s cubic-bezier(.34,1.56,.64,1); }
+    .ranking-nums { font-size: .78rem; font-weight: 700; min-width: 80px; text-align: right; }
+    .ranking-pct  { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; min-width: 52px; text-align: right; }
+
+    /* Gráfico de barras */
+    .chart-wrap { width: 100%; overflow-x: auto; padding-bottom: 8px; }
+    .chart-svg { display: block; }
+
+    @media (max-width: 900px) {
+      .ind-wrap { padding: 20px; }
+      .ind-row { grid-template-columns: 1fr; }
+      .ind-card-wide, .ind-card-full { grid-column: 1; }
     }
   </style>
 </head>
@@ -840,10 +1002,12 @@
   <div class="logo-wrap">
     <img src="https://github.com/jonathanseojuca/fila-closers/blob/main/images/Logo.png?raw=true" alt="Mercadinho do Seo Juca" onerror="this.style.display='none'" />
   </div>
+  <div class="header-center-title">Agendamentos Seo Juca</div>
   <div class="header-nav">
     <button class="nav-tab active" id="tab-agendamento" onclick="showScreen('agendamento')">📋 Agendamento</button>
     <button class="nav-tab" id="tab-sdr" onclick="showScreen('sdr')">🎯 SDR</button>
     <button class="nav-tab" id="tab-closer" onclick="showScreen('closer')">🏆 Closers</button>
+    <button class="nav-tab" id="tab-indicadores" onclick="showScreen('indicadores')">📈 Indicadores</button>
   </div>
 </header>
 
@@ -1017,6 +1181,61 @@
   </div>
 
 </div><!-- /screen-closer -->
+
+<!-- ══ TELA INDICADORES ══ -->
+<div id="screen-indicadores" class="screen">
+  <div class="ind-wrap">
+    <div class="ind-top-row">
+      <div class="ind-title">📈 Indicadores</div>
+      <div class="date-nav" style="margin:0">
+        <button class="nav-btn" onclick="indPrevMonth()">◀</button>
+        <div class="date-display" id="ind-month-label" style="min-width:160px;text-align:center"></div>
+        <button class="nav-btn" onclick="indNextMonth()">▶</button>
+      </div>
+    </div>
+
+    <!-- ROW 1: Pódio + SDR Campeão -->
+    <div class="ind-row">
+      <div class="ind-card ind-card-wide">
+        <div class="ind-card-title">🥇 Top 3 Closers — Reuniões Efetivadas</div>
+        <div class="podium-wrap" id="ind-podium"></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">🎯 SDR Campeão de Meta</div>
+        <div id="ind-sdr-meta"></div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Efetividade + No-show -->
+    <div class="ind-row">
+      <div class="ind-card">
+        <div class="ind-card-title">📈 Efetividade por Closer <span class="ind-formula">(efetivadas ÷ total agendado)</span></div>
+        <div id="ind-efetividade"></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">❌ Taxa de No-show por Closer <span class="ind-formula">(no-show ÷ total agendado)</span></div>
+        <div id="ind-noshow"></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Ranking SDR -->
+    <div class="ind-row">
+      <div class="ind-card ind-card-full">
+        <div class="ind-card-title">📊 Ranking de Agendamentos por SDR</div>
+        <div id="ind-ranking-sdr"></div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Gráfico evolução diária -->
+    <div class="ind-row">
+      <div class="ind-card ind-card-full">
+        <div class="ind-card-title">📉 Evolução Diária de Agendamentos</div>
+        <div class="chart-wrap" id="ind-chart"></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /screen-indicadores -->
 
 <!-- MODAL DE CONFIRMAÇÃO -->
 <div id="modal-overlay" class="modal-overlay" style="display:none">
@@ -1463,8 +1682,9 @@ function showScreen(screen) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('screen-' + screen).classList.add('active');
   document.getElementById('tab-' + screen).classList.add('active');
-  if (screen === 'closer') { renderCloserCards(); showCloserStep('login'); }
-  if (screen === 'sdr')    { renderSDRCards(sdrDate); }
+  if (screen === 'closer')      { renderCloserCards(); showCloserStep('login'); }
+  if (screen === 'sdr')         { renderSDRCards(sdrDate); }
+  if (screen === 'indicadores') { renderIndicadores(); }
 }
 
 function showCloserStep(step) {
@@ -1792,6 +2012,285 @@ function renderSDRCards(refDate) {
   });
 }
 
+// ══════════════════════════════════════════════════════════
+//  TELA INDICADORES
+// ══════════════════════════════════════════════════════════
+let indDate = new Date();
+
+function indPrevMonth() {
+  indDate.setMonth(indDate.getMonth() - 1);
+  renderIndicadores();
+}
+function indNextMonth() {
+  indDate.setMonth(indDate.getMonth() + 1);
+  renderIndicadores();
+}
+
+function renderIndicadores() {
+  const month     = indDate.getMonth();
+  const year      = indDate.getFullYear();
+  const monthName = indDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  document.getElementById('ind-month-label').textContent = monthName;
+
+  // Filtra agendamentos do mês (pelo carimbo)
+  const mesAgend = agendamentos.filter(r => {
+    const dp = extractDatePart(r.carimbo);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
+
+  renderPodium(mesAgend);
+  renderEfetividade(mesAgend);
+  renderNoshow(mesAgend);
+  renderSDRCampeao(month, year);
+  renderRankingSDR(month, year);
+  renderChart(month, year);
+}
+
+// ── 1. PÓDIO Top 3 Closers Efetivadas ──
+function renderPodium(mesAgend) {
+  const el = document.getElementById('ind-podium');
+  const counts = {};
+  closers.forEach(c => counts[c.name] = 0);
+  mesAgend.forEach(r => {
+    if (r.status === 'Efetivada' && r.closer)
+      counts[r.closer] = (counts[r.closer] || 0) + 1;
+  });
+
+  const sorted = Object.entries(counts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 3);
+
+  if (!sorted.length || sorted.every(([,v]) => v === 0)) {
+    el.innerHTML = '<div class="empty-state">Sem dados no período</div>';
+    return;
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  const classes = ['podium-1','podium-2','podium-3'];
+  // Order: 2nd, 1st, 3rd (visual podium)
+  const order = sorted.length >= 3 ? [sorted[1], sorted[0], sorted[2]] :
+                sorted.length === 2 ? [sorted[1], sorted[0]] : [sorted[0]];
+  const orderClasses = sorted.length >= 3 ? ['podium-2','podium-1','podium-3'] :
+                       sorted.length === 2 ? ['podium-2','podium-1'] : ['podium-1'];
+
+  el.innerHTML = order.map((item, vi) => {
+    if (!item) return '';
+    const [name, count] = item;
+    const origIdx = sorted.indexOf(item);
+    const cls = orderClasses[vi];
+    return `<div class="podium-item ${cls}">
+      <div class="podium-medal">${medals[origIdx]}</div>
+      <div class="podium-avatar">${initials(name)}</div>
+      <div class="podium-name">${name}</div>
+      <div class="podium-count">${count}</div>
+      <div class="podium-label">efetivadas</div>
+      <div class="podium-block"></div>
+    </div>`;
+  }).join('');
+}
+
+// ── 2. EFETIVIDADE por Closer ──
+function renderEfetividade(mesAgend) {
+  const el = document.getElementById('ind-efetividade');
+  const totalAgend = {}, totalEf = {};
+  closers.forEach(c => { totalAgend[c.name] = 0; totalEf[c.name] = 0; });
+
+  mesAgend.forEach(r => {
+    if (!r.closer) return;
+    totalAgend[r.closer] = (totalAgend[r.closer] || 0) + 1;
+    if (r.status === 'Efetivada') totalEf[r.closer] = (totalEf[r.closer] || 0) + 1;
+  });
+
+  const sorted = closers
+    .map(c => ({ name: c.name, total: totalAgend[c.name]||0, ef: totalEf[c.name]||0 }))
+    .filter(c => c.total > 0)
+    .sort((a,b) => (b.ef/b.total) - (a.ef/a.total));
+
+  if (!sorted.length) { el.innerHTML = '<div class="empty-state">Sem dados no período</div>'; return; }
+
+  el.innerHTML = sorted.map(c => {
+    const pct = c.total > 0 ? Math.round(c.ef / c.total * 100) : 0;
+    return `<div class="rate-row">
+      <div class="rate-name">${c.name}</div>
+      <div class="rate-bar-wrap"><div class="rate-bar-fill rate-bar-ef" style="width:${pct}%"></div></div>
+      <div class="rate-pct rate-pct-ef">${pct}%</div>
+      <div class="rate-detail">${c.ef}/${c.total}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 3. NO-SHOW por Closer ──
+function renderNoshow(mesAgend) {
+  const el = document.getElementById('ind-noshow');
+  const totalAgend = {}, totalNs = {};
+  closers.forEach(c => { totalAgend[c.name] = 0; totalNs[c.name] = 0; });
+
+  mesAgend.forEach(r => {
+    if (!r.closer) return;
+    totalAgend[r.closer] = (totalAgend[r.closer] || 0) + 1;
+    if (r.status === 'No-show') totalNs[r.closer] = (totalNs[r.closer] || 0) + 1;
+  });
+
+  const sorted = closers
+    .map(c => ({ name: c.name, total: totalAgend[c.name]||0, ns: totalNs[c.name]||0 }))
+    .filter(c => c.total > 0)
+    .sort((a,b) => (b.ns/b.total) - (a.ns/a.total));
+
+  if (!sorted.length) { el.innerHTML = '<div class="empty-state">Sem dados no período</div>'; return; }
+
+  el.innerHTML = sorted.map(c => {
+    const pct = c.total > 0 ? Math.round(c.ns / c.total * 100) : 0;
+    return `<div class="rate-row">
+      <div class="rate-name">${c.name}</div>
+      <div class="rate-bar-wrap"><div class="rate-bar-fill rate-bar-ns" style="width:${pct}%"></div></div>
+      <div class="rate-pct rate-pct-ns">${pct}%</div>
+      <div class="rate-detail">${c.ns}/${c.total}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 4. SDR CAMPEÃO DE META ──
+function renderSDRCampeao(month, year) {
+  const el = document.getElementById('ind-sdr-meta');
+  if (!sdrList.length) { el.innerHTML = '<div class="empty-state">Sem SDRs</div>'; return; }
+
+  const workdaysElapsed = countWorkdaysElapsed(year, month, indDate);
+
+  // Para cada SDR, conta quantos dias do mês ele bateu a meta
+  const results = sdrList.map(sdr => {
+    const metaDia = metaMap[sdr.cargo] || 0;
+    if (!metaDia) return { ...sdr, diasBatidos: 0, metaDia };
+
+    // Agrupa agendamentos do SDR por dia no mês
+    const byDay = {};
+    agendamentos.forEach(r => {
+      if (r.sdr !== sdr.name) return;
+      const dp = extractDatePart(r.carimbo);
+      if (!dp) return;
+      const dt = parseBRDate(dp);
+      if (isNaN(dt) || dt.getMonth() !== month || dt.getFullYear() !== year) return;
+      byDay[dp] = (byDay[dp] || 0) + 1;
+    });
+
+    const diasBatidos = Object.values(byDay).filter(v => v >= metaDia).length;
+    return { ...sdr, diasBatidos, metaDia };
+  }).sort((a,b) => b.diasBatidos - a.diasBatidos);
+
+  const ranks = ['r1','r2','r3'];
+  el.innerHTML = results.map((sdr, i) => `
+    <div class="sdr-champ-item">
+      <div class="sdr-champ-rank ${ranks[i]||''}">${i+1}º</div>
+      <div class="sdr-champ-avatar">${initials(sdr.name)}</div>
+      <div class="sdr-champ-info">
+        <div class="sdr-champ-name">${sdr.name}</div>
+        <div class="sdr-champ-sub">${sdr.cargo} · meta ${sdr.metaDia}/dia</div>
+      </div>
+      <div>
+        <div class="sdr-champ-days">${sdr.diasBatidos}</div>
+        <div class="sdr-champ-days-label">dias batidos<br>de ${workdaysElapsed}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── 5. RANKING SDR — Agendamentos no mês ──
+function renderRankingSDR(month, year) {
+  const el = document.getElementById('ind-ranking-sdr');
+  if (!sdrList.length) { el.innerHTML = '<div class="empty-state">Sem SDRs</div>'; return; }
+
+  const workdaysTotal = countWorkdays(year, month);
+
+  const results = sdrList.map(sdr => {
+    const metaDia = metaMap[sdr.cargo] || 0;
+    const metaMes = metaDia * workdaysTotal;
+    const count = agendamentos.filter(r => {
+      if (r.sdr !== sdr.name) return false;
+      const dp = extractDatePart(r.carimbo);
+      if (!dp) return false;
+      const dt = parseBRDate(dp);
+      return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+    }).length;
+    return { ...sdr, count, metaMes };
+  }).sort((a,b) => b.count - a.count);
+
+  const max = Math.max(...results.map(r => r.metaMes), 1);
+
+  el.innerHTML = results.map((sdr, i) => {
+    const pct    = sdr.metaMes > 0 ? Math.round(sdr.count / sdr.metaMes * 100) : 0;
+    const barW   = Math.round(sdr.count / max * 100);
+    const color  = sdr.count >= sdr.metaMes ? '#6EB150' : sdr.count >= sdr.metaMes * 0.7 ? '#FFD166' : '#ff6b6b';
+    return `<div class="ranking-row">
+      <div class="ranking-pos">${i+1}º</div>
+      <div class="ranking-name">${sdr.name}<br><span style="font-size:.65rem;color:#555;font-weight:600">${sdr.cargo}</span></div>
+      <div class="ranking-bar-wrap"><div class="ranking-bar-fill" style="width:${barW}%;background:${color}"></div></div>
+      <div class="ranking-nums" style="color:#888">${sdr.count} / ${sdr.metaMes}</div>
+      <div class="ranking-pct" style="color:${color}">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 6. GRÁFICO DE EVOLUÇÃO DIÁRIA ──
+function renderChart(month, year) {
+  const el = document.getElementById('ind-chart');
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Conta agendamentos por dia (todos os SDRs)
+  const byDay = {};
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dow  = date.getDay();
+    if (dow === 0 || dow === 6) continue; // só dias úteis
+    const key = fmtDate(date);
+    byDay[key] = 0;
+  }
+  agendamentos.forEach(r => {
+    const dp = extractDatePart(r.carimbo);
+    if (byDay.hasOwnProperty(dp)) byDay[dp]++;
+  });
+
+  const days   = Object.keys(byDay);
+  const values = Object.values(byDay);
+  const maxVal = Math.max(...values, 1);
+
+  const W = Math.max(days.length * 36 + 60, 400);
+  const H = 180;
+  const barW  = 24;
+  const barGap = 12;
+  const padL  = 36;
+  const padB  = 36;
+  const padT  = 16;
+  const chartH = H - padB - padT;
+
+  // Y axis gridlines
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p => {
+    const y = padT + chartH - (p * chartH);
+    const val = Math.round(p * maxVal);
+    return `<line x1="${padL}" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <text x="${padL - 6}" y="${y + 4}" fill="#555" font-size="9" text-anchor="end" font-family="Nunito">${val}</text>`;
+  }).join('');
+
+  const bars = days.map((day, i) => {
+    const x    = padL + i * (barW + barGap);
+    const val  = values[i];
+    const bh   = Math.max(val / maxVal * chartH, val > 0 ? 3 : 0);
+    const y    = padT + chartH - bh;
+    const col  = val >= (metaMap['SDR Pleno'] || 8) ? '#6EB150' :
+                 val >= (metaMap['SDR Junior'] || 6) ? '#FFD166' : '#ff6b6b';
+    const dd   = day.substring(0,5); // DD/MM
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="4" fill="${col}" opacity="0.85"/>
+            ${val > 0 ? `<text x="${x + barW/2}" y="${y - 4}" fill="${col}" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">${val}</text>` : ''}
+            <text x="${x + barW/2}" y="${H - 8}" fill="#555" font-size="8" text-anchor="middle" font-family="Nunito" transform="rotate(-35, ${x + barW/2}, ${H - 8})">${dd}</text>`;
+  }).join('');
+
+  el.innerHTML = `<svg class="chart-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    ${gridLines}
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + chartH}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    ${bars}
+  </svg>`;
+}
+
+// Update showScreen to render indicadores
 setInterval(loadAgendamentos, 90000);
 </script>
 </body>
