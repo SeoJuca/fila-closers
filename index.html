@@ -573,8 +573,28 @@
       color: #7eb8ff;
     }
 
-    /* Card fora da fila */
-    .login-card.off-queue {
+    /* Scoreboard card fora da fila */
+    .closer-card.off-queue-card {
+      opacity: .6;
+      border-color: rgba(255,255,255,0.05);
+    }
+    .closer-card.off-queue-card:hover {
+      opacity: 1;
+      border-color: rgba(255,215,0,0.3);
+    }
+    /* Scoreboard card forçado */
+    .closer-card.forced-card {
+      border-color: var(--yellow) !important;
+      background: linear-gradient(145deg, rgba(110,177,80,0.14), rgba(110,177,80,0.04)) !important;
+      box-shadow: 0 0 0 2px rgba(110,177,80,0.3), 0 8px 24px rgba(0,0,0,0.3) !important;
+      opacity: 1 !important;
+      animation: pulse-select .5s ease;
+    }
+    .closer-card.forced-card::before {
+      content: '🎯 FORÇADO';
+      background: var(--yellow);
+      color: var(--dark);
+    }
       border-color: rgba(255,255,255,0.05);
       opacity: .85;
     }
@@ -1686,23 +1706,30 @@ function renderScoreboard() {
 
   board.innerHTML = '';
   closers.forEach((c, i) => {
-    const isPulado = skippedThisSession.has(c.name);
+    const isPulado  = skippedThisSession.has(c.name);
+    const isOffQueue = c.emFila === false;
+    const isForced   = forcedCloser && forcedCloser.name === c.name;
+
     const div = document.createElement('div');
-    div.className = 'closer-card' + (i === nextIdx ? ' next-up' : '') + (isPulado ? ' pulado' : '');
+    div.className = 'closer-card'
+      + (i === nextIdx ? ' next-up' : '')
+      + (isPulado    ? ' pulado'   : '')
+      + (isOffQueue  ? ' off-queue-card' : '')
+      + (isForced    ? ' forced-card'    : '');
+
     div.innerHTML = `
       <div class="closer-avatar">${c.initials}</div>
-      <div class="closer-name">${c.name}${isPulado ? ' <span style="font-size:.6rem;opacity:.6">(pulado)</span>' : ''}</div>
+      <div class="closer-name">${c.name}${isPulado ? ' <span style="font-size:.6rem;opacity:.6">(pulado)</span>' : ''}${isOffQueue ? ' <span style="font-size:.6rem;opacity:.5">(fora da fila)</span>' : ''}</div>
       <div class="closer-count">${countDay[c.name] ?? 0}</div>
       <div class="closer-count-label">reuniões hoje</div>
       <div class="closer-month">
         <span class="month-num">${countMonth[c.name] ?? 0}</span>
         <span class="month-label">no mês</span>
       </div>
-      <div class="click-hint">clique para selecionar</div>`;
+      <div class="click-hint">${isOffQueue ? 'clique para forçar seleção' : 'clique para selecionar'}</div>`;
 
     // Ripple effect
     div.addEventListener('click', function(e) {
-      // Cria ripple
       const ripple = document.createElement('span');
       ripple.className = 'ripple';
       const rect = div.getBoundingClientRect();
@@ -1711,17 +1738,29 @@ function renderScoreboard() {
       div.appendChild(ripple);
       setTimeout(() => ripple.remove(), 600);
 
-      // Se já é o próximo, não faz nada
-      if (i === nextIdx) {
+      if (isOffQueue) {
+        // Closer fora da fila → seleção forçada via forcedCloser
+        if (isForced) {
+          // Clicou novamente no forçado → cancela a seleção
+          forcedCloser = null;
+          updateNextCloserDisplay();
+          renderScoreboard();
+          toast(`↩️ Seleção de ${c.name} cancelada. Fila normal restaurada.`);
+        } else {
+          forceCloser(c);
+        }
+        return;
+      }
+
+      // Closer na fila normal
+      if (i === nextIdx && !forcedCloser) {
         toast(`${c.name} já é o próximo! ✅`);
         return;
       }
 
-      // Marca todos entre nextIdx e i (exclusive) como pulados
-      // para que o algoritmo calcNextCloser() chegue em i
+      // Cancela qualquer forced e seleciona via skipped
+      forcedCloser = null;
       skippedThisSession.clear();
-      // Calcula quem precisa ser pulado para chegar em c.name
-      // Faz simulações até o algoritmo escolher o closer clicado
       let tentativas = 0;
       while (tentativas < closers.length * 2) {
         const { name: atual } = calcNextCloser();
@@ -1730,7 +1769,6 @@ function renderScoreboard() {
         tentativas++;
       }
 
-      // Feedback visual
       div.classList.add('selected-manual');
       setTimeout(() => div.classList.remove('selected-manual'), 600);
 
