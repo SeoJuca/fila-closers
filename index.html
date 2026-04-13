@@ -792,6 +792,22 @@
       letter-spacing: 1px;
       text-transform: uppercase;
       margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .sdr-total-mes {
+      font-size: .82rem;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: .5px;
+      text-transform: none;
+    }
+    .sdr-total-mes strong {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      color: var(--yellow);
     }
     .sdr-cards-grid {
       display: grid;
@@ -2095,6 +2111,19 @@ async function loadMeta() {
   } catch(e) { console.error('Meta:', e); }
 }
 
+// Extrai DD/MM/YYYY do carimbo no formato do Google Forms
+// Suporta: "13/04/2026 14:28:32", "13/04/2026, 14:28:32", "2026-04-13T14:28:32"
+function extractCarimboDate(str) {
+  if (!str) return '';
+  // DD/MM/YYYY com qualquer separador depois
+  const m1 = str.match(/^(\d{2}\/\d{2}\/\d{4})/);
+  if (m1) return m1[1];
+  // YYYY-MM-DD
+  const m2 = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m2) return `${m2[3]}/${m2[2]}/${m2[1]}`;
+  return extractDatePart(str);
+}
+
 function renderSDRCards(refDate) {
   if (!refDate) refDate = sdrDate;
   const grid    = document.getElementById('sdr-cards-grid');
@@ -2109,7 +2138,17 @@ function renderSDRCards(refDate) {
   const workdaysTotal   = countWorkdays(year, month);
   const workdaysElapsed = countWorkdaysElapsed(year, month, now);
 
-  infoEl.textContent = `${monthName} — ${workdaysTotal} dias úteis`;
+  // ── Total geral do mês (todos os SDRs, col B = carimbo) ──
+  const totalGeralMes = agendamentos.filter(r => {
+    const dp = extractCarimboDate(r.carimbo);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  }).length;
+
+  infoEl.innerHTML = `
+    <span>${monthName} — ${workdaysTotal} dias úteis</span>
+    <span class="sdr-total-mes">📊 Total do mês: <strong>${totalGeralMes}</strong> agendamentos</span>`;
 
   if (!sdrList.length) {
     grid.innerHTML = '<div class="empty-state">Nenhum SDR encontrado</div>';
@@ -2121,15 +2160,15 @@ function renderSDRCards(refDate) {
     const metaDia = metaMap[sdr.cargo] || 0;
     const metaMes = metaDia * workdaysTotal;
 
-    // Conta agendamentos hoje (pelo carimbo = col B = index 1)
+    // Conta agendamentos do dia selecionado (col B = carimbo)
     const countHoje = agendamentos.filter(r =>
-      r.sdr === sdr.name && extractDatePart(r.carimbo) === todayBR
+      r.sdr === sdr.name && extractCarimboDate(r.carimbo) === todayBR
     ).length;
 
-    // Conta agendamentos no mês
+    // Conta agendamentos no mês (col B = carimbo)
     const countMes = agendamentos.filter(r => {
       if (r.sdr !== sdr.name) return false;
-      const dp = extractDatePart(r.carimbo);
+      const dp = extractCarimboDate(r.carimbo);
       if (!dp) return false;
       const dt = parseBRDate(dp);
       return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
@@ -2138,7 +2177,6 @@ function renderSDRCards(refDate) {
     const diaOk = countHoje >= metaDia;
     const mesOk = countMes  >= metaMes;
 
-    // Ritmo esperado: meta_dia × dias_úteis_transcorridos
     const ritmoEsperado = metaDia * workdaysElapsed;
     const deficit = ritmoEsperado - countMes;
 
@@ -2154,7 +2192,7 @@ function renderSDRCards(refDate) {
       </div>
 
       <div class="smc-block ${diaOk ? 'ok' : 'nok'}">
-        <div class="smc-block-label">Hoje</div>
+        <div class="smc-block-label">${fmtDate(now)}</div>
         <div class="smc-progress-row">
           <div class="smc-nums">
             <span class="smc-count">${countHoje}</span>
