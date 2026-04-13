@@ -2253,9 +2253,9 @@ function renderIndicadores() {
     return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
   });
 
-  renderPodium(mesAgend);
-  renderEfetividade(mesAgend);
-  renderNoshow(mesAgend);
+  renderPodium(agendamentos, month, year);
+  renderEfetividade(agendamentos, month, year);
+  renderNoshow(agendamentos, month, year);
   renderSDRCampeao(month, year);
   renderRankingSDR(month, year);
   renderChart(month, year);
@@ -2264,11 +2264,17 @@ function renderIndicadores() {
 }
 
 // ── 1. PÓDIO Top 3 Closers Efetivadas ──
-function renderPodium(mesAgend) {
+function renderPodium(allAgend, month, year) {
   const el = document.getElementById('ind-podium');
+  const data = allAgend.filter(r => {
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
   const counts = {};
   closers.forEach(c => counts[c.name] = 0);
-  mesAgend.forEach(r => {
+  data.forEach(r => {
     if (r.status === 'Efetivada' && r.closer)
       counts[r.closer] = (counts[r.closer] || 0) + 1;
   });
@@ -2306,13 +2312,19 @@ function renderPodium(mesAgend) {
   }).join('');
 }
 
-// ── 2. EFETIVIDADE por Closer ──
-function renderEfetividade(mesAgend) {
+// ── 2. EFETIVIDADE por Closer — usa dataReun (col D) ──
+function renderEfetividade(allAgend, month, year) {
   const el = document.getElementById('ind-efetividade');
+  const data = allAgend.filter(r => {
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
   const totalAgend = {}, totalEf = {};
   closers.forEach(c => { totalAgend[c.name] = 0; totalEf[c.name] = 0; });
 
-  mesAgend.forEach(r => {
+  data.forEach(r => {
     if (!r.closer) return;
     totalAgend[r.closer] = (totalAgend[r.closer] || 0) + 1;
     if (r.status === 'Efetivada') totalEf[r.closer] = (totalEf[r.closer] || 0) + 1;
@@ -2336,13 +2348,19 @@ function renderEfetividade(mesAgend) {
   }).join('');
 }
 
-// ── 3. NO-SHOW por Closer ──
-function renderNoshow(mesAgend) {
+// ── 3. NO-SHOW por Closer — usa dataReun (col D) ──
+function renderNoshow(allAgend, month, year) {
   const el = document.getElementById('ind-noshow');
+  const data = allAgend.filter(r => {
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
   const totalAgend = {}, totalNs = {};
   closers.forEach(c => { totalAgend[c.name] = 0; totalNs[c.name] = 0; });
 
-  mesAgend.forEach(r => {
+  data.forEach(r => {
     if (!r.closer) return;
     totalAgend[r.closer] = (totalAgend[r.closer] || 0) + 1;
     if (r.status === 'No-show') totalNs[r.closer] = (totalNs[r.closer] || 0) + 1;
