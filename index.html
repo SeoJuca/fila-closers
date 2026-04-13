@@ -2523,18 +2523,19 @@ function renderChart(month, year) {
 
 // Update showScreen to render indicadores
 // ── 7. DIA DA SEMANA — Volume de Agendamentos ──
+// ── 7. DIA DA SEMANA — Volume de Agendamentos ──
+// Usa col B (carimbo): dia que o SDR criou o agendamento
 function renderDowAgend(mesAgend, month, year) {
   const el = document.getElementById('ind-dow-agend');
   const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const counts = { 1:0, 2:0, 3:0, 4:0, 5:0 }; // seg a sex
+  const counts = { 1:0, 2:0, 3:0, 4:0, 5:0 };
 
   mesAgend.forEach(r => {
-    // Usa dataReun (data da reunião, col D) — não o carimbo
-    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    const dp = extractCarimboDate(r.carimbo); // col B — dia que foi agendado
     if (!dp) return;
     const dt = parseBRDate(dp);
     if (isNaN(dt)) return;
-    const dow = dt.getDay(); // 0=dom, 1=seg...6=sab
+    const dow = dt.getDay();
     if (dow >= 1 && dow <= 5) counts[dow] = (counts[dow] || 0) + 1;
   });
 
@@ -2561,6 +2562,7 @@ function renderDowAgend(mesAgend, month, year) {
 }
 
 // ── 8. DIA DA SEMANA — Taxa de Efetivação ──
+// Usa col D (dataReun): dia que a reunião aconteceu — tanto numerador quanto denominador
 function renderDowEfetividade(mesAgend, month, year) {
   const el = document.getElementById('ind-dow-ef');
   const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -2568,11 +2570,12 @@ function renderDowEfetividade(mesAgend, month, year) {
   const efMap    = { 1:0, 2:0, 3:0, 4:0, 5:0 };
 
   mesAgend.forEach(r => {
-    // Usa dataReun (data da reunião, col D) — não o carimbo
-    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun); // col D — dia da reunião
     if (!dp) return;
     const dt = parseBRDate(dp);
     if (isNaN(dt)) return;
+    // Só conta reuniões cujo mês bate com o filtro (dataReun pode ser mês diferente do carimbo)
+    if (dt.getMonth() !== month || dt.getFullYear() !== year) return;
     const dow = dt.getDay();
     if (dow < 1 || dow > 5) return;
     totalMap[dow]++;
