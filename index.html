@@ -693,11 +693,136 @@
     .modal-msg { font-size: .9rem; color: rgba(255,255,255,0.65); line-height: 1.5; margin-bottom: 24px; }
     .modal-btns { display: flex; gap: 12px; }
 
+    /* ── TELA SDR META ── */
+    .sdr-screen-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 40px;
+    }
+    .sdr-screen-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 3px;
+      color: var(--yellow);
+      margin-bottom: 6px;
+    }
+    .sdr-month-info {
+      font-size: .8rem;
+      color: #666;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .sdr-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    /* Card */
+    .sdr-meta-card {
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 18px;
+      padding: 22px 22px 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .sdr-meta-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+    }
+
+    /* Header do card */
+    .smc-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .smc-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--yellow));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 900;
+      color: #fff; flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
+    .smc-name  { font-size: .95rem; font-weight: 900; }
+    .smc-cargo {
+      font-size: .68rem; color: var(--yellow);
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-top: 2px; font-weight: 700;
+    }
+
+    /* Bloco dia / mês */
+    .smc-block {
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .smc-block-label {
+      font-size: .68rem; color: #666;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      margin-bottom: 10px; font-weight: 700;
+    }
+    .smc-progress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .smc-nums { display: flex; align-items: baseline; gap: 3px; }
+    .smc-count {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem; line-height: 1;
+    }
+    .smc-sep   { font-size: 1.1rem; color: #444; }
+    .smc-meta  { font-size: 1rem; color: #555; font-weight: 700; }
+
+    .smc-block.ok  .smc-count { color: #6EB150; }
+    .smc-block.nok .smc-count { color: #ff6b6b; }
+    .smc-block.warn .smc-count { color: #FFD166; }
+
+    /* Badge */
+    .smc-badge {
+      font-size: .7rem; font-weight: 900;
+      padding: 4px 10px; border-radius: 99px;
+      letter-spacing: .5px; white-space: nowrap;
+    }
+    .badge-ok  { background: rgba(110,177,80,0.15); color: #6EB150; border: 1px solid rgba(110,177,80,0.3); }
+    .badge-nok { background: rgba(255,107,107,0.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.25); }
+
+    /* Barra de progresso */
+    .smc-bar-wrap {
+      height: 6px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .smc-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .6s cubic-bezier(.34,1.56,.64,1);
+    }
+    .bar-ok  { background: linear-gradient(90deg, #4a9e30, #6EB150); }
+    .bar-nok { background: linear-gradient(90deg, #cc3333, #ff6b6b); }
+
+    /* Ritmo esperado */
+    .smc-ritmo {
+      font-size: .68rem; color: #555;
+      margin-top: 8px; letter-spacing: .3px;
+    }
+    .smc-ritmo strong { color: #888; }
+
     @media (max-width: 900px) {
-      .closer-dash-header { padding: 16px 20px; }
-      .dash-stats { margin: 16px 20px; }
-      .dash-table-wrap { margin: 0 20px 32px; }
-      .closer-login-wrap { padding: 0 20px; }
+      .sdr-screen-wrap { padding: 20px; }
     }
   </style>
 </head>
@@ -709,14 +834,15 @@
   </div>
   <div class="header-title">Fila de Closers</div>
   <div class="header-nav">
-    <button class="nav-tab active" id="tab-sdr" onclick="showScreen('sdr')">📋 SDR</button>
+    <button class="nav-tab active" id="tab-agendamento" onclick="showScreen('agendamento')">📋 Agendamento</button>
+    <button class="nav-tab" id="tab-sdr" onclick="showScreen('sdr')">🎯 SDR</button>
     <button class="nav-tab" id="tab-closer" onclick="showScreen('closer')">🏆 Closers</button>
   </div>
   <div class="header-badge">SDR Control</div>
 </header>
 
 <!-- ══ TELA SDR ══ -->
-<div id="screen-sdr" class="screen active">
+<div id="screen-agendamento" class="screen active">
 <div class="main-grid">
 
   <!-- ══ LEFT: FORMULÁRIO ══ -->
@@ -812,6 +938,17 @@
 
   </div>
 </div>
+</div><!-- /screen-agendamento -->
+
+<!-- ══ TELA SDR ══ -->
+<div id="screen-sdr" class="screen">
+  <div class="sdr-screen-wrap">
+    <div class="sdr-screen-title">🎯 Meta de Agendamentos</div>
+    <div class="sdr-month-info" id="sdr-month-info"></div>
+    <div class="sdr-cards-grid" id="sdr-cards-grid">
+      <div class="empty-state"><span class="spin">⏳</span> Carregando...</div>
+    </div>
+  </div>
 </div><!-- /screen-sdr -->
 
 <!-- ══ TELA CLOSER ══ -->
@@ -888,6 +1025,7 @@ const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQXQEJMybM1m
 const GID_CLOSERS = '0';
 const GID_AGEND   = '1127809379';
 const GID_SDR     = '1360192723';
+const GID_META    = '731667161';
 const WEBHOOK     = 'https://hook.us2.make.com/xh4sxhoftr8gyemrd18rjw9brksguzda';
 
 let closers       = [];
@@ -1295,7 +1433,7 @@ document.getElementById('meeting-date').value = isoDate(new Date());
 
 // ── INIT ──
 (async () => {
-  await Promise.all([loadSDRs(), loadClosers(), loadCloserPasswords()]);
+  await Promise.all([loadSDRs(), loadClosers(), loadCloserPasswords(), loadSDRList(), loadMeta()]);
   await loadAgendamentos();
 })();
 
@@ -1312,6 +1450,7 @@ function showScreen(screen) {
   document.getElementById('screen-' + screen).classList.add('active');
   document.getElementById('tab-' + screen).classList.add('active');
   if (screen === 'closer') { renderCloserCards(); showCloserStep('login'); }
+  if (screen === 'sdr')    { renderSDRCards(); }
 }
 
 function showCloserStep(step) {
@@ -1491,6 +1630,148 @@ async function confirmModal() {
 document.getElementById('modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
+
+// ══════════════════════════════════════════════════════════
+//  TELA SDR — META DE AGENDAMENTOS
+// ══════════════════════════════════════════════════════════
+let sdrList  = [];  // [{name, cargo}]
+let metaMap  = {};  // { 'SDR Junior': 6, 'SDR Pleno': 8 }
+
+// Conta dias úteis (seg-sex) de um mês/ano
+function countWorkdays(year, month) {
+  const days = new Date(year, month + 1, 0).getDate(); // total dias do mês
+  let count = 0;
+  for (let d = 1; d <= days; d++) {
+    const dow = new Date(year, month, d).getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
+}
+
+// Conta dias úteis JÁ transcorridos no mês até hoje (inclusive)
+function countWorkdaysElapsed(year, month) {
+  const today = new Date();
+  const lastDay = (year === today.getFullYear() && month === today.getMonth())
+    ? today.getDate()
+    : new Date(year, month + 1, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= lastDay; d++) {
+    const dow = new Date(year, month, d).getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
+}
+
+async function loadSDRList() {
+  try {
+    const rows = parseCSVRaw(await fetchRaw(GID_SDR));
+    sdrList = rows.slice(1)
+      .map(cols => ({ name: (cols[0]||'').trim(), cargo: (cols[1]||'').trim() }))
+      .filter(r => r.name && r.cargo.toUpperCase().includes('SDR'));
+  } catch(e) { console.error('SDRList:', e); }
+}
+
+async function loadMeta() {
+  try {
+    const rows = parseCSVRaw(await fetchRaw(GID_META));
+    // Col A = cargo, Col B = meta diária
+    rows.slice(1).forEach(cols => {
+      const cargo = (cols[0]||'').trim();
+      const meta  = parseInt(cols[1]||'0', 10);
+      if (cargo && !isNaN(meta)) metaMap[cargo] = meta;
+    });
+  } catch(e) { console.error('Meta:', e); }
+}
+
+function renderSDRCards() {
+  const grid    = document.getElementById('sdr-cards-grid');
+  const infoEl  = document.getElementById('sdr-month-info');
+  const now     = new Date();
+  const todayBR = fmtDate(now);
+  const month   = now.getMonth();
+  const year    = now.getFullYear();
+  const monthName = now.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  const workdaysTotal   = countWorkdays(year, month);
+  const workdaysElapsed = countWorkdaysElapsed(year, month);
+
+  infoEl.textContent = `${monthName} — ${workdaysTotal} dias úteis`;
+
+  if (!sdrList.length) {
+    grid.innerHTML = '<div class="empty-state">Nenhum SDR encontrado</div>';
+    return;
+  }
+
+  grid.innerHTML = '';
+  sdrList.forEach(sdr => {
+    const metaDia = metaMap[sdr.cargo] || 0;
+    const metaMes = metaDia * workdaysTotal;
+
+    // Conta agendamentos hoje (pelo carimbo = col B = index 1)
+    const countHoje = agendamentos.filter(r =>
+      r.sdr === sdr.name && extractDatePart(r.carimbo) === todayBR
+    ).length;
+
+    // Conta agendamentos no mês
+    const countMes = agendamentos.filter(r => {
+      if (r.sdr !== sdr.name) return false;
+      const dp = extractDatePart(r.carimbo);
+      if (!dp) return false;
+      const dt = parseBRDate(dp);
+      return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+    }).length;
+
+    const diaOk = countHoje >= metaDia;
+    const mesOk = countMes  >= metaMes;
+
+    // Ritmo esperado: meta_dia × dias_úteis_transcorridos
+    const ritmoEsperado = metaDia * workdaysElapsed;
+    const deficit = ritmoEsperado - countMes;
+
+    const card = document.createElement('div');
+    card.className = 'sdr-meta-card';
+    card.innerHTML = `
+      <div class="smc-header">
+        <div class="smc-avatar">${initials(sdr.name)}</div>
+        <div>
+          <div class="smc-name">${sdr.name}</div>
+          <div class="smc-cargo">${sdr.cargo}</div>
+        </div>
+      </div>
+
+      <div class="smc-block ${diaOk ? 'ok' : 'nok'}">
+        <div class="smc-block-label">Hoje</div>
+        <div class="smc-progress-row">
+          <div class="smc-nums">
+            <span class="smc-count">${countHoje}</span>
+            <span class="smc-sep">/</span>
+            <span class="smc-meta">${metaDia}</span>
+          </div>
+          <div class="smc-badge ${diaOk ? 'badge-ok' : 'badge-nok'}">${diaOk ? '✅ Meta!' : `${metaDia - countHoje} restam`}</div>
+        </div>
+        <div class="smc-bar-wrap">
+          <div class="smc-bar-fill ${diaOk ? 'bar-ok' : 'bar-nok'}" style="width:${Math.min(100, Math.round(countHoje/Math.max(metaDia,1)*100))}%"></div>
+        </div>
+      </div>
+
+      <div class="smc-block ${mesOk ? 'ok' : (deficit > 0 ? 'nok' : 'warn')}">
+        <div class="smc-block-label">Mês — meta ${metaMes}</div>
+        <div class="smc-progress-row">
+          <div class="smc-nums">
+            <span class="smc-count">${countMes}</span>
+            <span class="smc-sep">/</span>
+            <span class="smc-meta">${metaMes}</span>
+          </div>
+          <div class="smc-badge ${mesOk ? 'badge-ok' : 'badge-nok'}">${mesOk ? '✅ Meta!' : deficit > 0 ? `−${deficit} atraso` : `${metaMes - countMes} restam`}</div>
+        </div>
+        <div class="smc-bar-wrap">
+          <div class="smc-bar-fill ${mesOk ? 'bar-ok' : 'bar-nok'}" style="width:${Math.min(100, Math.round(countMes/Math.max(metaMes,1)*100))}%"></div>
+        </div>
+        <div class="smc-ritmo">Ritmo esperado: <strong>${ritmoEsperado}</strong></div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
 
 setInterval(loadAgendamentos, 90000);
 </script>
