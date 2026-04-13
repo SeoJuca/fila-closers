@@ -573,7 +573,35 @@
       color: #7eb8ff;
     }
 
-    /* Linha futura na tabela */
+    /* Card fora da fila */
+    .login-card.off-queue {
+      border-color: rgba(255,255,255,0.05);
+      opacity: .85;
+    }
+    .login-card.off-queue .lc-avatar {
+      background: linear-gradient(135deg, #444, #666);
+    }
+    .lc-off-queue-tag {
+      font-size: .62rem; color: #555;
+      letter-spacing: 1px; margin-top: 6px;
+      font-weight: 700; text-transform: uppercase;
+    }
+    /* Card com seleção forçada */
+    .login-card.forced-selected {
+      border-color: var(--yellow) !important;
+      background: linear-gradient(145deg, rgba(110,177,80,0.14), rgba(110,177,80,0.04)) !important;
+      box-shadow: 0 0 0 2px rgba(110,177,80,0.3), 0 8px 24px rgba(0,0,0,0.3) !important;
+      opacity: 1 !important;
+      animation: pulse-select .5s ease;
+    }
+    .lc-forced-tag {
+      font-size: .68rem; font-weight: 900;
+      color: var(--yellow);
+      background: rgba(110,177,80,0.15);
+      border: 1px solid rgba(110,177,80,0.3);
+      padding: 3px 10px; border-radius: 99px;
+      margin-top: 6px; letter-spacing: .5px;
+    }
     .tr-future { opacity: .75; }
     .tr-future td { background: rgba(80,140,255,0.03); }
 
@@ -1485,6 +1513,12 @@ async function fetchRaw(gid) {
 function calcNextCloser() {
   if (!closers.length) return { index: 0, name: '—' };
 
+  // Se há um closer forçado manualmente, retorna ele
+  if (forcedCloser) {
+    const idx = closers.findIndex(c => c.name === forcedCloser.name);
+    return { index: idx >= 0 ? idx : 0, name: forcedCloser.name };
+  }
+
   const n = closers.length;
 
   // Apenas closers com emFila = true entram no rodízio
@@ -1771,6 +1805,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
 
     // Reseta pulos da sessão após agendar — o closer pulado volta à fila
     skippedThisSession.clear();
+    forcedCloser = null; // limpa seleção forçada após agendar
 
     // Optimistic update: insere localmente para refletir imediatamente
     // NÃO recarrega da planilha logo após — o Make precisa de tempo para gravar.
@@ -1828,6 +1863,7 @@ document.getElementById('meeting-date').value = isoDate(new Date());
 //  TELA CLOSER
 // ══════════════════════════════════════════════════════════
 let loggedCloser    = null;
+let forcedCloser    = null;  // closer fora da fila selecionado manualmente
 let closerPasswords = {};
 let dashDate        = new Date();
 let sdrDate         = new Date();
@@ -1864,16 +1900,22 @@ function renderCloserCards() {
     );
 
     // Separa: passado/hoje (pendentes reais) vs futuro (informativo)
+    const parseReunDate = r => {
+      const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '';
+      if (!dp) return null;
+      const d = parseBRDate(dp);
+      if (isNaN(d)) return null;
+      d.setHours(0,0,0,0);
+      return d;
+    };
     const pendentes = semStatus.filter(r => {
-      const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
-      if (!dp) return true; // sem data = trata como pendente
-      const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
+      const dt = parseReunDate(r);
+      if (!dt) return true; // sem data legível = trata como pendente
       return dt <= hoje;
     });
     const futuras = semStatus.filter(r => {
-      const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
-      if (!dp) return false;
-      const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
+      const dt = parseReunDate(r);
+      if (!dt) return false;
       return dt > hoje;
     });
 
@@ -1904,12 +1946,17 @@ function renderCloserCards() {
       hasFut  ? `<div class="pend-badge pend-badge-fut"  data-type="fut" >🔵 ${futuras.length} futura${futuras.length > 1 ? 's' : ''}</div>` : '',
     ].join('');
 
+    const isForced  = forcedCloser && forcedCloser.name === c.name;
+    const offQueue  = c.emFila === false;
+
     const div = document.createElement('div');
-    div.className = 'login-card';
+    div.className = 'login-card' + (isForced ? ' forced-selected' : '') + (offQueue ? ' off-queue' : '');
     div.innerHTML = `
       <div class="lc-avatar">${c.initials}</div>
       <div class="lc-name">${c.name}</div>
-      <div class="lc-hint">clique para entrar</div>
+      ${offQueue ? `<div class="lc-off-queue-tag">⏸ Fora da fila</div>` : ''}
+      ${isForced ? `<div class="lc-forced-tag">🎯 Selecionado</div>` : ''}
+      <div class="lc-hint">${offQueue ? 'clique para selecionar' : 'clique para entrar'}</div>
       <div class="pend-badges-wrap">${badgeHTML}</div>`;
 
     // Tooltip genérico — aparece após 1s de hover
@@ -1954,7 +2001,7 @@ function renderCloserCards() {
       if (b) attachTooltip(b, '🔵 Reuniões futuras', byDateFut, futDates);
     }
 
-    // Ripple + login on card click
+    // Ripple + ação no clique
     div.addEventListener('click', function(e) {
       const ripple = document.createElement('span');
       ripple.className = 'ripple';
@@ -1963,7 +2010,13 @@ function renderCloserCards() {
       ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
       div.appendChild(ripple);
       setTimeout(() => ripple.remove(), 600);
-      selectCloserLogin(c);
+      if (offQueue) {
+        // Closer fora da fila: seleção forçada como próximo (sem login)
+        forceCloser(c);
+      } else {
+        // Closer na fila: vai para login normalmente
+        selectCloserLogin(c);
+      }
     });
 
     grid.appendChild(div);
@@ -1978,6 +2031,17 @@ function selectCloserLogin(c) {
   document.getElementById('auth-error').textContent  = '';
   showCloserStep('auth');
   setTimeout(() => document.getElementById('auth-password').focus(), 100);
+}
+
+// Força um closer (fora da fila) como próximo — seleção manual
+function forceCloser(c) {
+  forcedCloser = c;
+  skippedThisSession.clear();
+  updateNextCloserDisplay();
+  renderScoreboard();
+  toast(`🎯 ${c.name} selecionado manualmente como próximo!`);
+  // Renderiza os cards novamente para atualizar o destaque
+  renderCloserCards();
 }
 
 function backToCards()  { loggedCloser = null; showCloserStep('login'); }
