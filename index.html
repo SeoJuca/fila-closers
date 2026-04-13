@@ -547,13 +547,14 @@
     }
     .login-card:hover .lc-hint { opacity: 1; }
 
-    /* Badge de pendências — só aparece no hover do card */
+    /* Badge de pendências — variantes */
+    .pend-badges-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 5px;
+      margin-top: 8px;
+    }
     .pend-badge {
       display: inline-block;
-      margin-top: 10px;
-      background: rgba(255,209,0,0.12);
-      border: 1px solid rgba(255,209,0,0.35);
-      color: #FFD166;
       font-size: .68rem; font-weight: 900;
       padding: 4px 10px; border-radius: 99px;
       letter-spacing: .5px; cursor: default;
@@ -561,6 +562,30 @@
       position: relative; z-index: 1;
     }
     .login-card:hover .pend-badge { opacity: 1; }
+    .pend-badge-real {
+      background: rgba(255,80,80,0.12);
+      border: 1px solid rgba(255,80,80,0.35);
+      color: #ff6b6b;
+    }
+    .pend-badge-fut {
+      background: rgba(80,140,255,0.10);
+      border: 1px solid rgba(80,140,255,0.3);
+      color: #7eb8ff;
+    }
+
+    /* Linha futura na tabela */
+    .tr-future { opacity: .75; }
+    .tr-future td { background: rgba(80,140,255,0.03); }
+
+    /* Aviso sutil de reunião futura */
+    .future-hint {
+      font-size: .62rem; color: #7eb8ff;
+      letter-spacing: .5px; margin-bottom: 5px;
+      font-weight: 700;
+    }
+    /* Botão em reunião futura — levemente mais opaco */
+    .status-btn.future-btn { opacity: .65; }
+    .status-btn.future-btn:hover { opacity: 1; }
 
     /* Tooltip de pendências */
     .pend-tooltip {
@@ -1829,24 +1854,55 @@ function renderCloserCards() {
   grid.innerHTML = '';
 
   closers.forEach(c => {
-    // Busca pendências: reuniões do closer sem status definido
-    const pendentes = agendamentos.filter(r =>
-      r.closer === c.name && r.status !== 'Efetivada' && r.status !== 'No-show' && (r.lead && r.lead !== '__PULO__')
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+    // Todas sem status (exceto pulos)
+    const semStatus = agendamentos.filter(r =>
+      r.closer === c.name &&
+      r.status !== 'Efetivada' && r.status !== 'No-show' &&
+      r.lead && r.lead !== '__PULO__'
     );
 
-    // Agrupa por data da reunião
-    const byDate = {};
+    // Separa: passado/hoje (pendentes reais) vs futuro (informativo)
+    const pendentes = semStatus.filter(r => {
+      const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+      if (!dp) return true; // sem data = trata como pendente
+      const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
+      return dt <= hoje;
+    });
+    const futuras = semStatus.filter(r => {
+      const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+      if (!dp) return false;
+      const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
+      return dt > hoje;
+    });
+
+    // Agrupa pendentes por data
+    const byDatePend = {};
     pendentes.forEach(r => {
-      const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || r.dataReun;
-      if (!d) return;
-      if (!byDate[d]) byDate[d] = [];
-      byDate[d].push(r.lead || '—');
+      const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+      if (!byDatePend[d]) byDatePend[d] = [];
+      byDatePend[d].push(r.lead || '—');
     });
-    const pendDates = Object.keys(byDate).sort((a,b) => {
-      const da = parseBRDate(a), db = parseBRDate(b);
-      return da - db;
+    // Agrupa futuras por data
+    const byDateFut = {};
+    futuras.forEach(r => {
+      const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+      if (!byDateFut[d]) byDateFut[d] = [];
+      byDateFut[d].push(r.lead || '—');
     });
-    const hasPend = pendDates.length > 0;
+
+    const sortDates = obj => Object.keys(obj).sort((a,b) => parseBRDate(a) - parseBRDate(b));
+    const pendDates = sortDates(byDatePend);
+    const futDates  = sortDates(byDateFut);
+
+    const hasPend = pendentes.length > 0;
+    const hasFut  = futuras.length > 0;
+
+    const badgeHTML = [
+      hasPend ? `<div class="pend-badge pend-badge-real" data-type="pend">🔴 ${pendentes.length} pendente${pendentes.length > 1 ? 's' : ''}</div>` : '',
+      hasFut  ? `<div class="pend-badge pend-badge-fut"  data-type="fut" >🔵 ${futuras.length} futura${futuras.length > 1 ? 's' : ''}</div>` : '',
+    ].join('');
 
     const div = document.createElement('div');
     div.className = 'login-card';
@@ -1854,51 +1910,48 @@ function renderCloserCards() {
       <div class="lc-avatar">${c.initials}</div>
       <div class="lc-name">${c.name}</div>
       <div class="lc-hint">clique para entrar</div>
-      ${hasPend ? `<div class="pend-badge" data-closer="${c.name}">⏳ ${pendentes.length} pendente${pendentes.length > 1 ? 's' : ''}</div>` : ''}`;
+      <div class="pend-badges-wrap">${badgeHTML}</div>`;
 
-    // Tooltip de pendências — aparece após 1s de hover no badge
-    if (hasPend) {
-      const badge = div.querySelector('.pend-badge');
-      let hoverTimer = null;
-      let tooltip = null;
-
+    // Tooltip genérico — aparece após 1s de hover
+    const attachTooltip = (badge, title, byDate, dates) => {
+      if (!dates.length) return;
+      let hoverTimer = null, tooltip = null;
       badge.addEventListener('mouseenter', () => {
         hoverTimer = setTimeout(() => {
           tooltip = document.createElement('div');
           tooltip.className = 'pend-tooltip';
-          const rows = pendDates.map(date => {
+          const rows = dates.map(date => {
             const leads = byDate[date];
             return `<div class="ptt-row">
               <div class="ptt-date">📅 ${date}</div>
               <div class="ptt-leads">${leads.map(l => `<span class="ptt-lead">${l}</span>`).join('')}</div>
             </div>`;
           }).join('');
-          tooltip.innerHTML = `
-            <div class="ptt-title">⏳ Reuniões pendentes</div>
-            ${rows}`;
+          tooltip.innerHTML = `<div class="ptt-title">${title}</div>${rows}`;
           document.body.appendChild(tooltip);
-
-          // Position above the badge
           const rect = badge.getBoundingClientRect();
-          const tw   = 260;
+          const tw = 270;
           let left = rect.left + rect.width/2 - tw/2;
           left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
           tooltip.style.cssText = `left:${left + window.scrollX}px;top:${rect.top + window.scrollY - 8}px;width:${tw}px`;
-          // Animate in
           requestAnimationFrame(() => tooltip.classList.add('pend-tooltip-show'));
         }, 1000);
       });
-
       badge.addEventListener('mouseleave', () => {
         clearTimeout(hoverTimer);
-        if (tooltip) {
-          tooltip.classList.remove('pend-tooltip-show');
-          setTimeout(() => { if (tooltip) { tooltip.remove(); tooltip = null; } }, 200);
-        }
+        if (tooltip) { tooltip.classList.remove('pend-tooltip-show'); setTimeout(() => { tooltip?.remove(); tooltip = null; }, 200); }
       });
-
-      // Prevent card click when clicking badge
       badge.addEventListener('click', e => e.stopPropagation());
+    };
+
+    // Anexa tooltips em cada badge
+    if (hasPend) {
+      const b = div.querySelector('.pend-badge-real');
+      if (b) attachTooltip(b, '🔴 Pendentes — aguardando status', byDatePend, pendDates);
+    }
+    if (hasFut) {
+      const b = div.querySelector('.pend-badge-fut');
+      if (b) attachTooltip(b, '🔵 Reuniões futuras', byDateFut, futDates);
     }
 
     // Ripple + login on card click
@@ -1998,19 +2051,35 @@ function renderDashboard() {
     return;
   }
 
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+
   tbody.innerHTML = '';
   reunioes.forEach((row, i) => {
     const hasStatus = row.status === 'Efetivada' || row.status === 'No-show';
-    const safeId   = (row.id||'').replace(/'/g, "\'");
-    const safeLead = (row.lead||'').replace(/'/g, "\'");
-    const statusCell = hasStatus
-      ? `<td colspan="2"><span class="${row.status === 'Efetivada' ? 'badge-status-ef' : 'badge-status-ns'}">${row.status === 'Efetivada' ? '✅ Efetivada' : '❌ No-show'}</span></td>`
-      : `<td><button class="status-btn ef" onclick="promptStatus('${safeId}','${safeLead}','Efetivada')">✅ Efetivada</button></td>
-         <td><button class="status-btn ns" onclick="promptStatus('${safeId}','${safeLead}','No-show')">❌ No-show</button></td>`;
+    const safeId    = (row.id||'').replace(/'/g, "\'");
+    const safeLead  = (row.lead||'').replace(/'/g, "\'");
+
+    // Verifica se a reunião é futura
+    const drDP = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+    const drDt = parseBRDate(drDP); drDt.setHours(0,0,0,0);
+    const isFuture = !isNaN(drDt) && drDt > hoje;
+
+    let statusCell;
+    if (hasStatus) {
+      statusCell = `<td colspan="2"><span class="${row.status === 'Efetivada' ? 'badge-status-ef' : 'badge-status-ns'}">${row.status === 'Efetivada' ? '✅ Efetivada' : '❌ No-show'}</span></td>`;
+    } else {
+      const futureHint = isFuture ? `<div class="future-hint">📅 Reunião futura</div>` : '';
+      statusCell = `<td>
+        ${futureHint}
+        <button class="status-btn ef${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','Efetivada')">✅ Efetivada</button>
+      </td>
+      <td><button class="status-btn ns${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','No-show')">❌ No-show</button></td>`;
+    }
 
     const carimboExib = (row.carimbo||'').replace(/^(\d{2}\/\d{2}\/\d{4})[, ]+(\d{2}:\d{2}).*$/, '$1 $2') || '—';
     const tr = document.createElement('tr');
     tr.id = 'row-' + row.id;
+    if (isFuture && !hasStatus) tr.classList.add('tr-future');
     tr.innerHTML = `
       <td>${i+1}</td>
       <td><strong>${row.lead||'—'}</strong></td>
