@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fila de Closers – Mercadinho do Seo Juca</title>
+  <title>Agendamentos Seo Juca</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -699,6 +699,14 @@
       margin: 0 auto;
       padding: 32px 40px;
     }
+    .sdr-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
     .sdr-screen-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1.8rem;
@@ -832,13 +840,11 @@
   <div class="logo-wrap">
     <img src="https://github.com/jonathanseojuca/fila-closers/blob/main/images/Logo.png?raw=true" alt="Mercadinho do Seo Juca" onerror="this.style.display='none'" />
   </div>
-  <div class="header-title">Fila de Closers</div>
   <div class="header-nav">
     <button class="nav-tab active" id="tab-agendamento" onclick="showScreen('agendamento')">📋 Agendamento</button>
     <button class="nav-tab" id="tab-sdr" onclick="showScreen('sdr')">🎯 SDR</button>
     <button class="nav-tab" id="tab-closer" onclick="showScreen('closer')">🏆 Closers</button>
   </div>
-  <div class="header-badge">SDR Control</div>
 </header>
 
 <!-- ══ TELA SDR ══ -->
@@ -943,7 +949,14 @@
 <!-- ══ TELA SDR ══ -->
 <div id="screen-sdr" class="screen">
   <div class="sdr-screen-wrap">
-    <div class="sdr-screen-title">🎯 Meta de Agendamentos</div>
+    <div class="sdr-top-row">
+      <div class="sdr-screen-title">🎯 Meta de Agendamentos</div>
+      <div class="date-nav" style="margin:0">
+        <button class="nav-btn" onclick="sdrPrevDay()">◀</button>
+        <div class="date-display" id="sdr-date-label" style="min-width:150px;text-align:center"></div>
+        <button class="nav-btn" onclick="sdrNextDay()">▶</button>
+      </div>
+    </div>
     <div class="sdr-month-info" id="sdr-month-info"></div>
     <div class="sdr-cards-grid" id="sdr-cards-grid">
       <div class="empty-state"><span class="spin">⏳</span> Carregando...</div>
@@ -1443,6 +1456,7 @@ document.getElementById('meeting-date').value = isoDate(new Date());
 let loggedCloser    = null;
 let closerPasswords = {};
 let dashDate        = new Date();
+let sdrDate         = new Date();
 
 function showScreen(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1450,7 +1464,7 @@ function showScreen(screen) {
   document.getElementById('screen-' + screen).classList.add('active');
   document.getElementById('tab-' + screen).classList.add('active');
   if (screen === 'closer') { renderCloserCards(); showCloserStep('login'); }
-  if (screen === 'sdr')    { renderSDRCards(); }
+  if (screen === 'sdr')    { renderSDRCards(sdrDate); }
 }
 
 function showCloserStep(step) {
@@ -1638,6 +1652,9 @@ let sdrList  = [];  // [{name, cargo}]
 let metaMap  = {};  // { 'SDR Junior': 6, 'SDR Pleno': 8 }
 
 // Conta dias úteis (seg-sex) de um mês/ano
+function sdrPrevDay() { sdrDate.setDate(sdrDate.getDate()-1); renderSDRCards(sdrDate); }
+function sdrNextDay() { sdrDate.setDate(sdrDate.getDate()+1); renderSDRCards(sdrDate); }
+
 function countWorkdays(year, month) {
   const days = new Date(year, month + 1, 0).getDate(); // total dias do mês
   let count = 0;
@@ -1649,8 +1666,8 @@ function countWorkdays(year, month) {
 }
 
 // Conta dias úteis JÁ transcorridos no mês até hoje (inclusive)
-function countWorkdaysElapsed(year, month) {
-  const today = new Date();
+function countWorkdaysElapsed(year, month, refDate) {
+  const today = refDate || new Date();
   const lastDay = (year === today.getFullYear() && month === today.getMonth())
     ? today.getDate()
     : new Date(year, month + 1, 0).getDate();
@@ -1683,17 +1700,19 @@ async function loadMeta() {
   } catch(e) { console.error('Meta:', e); }
 }
 
-function renderSDRCards() {
+function renderSDRCards(refDate) {
+  if (!refDate) refDate = sdrDate;
   const grid    = document.getElementById('sdr-cards-grid');
   const infoEl  = document.getElementById('sdr-month-info');
-  const now     = new Date();
+  const now     = refDate;
   const todayBR = fmtDate(now);
   const month   = now.getMonth();
   const year    = now.getFullYear();
   const monthName = now.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  document.getElementById('sdr-date-label').textContent = fmtDate(now);
 
   const workdaysTotal   = countWorkdays(year, month);
-  const workdaysElapsed = countWorkdaysElapsed(year, month);
+  const workdaysElapsed = countWorkdaysElapsed(year, month, now);
 
   infoEl.textContent = `${monthName} — ${workdaysTotal} dias úteis`;
 
