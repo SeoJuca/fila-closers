@@ -448,11 +448,256 @@
     .spin { animation: spin 1s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* responsivo */
+    /* ── NAV TABS ── */
+    .header-nav { display: flex; gap: 8px; }
+    .nav-tab {
+      background: rgba(255,255,255,0.1);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.7);
+      border-radius: 8px;
+      padding: 7px 18px;
+      font-family: 'Nunito', sans-serif;
+      font-size: .82rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .nav-tab:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    .nav-tab.active {
+      background: var(--yellow);
+      border-color: var(--yellow);
+      color: var(--dark);
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── CLOSER LOGIN GRID ── */
+    .closer-login-wrap {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 40px;
+    }
+    .closer-login-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 3px;
+      color: var(--yellow);
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .closer-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 20px;
+    }
+    .login-card {
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 28px 16px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+      user-select: none;
+    }
+    .login-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.5);
+      border-color: var(--yellow);
+      background: linear-gradient(145deg, rgba(110,177,80,0.1), var(--mid));
+    }
+    .login-card:active { transform: scale(.96); }
+    .login-card .lc-avatar {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--yellow));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; font-weight: 900;
+      margin: 0 auto 14px;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .login-card .lc-name {
+      font-size: .9rem; font-weight: 800;
+      color: #fff; line-height: 1.3;
+    }
+    .login-card .lc-hint {
+      font-size: .65rem; color: #555;
+      margin-top: 8px; letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── AUTH BOX ── */
+    .closer-auth-wrap {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 60vh;
+    }
+    .closer-auth-box {
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 40px 36px;
+      text-align: center;
+      width: 100%; max-width: 360px;
+      box-shadow: var(--shadow);
+    }
+    .closer-auth-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--yellow));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; font-weight: 900;
+      margin: 0 auto 12px; color: #fff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .closer-auth-name { font-size: 1.2rem; font-weight: 900; margin-bottom: 20px; }
+    .closer-auth-label { font-size: .75rem; color: #888; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+    .closer-auth-input {
+      width: 100%; padding: 13px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px; color: #fff;
+      font-size: 1.2rem; text-align: center;
+      letter-spacing: 4px; outline: none;
+      font-family: 'Nunito', sans-serif;
+      transition: border-color .2s;
+    }
+    .closer-auth-input:focus { border-color: var(--yellow); }
+    .closer-auth-error { color: #ff6b6b; font-size: .82rem; min-height: 20px; margin: 8px 0; }
+    .closer-auth-btns { display: flex; gap: 10px; margin-top: 16px; }
+
+    /* ── DASHBOARD ── */
+    .closer-dash-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 40px; gap: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-wrap: wrap;
+    }
+    .closer-dash-title {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem; letter-spacing: 2px; color: var(--yellow);
+    }
+    .dash-stats {
+      display: flex; gap: 0;
+      margin: 24px 40px;
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; overflow: hidden;
+    }
+    .dash-stat {
+      flex: 1; padding: 20px 12px;
+      text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      position: relative;
+    }
+    .dash-stat:last-child { border-right: none; }
+    .dash-stat-num {
+      display: block;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.6rem; line-height: 1;
+      color: var(--yellow);
+    }
+    .dash-stat-num.green { color: #6EB150; }
+    .dash-stat-num.red   { color: #ff6b6b; }
+    .dash-stat-num.yellow { color: #FFD166; }
+    .dash-stat-label {
+      font-size: .65rem; color: #666;
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-top: 4px; display: block;
+    }
+    .dash-table-wrap { margin: 0 40px 40px; overflow-x: auto; }
+    .dash-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    .dash-table thead tr { background: rgba(110,177,80,0.08); }
+    .dash-table th {
+      padding: 11px 16px; text-align: left;
+      font-size: .72rem; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--yellow);
+      border-bottom: 1px solid rgba(110,177,80,0.2);
+    }
+    .dash-table td {
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.85);
+      vertical-align: middle;
+    }
+    .dash-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+    /* Status buttons */
+    .status-btn {
+      padding: 7px 14px; border: none; border-radius: 8px;
+      font-family: 'Nunito', sans-serif; font-size: .78rem;
+      font-weight: 800; cursor: pointer; letter-spacing: .5px;
+      transition: all .2s; white-space: nowrap;
+    }
+    .status-btn.ef {
+      background: rgba(110,177,80,0.15);
+      border: 1.5px solid rgba(110,177,80,0.4);
+      color: #6EB150;
+    }
+    .status-btn.ef:hover:not(:disabled) { background: rgba(110,177,80,0.3); }
+    .status-btn.ns {
+      background: rgba(255,107,107,0.12);
+      border: 1.5px solid rgba(255,107,107,0.35);
+      color: #ff6b6b;
+    }
+    .status-btn.ns:hover:not(:disabled) { background: rgba(255,107,107,0.25); }
+    .status-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .status-btn.done-ef {
+      background: rgba(110,177,80,0.3);
+      border-color: #6EB150; color: #6EB150;
+      cursor: default;
+    }
+    .status-btn.done-ns {
+      background: rgba(255,107,107,0.25);
+      border-color: #ff6b6b; color: #ff6b6b;
+      cursor: default;
+    }
+    .badge-status-ef {
+      background: rgba(110,177,80,0.2); color: #6EB150;
+      font-size: .72rem; font-weight: 800;
+      padding: 3px 10px; border-radius: 99px;
+    }
+    .badge-status-ns {
+      background: rgba(255,107,107,0.18); color: #ff6b6b;
+      font-size: .72rem; font-weight: 800;
+      padding: 3px 10px; border-radius: 99px;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      animation: fadeIn .2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box {
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 36px 32px;
+      text-align: center;
+      max-width: 340px; width: 90%;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      animation: slideUp .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--yellow); margin-bottom: 8px; }
+    .modal-msg { font-size: .9rem; color: rgba(255,255,255,0.65); line-height: 1.5; margin-bottom: 24px; }
+    .modal-btns { display: flex; gap: 12px; }
+
     @media (max-width: 900px) {
-      .main-grid { grid-template-columns: 1fr; padding: 20px; }
-      header { padding: 14px 20px; }
-      .header-title { font-size: 1.3rem; }
+      .closer-dash-header { padding: 16px 20px; }
+      .dash-stats { margin: 16px 20px; }
+      .dash-table-wrap { margin: 0 20px 32px; }
+      .closer-login-wrap { padding: 0 20px; }
     }
   </style>
 </head>
@@ -463,9 +708,15 @@
     <img src="https://github.com/jonathanseojuca/fila-closers/blob/main/images/Logo.png?raw=true" alt="Mercadinho do Seo Juca" onerror="this.style.display='none'" />
   </div>
   <div class="header-title">Fila de Closers</div>
+  <div class="header-nav">
+    <button class="nav-tab active" id="tab-sdr" onclick="showScreen('sdr')">📋 SDR</button>
+    <button class="nav-tab" id="tab-closer" onclick="showScreen('closer')">🏆 Closers</button>
+  </div>
   <div class="header-badge">SDR Control</div>
 </header>
 
+<!-- ══ TELA SDR ══ -->
+<div id="screen-sdr" class="screen active">
 <div class="main-grid">
 
   <!-- ══ LEFT: FORMULÁRIO ══ -->
@@ -559,6 +810,74 @@
       </div>
     </div>
 
+  </div>
+</div>
+</div><!-- /screen-sdr -->
+
+<!-- ══ TELA CLOSER ══ -->
+<div id="screen-closer" class="screen">
+
+  <!-- STEP 1: Grid de cards dos closers -->
+  <div id="closer-login" class="closer-login-wrap">
+    <div class="closer-login-title">👤 Selecione seu perfil</div>
+    <div class="closer-cards-grid" id="closer-cards-grid"><!-- gerado via JS --></div>
+  </div>
+
+  <!-- STEP 2: Formulário de senha -->
+  <div id="closer-auth" class="closer-auth-wrap" style="display:none">
+    <div class="closer-auth-box">
+      <div class="closer-auth-avatar" id="auth-avatar"></div>
+      <div class="closer-auth-name" id="auth-name"></div>
+      <div class="closer-auth-label">Digite sua senha</div>
+      <input type="password" id="auth-password" class="closer-auth-input" placeholder="••••••" />
+      <div class="closer-auth-error" id="auth-error"></div>
+      <div class="closer-auth-btns">
+        <button class="btn btn-secondary" onclick="backToCards()">← Voltar</button>
+        <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Dashboard do closer -->
+  <div id="closer-dashboard" style="display:none">
+    <div class="closer-dash-header">
+      <button class="btn btn-secondary" style="width:auto;padding:8px 18px" onclick="logoutCloser()">← Sair</button>
+      <div class="closer-dash-title">
+        <span id="dash-avatar" class="closer-avatar" style="width:40px;height:40px;font-size:1rem;display:inline-flex;margin:0"></span>
+        <span id="dash-name"></span>
+      </div>
+      <div class="date-nav" style="margin:0">
+        <button class="nav-btn" onclick="dashPrevDay()">◀</button>
+        <div class="date-display" id="dash-date-label" style="min-width:130px;text-align:center"></div>
+        <button class="nav-btn" onclick="dashNextDay()">▶</button>
+      </div>
+    </div>
+    <div class="dash-stats">
+      <div class="dash-stat"><span class="dash-stat-num" id="dash-total">0</span><span class="dash-stat-label">Reuniões no dia</span></div>
+      <div class="dash-stat"><span class="dash-stat-num green" id="dash-efetivadas">0</span><span class="dash-stat-label">Efetivadas</span></div>
+      <div class="dash-stat"><span class="dash-stat-num red" id="dash-noshow">0</span><span class="dash-stat-label">No-show</span></div>
+      <div class="dash-stat"><span class="dash-stat-num yellow" id="dash-pending">0</span><span class="dash-stat-label">Pendentes</span></div>
+    </div>
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead><tr><th>#</th><th>Lead</th><th>Horário Agend.</th><th>Efetivada</th><th>No-show</th></tr></thead>
+        <tbody id="dash-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /screen-closer -->
+
+<!-- MODAL DE CONFIRMAÇÃO -->
+<div id="modal-overlay" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="modal-icon" id="modal-icon">✅</div>
+    <div class="modal-title" id="modal-title">Confirmar ação</div>
+    <div class="modal-msg" id="modal-msg">Tem certeza?</div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modal-confirm-btn" onclick="confirmModal()">Confirmar</button>
+    </div>
   </div>
 </div>
 
@@ -741,11 +1060,14 @@ async function loadAgendamentos() {
   try {
     const rows = parseCSVRaw(await fetchRaw(GID_AGEND));
     agendamentos = rows.slice(1).map(cols => ({
-      carimbo:  (cols[0]||'').trim(),
-      sdr:      (cols[1]||'').trim(),
-      dataReun: (cols[2]||'').trim(),
-      closer:   (cols[3]||'').trim(),
-      lead:     (cols[4]||'').trim(),
+      id:       (cols[0]||'').trim(),   // A - ID sequencial (Make)
+      carimbo:  (cols[1]||'').trim(),   // B - Carimbo data/hora
+      sdr:      (cols[2]||'').trim(),   // C - Nome SDR
+      dataReun: (cols[3]||'').trim(),   // D - Data 1ª Reunião
+      closer:   (cols[4]||'').trim(),   // E - Nome Closer
+      lead:     (cols[5]||'').trim(),   // F - Nome Lead
+      status:   (cols[6]||'').trim(),   // G - Status
+      tsStatus: (cols[7]||'').trim(),   // H - Timestamp status
     })).filter(r => r.sdr || r.carimbo);
 
     updateNextCloserDisplay();
@@ -916,6 +1238,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   fd.append('data_reuniao', `${d}/${m}/${y}`);
   fd.append('nome_lead',    lead);
   fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
+  fd.append('caminho',      'SDR');
 
   try {
     await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
@@ -972,9 +1295,202 @@ document.getElementById('meeting-date').value = isoDate(new Date());
 
 // ── INIT ──
 (async () => {
-  await Promise.all([loadSDRs(), loadClosers()]);
+  await Promise.all([loadSDRs(), loadClosers(), loadCloserPasswords()]);
   await loadAgendamentos();
 })();
+
+// ══════════════════════════════════════════════════════════
+//  TELA CLOSER
+// ══════════════════════════════════════════════════════════
+let loggedCloser    = null;
+let closerPasswords = {};
+let dashDate        = new Date();
+
+function showScreen(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  document.getElementById('tab-' + screen).classList.add('active');
+  if (screen === 'closer') { renderCloserCards(); showCloserStep('login'); }
+}
+
+function showCloserStep(step) {
+  document.getElementById('closer-login').style.display     = step === 'login'     ? 'block' : 'none';
+  document.getElementById('closer-auth').style.display      = step === 'auth'      ? 'flex'  : 'none';
+  document.getElementById('closer-dashboard').style.display = step === 'dashboard' ? 'block' : 'none';
+}
+
+function renderCloserCards() {
+  const grid = document.getElementById('closer-cards-grid');
+  if (!closers.length) { grid.innerHTML = '<div class="empty-state">Carregando...</div>'; return; }
+  grid.innerHTML = '';
+  closers.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'login-card';
+    div.innerHTML = `
+      <div class="lc-avatar">${c.initials}</div>
+      <div class="lc-name">${c.name}</div>
+      <div class="lc-hint">clique para entrar</div>`;
+    div.addEventListener('click', function(e) {
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      const rect = div.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+      div.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+      selectCloserLogin(c);
+    });
+    grid.appendChild(div);
+  });
+}
+
+function selectCloserLogin(c) {
+  loggedCloser = c;
+  document.getElementById('auth-avatar').textContent = c.initials;
+  document.getElementById('auth-name').textContent   = c.name;
+  document.getElementById('auth-password').value     = '';
+  document.getElementById('auth-error').textContent  = '';
+  showCloserStep('auth');
+  setTimeout(() => document.getElementById('auth-password').focus(), 100);
+}
+
+function backToCards()  { loggedCloser = null; showCloserStep('login'); }
+function logoutCloser() { loggedCloser = null; showCloserStep('login'); }
+
+function doLogin() {
+  const pwd    = document.getElementById('auth-password').value;
+  const stored = closerPasswords[loggedCloser.name] || '';
+  if (pwd === stored) {
+    document.getElementById('auth-error').textContent = '';
+    enterDashboard();
+  } else {
+    document.getElementById('auth-error').textContent = '❌ Senha incorreta. Tente novamente.';
+    document.getElementById('auth-password').value = '';
+    document.getElementById('auth-password').focus();
+  }
+}
+document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+async function loadCloserPasswords() {
+  try {
+    const rows = parseCSVRaw(await fetchRaw(GID_CLOSERS));
+    rows.slice(1).forEach(cols => {
+      const name = (cols[0]||'').trim();
+      const pwd  = (cols[1]||'').trim();
+      if (name) closerPasswords[name] = pwd;
+    });
+  } catch(e) { console.error('Passwords:', e); }
+}
+
+function enterDashboard() {
+  dashDate = new Date();
+  document.getElementById('dash-avatar').textContent = loggedCloser.initials;
+  document.getElementById('dash-name').textContent   = loggedCloser.name;
+  showCloserStep('dashboard');
+  renderDashboard();
+}
+
+function dashPrevDay() { dashDate.setDate(dashDate.getDate()-1); renderDashboard(); }
+function dashNextDay() { dashDate.setDate(dashDate.getDate()+1); renderDashboard(); }
+
+function renderDashboard() {
+  const dataBR = fmtDate(dashDate);
+  document.getElementById('dash-date-label').textContent = dataBR;
+
+  const reunioes = agendamentos.filter(row =>
+    row.closer === loggedCloser.name &&
+    (extractDatePart(row.dataReun) === dataBR || isoToBR(row.dataReun) === dataBR)
+  );
+
+  const total      = reunioes.length;
+  const efetivadas = reunioes.filter(r => r.status === 'Efetivada').length;
+  const noshow     = reunioes.filter(r => r.status === 'No-show').length;
+  const pending    = total - efetivadas - noshow;
+
+  document.getElementById('dash-total').textContent      = total;
+  document.getElementById('dash-efetivadas').textContent = efetivadas;
+  document.getElementById('dash-noshow').textContent     = noshow;
+  document.getElementById('dash-pending').textContent    = pending;
+
+  const tbody = document.getElementById('dash-tbody');
+  if (!reunioes.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhuma reunião em ${dataBR}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  reunioes.forEach((row, i) => {
+    const hasStatus = row.status === 'Efetivada' || row.status === 'No-show';
+    const safeId   = (row.id||'').replace(/'/g, "\'");
+    const safeLead = (row.lead||'').replace(/'/g, "\'");
+    const statusCell = hasStatus
+      ? `<td colspan="2"><span class="${row.status === 'Efetivada' ? 'badge-status-ef' : 'badge-status-ns'}">${row.status === 'Efetivada' ? '✅ Efetivada' : '❌ No-show'}</span></td>`
+      : `<td><button class="status-btn ef" onclick="promptStatus('${safeId}','${safeLead}','Efetivada')">✅ Efetivada</button></td>
+         <td><button class="status-btn ns" onclick="promptStatus('${safeId}','${safeLead}','No-show')">❌ No-show</button></td>`;
+
+    const carimboExib = (row.carimbo||'').replace(/^(\d{2}\/\d{2}\/\d{4})[, ]+(\d{2}:\d{2}).*$/, '$1 $2') || '—';
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + row.id;
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td><strong>${row.lead||'—'}</strong></td>
+      <td style="font-size:.8rem;color:#888">${carimboExib}</td>
+      ${statusCell}`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── MODAL ──
+let pendingId = null, pendingLead = null, pendingStatus = null;
+
+function promptStatus(id, lead, status) {
+  pendingId = id; pendingLead = lead; pendingStatus = status;
+  const isEf = status === 'Efetivada';
+  document.getElementById('modal-icon').textContent  = isEf ? '✅' : '❌';
+  document.getElementById('modal-title').textContent = isEf ? 'Marcar como Efetivada' : 'Marcar como No-show';
+  document.getElementById('modal-msg').textContent   = `Tem certeza que deseja marcar a reunião com "${lead}" como ${status}? Esta ação não poderá ser desfeita.`;
+  const confirmBtn = document.getElementById('modal-confirm-btn');
+  confirmBtn.style.background = isEf ? '' : 'rgba(255,107,107,0.2)';
+  confirmBtn.style.color      = isEf ? '' : '#ff6b6b';
+  confirmBtn.style.border     = isEf ? '' : '1.5px solid rgba(255,107,107,0.4)';
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+  pendingId = pendingLead = pendingStatus = null;
+}
+
+async function confirmModal() {
+  if (!pendingId || !pendingStatus) return;
+  const id = pendingId, lead = pendingLead, status = pendingStatus;
+  closeModal();
+
+  const rowEl = document.getElementById('row-' + id);
+  if (rowEl) rowEl.querySelectorAll('.status-btn').forEach(b => b.disabled = true);
+
+  const fd = new FormData();
+  fd.append('id',        id);
+  fd.append('status',    status);
+  fd.append('timestamp', new Date().toLocaleString('pt-BR'));
+  fd.append('caminho',   'Closer');
+
+  try {
+    await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
+    toast(`${status === 'Efetivada' ? '✅' : '❌'} ${lead} marcado como ${status}!`);
+    const agend = agendamentos.find(r => r.id === id);
+    if (agend) agend.status = status;
+    renderDashboard();
+  } catch(e) {
+    toast('Erro ao enviar status.', false);
+    if (rowEl) rowEl.querySelectorAll('.status-btn').forEach(b => b.disabled = false);
+  }
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
 
 setInterval(loadAgendamentos, 90000);
 </script>
