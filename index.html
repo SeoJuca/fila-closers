@@ -1984,17 +1984,13 @@ function renderCloserCards() {
       hasFut  ? `<div class="pend-badge pend-badge-fut"  data-type="fut" >🔵 ${futuras.length} futura${futuras.length > 1 ? 's' : ''}</div>` : '',
     ].join('');
 
-    const isForced  = forcedCloser && forcedCloser.name === c.name;
-    const offQueue  = c.emFila === false;
-
     const div = document.createElement('div');
-    div.className = 'login-card' + (isForced ? ' forced-selected' : '') + (offQueue ? ' off-queue' : '');
+    div.className = 'login-card' + (offQueue ? ' off-queue' : '');
     div.innerHTML = `
       <div class="lc-avatar">${c.initials}</div>
       <div class="lc-name">${c.name}</div>
       ${offQueue ? `<div class="lc-off-queue-tag">⏸ Fora da fila</div>` : ''}
-      ${isForced ? `<div class="lc-forced-tag">🎯 Selecionado</div>` : ''}
-      <div class="lc-hint">${offQueue ? 'clique para selecionar' : 'clique para entrar'}</div>
+      <div class="lc-hint">clique para entrar</div>
       <div class="pend-badges-wrap">${badgeHTML}</div>`;
 
     // Tooltip genérico — aparece após 1s de hover
@@ -2049,8 +2045,8 @@ function renderCloserCards() {
       div.appendChild(ripple);
       setTimeout(() => ripple.remove(), 600);
       if (offQueue) {
-        // Closer fora da fila: seleção forçada como próximo (sem login)
-        forceCloser(c);
+        // Closer fora da fila: vai para login normalmente (igual aos da fila)
+        selectCloserLogin(c);
       } else {
         // Closer na fila: vai para login normalmente
         selectCloserLogin(c);
