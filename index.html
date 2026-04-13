@@ -1462,43 +1462,44 @@ function calcNextCloser() {
 
   const n = closers.length;
 
-  // 1. Conta histórico total por closer
+  // Apenas closers com emFila = true entram no rodízio
+  const naFila = closers.filter(c => c.emFila !== false);
+  if (!naFila.length) return { index: 0, name: closers[0].name };
+
+  // 1. Conta histórico total por closer (só os da fila)
   const counts = {};
-  closers.forEach(c => counts[c.name] = 0);
+  naFila.forEach(c => counts[c.name] = 0);
   agendamentos.forEach(row => {
     if (row.closer && counts.hasOwnProperty(row.closer))
       counts[row.closer]++;
   });
 
-  // 2. Descobre o índice do último closer que recebeu
-  //    (mais recente pelo carimbo)
-  let lastIdx = -1;
+  // 2. Último closer DA FILA que recebeu (mais recente pelo carimbo)
+  let lastFila = -1;
   if (agendamentos.length > 0) {
     const sorted = [...agendamentos]
-      .filter(r => r.closer && r.carimbo)
+      .filter(r => r.closer && r.carimbo && counts.hasOwnProperty(r.closer))
       .sort((a, b) => (a.carimbo > b.carimbo ? -1 : 1));
     for (const row of sorted) {
       const idx = closers.findIndex(c => c.name === row.closer);
-      if (idx !== -1) { lastIdx = idx; break; }
+      if (idx !== -1) { lastFila = idx; break; }
     }
   }
 
-  // 3. Percorre em ordem circular a partir do PRÓXIMO após o último
-  //    Menor contagem + ordem circular = desempate justo
-  const available = closers.filter(c => !skippedThisSession.has(c.name));
+  // 3. Percorre em ordem circular na lista COMPLETA mas só escolhe quem está na fila
+  const available = naFila.filter(c => !skippedThisSession.has(c.name));
   if (!available.length) skippedThisSession.clear();
 
-  const minCount = Math.min(
-    ...closers
-      .filter(c => !skippedThisSession.has(c.name))
-      .map(c => counts[c.name])
-  );
+  const eligibleCounts = naFila
+    .filter(c => !skippedThisSession.has(c.name))
+    .map(c => counts[c.name]);
+  const minCount = Math.min(...eligibleCounts);
 
-  // Varredura circular a partir do próximo após o último
-  const start = (lastIdx + 1) % n;
+  const start = lastFila >= 0 ? (lastFila + 1) % n : 0;
   for (let offset = 0; offset < n; offset++) {
     const idx = (start + offset) % n;
     const c = closers[idx];
+    if (c.emFila === false) continue; // pula fora da fila
     if (!skippedThisSession.has(c.name) && counts[c.name] === minCount) {
       return { index: idx, name: c.name };
     }
@@ -1509,12 +1510,13 @@ function calcNextCloser() {
   for (let offset = 0; offset < n; offset++) {
     const idx = (start + offset) % n;
     const c = closers[idx];
+    if (c.emFila === false) continue;
     if (counts[c.name] === minCount) {
       return { index: idx, name: c.name };
     }
   }
 
-  return { index: 0, name: closers[0].name };
+  return { index: closers.findIndex(c => c.emFila !== false), name: naFila[0].name };
 }
 
 // ── LOAD SDRs ──
@@ -1538,11 +1540,16 @@ async function loadClosers() {
   if (closersLoaded) return;
   try {
     const rows = parseCSVRaw(await fetchRaw(GID_CLOSERS));
-    const names = rows.slice(1).map(c => (c[0]||'').trim()).filter(Boolean);
-    if (names.length) {
-      closers = names.map(n => ({name: n, initials: initials(n)}));
+    const data = rows.slice(1).filter(c => (c[0]||'').trim());
+    if (data.length) {
+      closers = data.map(c => ({
+        name:    (c[0]||'').trim(),
+        initials: initials((c[0]||'').trim()),
+        senha:   (c[1]||'').trim(),
+        emFila:  (c[2]||'').trim().toLowerCase() !== 'não', // col C: "Não" = fora da fila
+      }));
       closersLoaded = true;
-      console.log('Closers:', closers.map(c=>c.name));
+      console.log('Closers:', closers.map(c => c.name + (c.emFila ? ' ✅' : ' ⏸')));
     }
   } catch(e) { console.error('Closers:', e); toast('Erro ao carregar closers', false); }
 }
@@ -1787,7 +1794,8 @@ document.getElementById('meeting-date').value = isoDate(new Date());
 
 // ── INIT ──
 (async () => {
-  await Promise.all([loadSDRs(), loadClosers(), loadCloserPasswords(), loadSDRList(), loadMeta()]);
+  await Promise.all([loadSDRs(), loadClosers(), loadSDRList(), loadMeta()]);
+  loadCloserPasswords(); // depende de closers[] já carregado
   await loadAgendamentos();
 })();
 
@@ -1937,14 +1945,21 @@ function doLogin() {
 document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 async function loadCloserPasswords() {
-  try {
-    const rows = parseCSVRaw(await fetchRaw(GID_CLOSERS));
-    rows.slice(1).forEach(cols => {
-      const name = (cols[0]||'').trim();
-      const pwd  = (cols[1]||'').trim();
-      if (name) closerPasswords[name] = pwd;
-    });
-  } catch(e) { console.error('Passwords:', e); }
+  // Passwords are already loaded in closers[].senha via loadClosers()
+  // Just map them to closerPasswords for compatibility
+  if (closers.length) {
+    closers.forEach(c => { closerPasswords[c.name] = c.senha || ''; });
+  } else {
+    // Fallback: load directly if closers not yet loaded
+    try {
+      const rows = parseCSVRaw(await fetchRaw(GID_CLOSERS));
+      rows.slice(1).forEach(cols => {
+        const name = (cols[0]||'').trim();
+        const pwd  = (cols[1]||'').trim();
+        if (name) closerPasswords[name] = pwd;
+      });
+    } catch(e) { console.error('Passwords:', e); }
+  }
 }
 
 function enterDashboard() {
