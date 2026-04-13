@@ -543,6 +543,63 @@
       font-size: .65rem; color: #555;
       margin-top: 8px; letter-spacing: 1px;
       text-transform: uppercase;
+      opacity: 0; transition: opacity .2s;
+    }
+    .login-card:hover .lc-hint { opacity: 1; }
+
+    /* Badge de pendências — só aparece no hover do card */
+    .pend-badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(255,209,0,0.12);
+      border: 1px solid rgba(255,209,0,0.35);
+      color: #FFD166;
+      font-size: .68rem; font-weight: 900;
+      padding: 4px 10px; border-radius: 99px;
+      letter-spacing: .5px; cursor: default;
+      opacity: 0; transition: opacity .25s;
+      position: relative; z-index: 1;
+    }
+    .login-card:hover .pend-badge { opacity: 1; }
+
+    /* Tooltip de pendências */
+    .pend-tooltip {
+      position: absolute;
+      background: #1e2d1e;
+      border: 1px solid rgba(110,177,80,0.3);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+      z-index: 9999;
+      pointer-events: none;
+      transform: translateY(-100%) translateY(-12px);
+      opacity: 0; transition: opacity .2s ease, transform .2s ease;
+    }
+    .pend-tooltip.pend-tooltip-show {
+      opacity: 1;
+      transform: translateY(-100%) translateY(-16px);
+    }
+    .ptt-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem; letter-spacing: 2px;
+      color: #FFD166; margin-bottom: 10px;
+      border-bottom: 1px solid rgba(110,177,80,0.15);
+      padding-bottom: 8px;
+    }
+    .ptt-row { margin-bottom: 10px; }
+    .ptt-row:last-child { margin-bottom: 0; }
+    .ptt-date {
+      font-size: .72rem; font-weight: 900;
+      color: var(--yellow); margin-bottom: 4px;
+      letter-spacing: .5px;
+    }
+    .ptt-leads { display: flex; flex-wrap: wrap; gap: 4px; }
+    .ptt-lead {
+      font-size: .68rem; font-weight: 700;
+      background: rgba(110,177,80,0.1);
+      border: 1px solid rgba(110,177,80,0.2);
+      color: rgba(255,255,255,0.7);
+      padding: 2px 8px; border-radius: 6px;
     }
 
     /* ── AUTH BOX ── */
@@ -1746,13 +1803,81 @@ function renderCloserCards() {
   const grid = document.getElementById('closer-cards-grid');
   if (!closers.length) { grid.innerHTML = '<div class="empty-state">Carregando...</div>'; return; }
   grid.innerHTML = '';
+
   closers.forEach(c => {
+    // Busca pendências: reuniões do closer sem status definido
+    const pendentes = agendamentos.filter(r =>
+      r.closer === c.name && r.status !== 'Efetivada' && r.status !== 'No-show' && (r.lead && r.lead !== '__PULO__')
+    );
+
+    // Agrupa por data da reunião
+    const byDate = {};
+    pendentes.forEach(r => {
+      const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || r.dataReun;
+      if (!d) return;
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(r.lead || '—');
+    });
+    const pendDates = Object.keys(byDate).sort((a,b) => {
+      const da = parseBRDate(a), db = parseBRDate(b);
+      return da - db;
+    });
+    const hasPend = pendDates.length > 0;
+
     const div = document.createElement('div');
     div.className = 'login-card';
     div.innerHTML = `
       <div class="lc-avatar">${c.initials}</div>
       <div class="lc-name">${c.name}</div>
-      <div class="lc-hint">clique para entrar</div>`;
+      <div class="lc-hint">clique para entrar</div>
+      ${hasPend ? `<div class="pend-badge" data-closer="${c.name}">⏳ ${pendentes.length} pendente${pendentes.length > 1 ? 's' : ''}</div>` : ''}`;
+
+    // Tooltip de pendências — aparece após 1s de hover no badge
+    if (hasPend) {
+      const badge = div.querySelector('.pend-badge');
+      let hoverTimer = null;
+      let tooltip = null;
+
+      badge.addEventListener('mouseenter', () => {
+        hoverTimer = setTimeout(() => {
+          tooltip = document.createElement('div');
+          tooltip.className = 'pend-tooltip';
+          const rows = pendDates.map(date => {
+            const leads = byDate[date];
+            return `<div class="ptt-row">
+              <div class="ptt-date">📅 ${date}</div>
+              <div class="ptt-leads">${leads.map(l => `<span class="ptt-lead">${l}</span>`).join('')}</div>
+            </div>`;
+          }).join('');
+          tooltip.innerHTML = `
+            <div class="ptt-title">⏳ Reuniões pendentes</div>
+            ${rows}`;
+          document.body.appendChild(tooltip);
+
+          // Position above the badge
+          const rect = badge.getBoundingClientRect();
+          const tw   = 260;
+          let left = rect.left + rect.width/2 - tw/2;
+          left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+          tooltip.style.cssText = `left:${left + window.scrollX}px;top:${rect.top + window.scrollY - 8}px;width:${tw}px`;
+          // Animate in
+          requestAnimationFrame(() => tooltip.classList.add('pend-tooltip-show'));
+        }, 1000);
+      });
+
+      badge.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimer);
+        if (tooltip) {
+          tooltip.classList.remove('pend-tooltip-show');
+          setTimeout(() => { if (tooltip) { tooltip.remove(); tooltip = null; } }, 200);
+        }
+      });
+
+      // Prevent card click when clicking badge
+      badge.addEventListener('click', e => e.stopPropagation());
+    }
+
+    // Ripple + login on card click
     div.addEventListener('click', function(e) {
       const ripple = document.createElement('span');
       ripple.className = 'ripple';
@@ -1763,6 +1888,7 @@ function renderCloserCards() {
       setTimeout(() => ripple.remove(), 600);
       selectCloserLogin(c);
     });
+
     grid.appendChild(div);
   });
 }
@@ -2365,7 +2491,8 @@ function renderDowAgend(mesAgend, month, year) {
   const counts = { 1:0, 2:0, 3:0, 4:0, 5:0 }; // seg a sex
 
   mesAgend.forEach(r => {
-    const dp = extractDatePart(r.carimbo);
+    // Usa dataReun (data da reunião, col D) — não o carimbo
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return;
     const dt = parseBRDate(dp);
     if (isNaN(dt)) return;
@@ -2403,7 +2530,8 @@ function renderDowEfetividade(mesAgend, month, year) {
   const efMap    = { 1:0, 2:0, 3:0, 4:0, 5:0 };
 
   mesAgend.forEach(r => {
-    const dp = extractDatePart(r.carimbo);
+    // Usa dataReun (data da reunião, col D) — não o carimbo
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return;
     const dt = parseBRDate(dp);
     if (isNaN(dt)) return;
