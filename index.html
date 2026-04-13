@@ -938,10 +938,16 @@
       text-transform: uppercase;
       margin-bottom: 28px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 8px;
+    }
+    .sdr-totals-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
     }
     .sdr-total-mes {
       font-size: .82rem;
@@ -953,6 +959,9 @@
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1.1rem;
       color: var(--yellow);
+    }
+    .sdr-total-sdr strong {
+      color: #7eb8ff;
     }
     .sdr-cards-grid {
       display: grid;
@@ -2414,8 +2423,18 @@ function renderSDRCards(refDate) {
   const workdaysTotal   = countWorkdays(year, month);
   const workdaysElapsed = countWorkdaysElapsed(year, month, now);
 
-  // ── Total geral do mês (todos os SDRs, col B = carimbo) ──
+  // ── Total geral do mês (todos os agendamentos, col B = carimbo) ──
   const totalGeralMes = agendamentos.filter(r => {
+    const dp = extractCarimboDate(r.carimbo);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  }).length;
+
+  // ── Total do mês agendado pelos SDRs dos cards (col B = carimbo, filtrado por nome) ──
+  const sdrNames = sdrList.map(s => s.name);
+  const totalSDRMes = agendamentos.filter(r => {
+    if (!sdrNames.includes(r.sdr)) return false;
     const dp = extractCarimboDate(r.carimbo);
     if (!dp) return false;
     const dt = parseBRDate(dp);
@@ -2424,7 +2443,10 @@ function renderSDRCards(refDate) {
 
   infoEl.innerHTML = `
     <span>${monthName} — ${workdaysTotal} dias úteis</span>
-    <span class="sdr-total-mes">📊 Total do mês: <strong>${totalGeralMes}</strong> agendamentos</span>`;
+    <div class="sdr-totals-wrap">
+      <span class="sdr-total-mes">📊 Total geral do mês: <strong>${totalGeralMes}</strong></span>
+      <span class="sdr-total-mes sdr-total-sdr">👥 Agendado pelos SDRs: <strong>${totalSDRMes}</strong></span>
+    </div>`;
 
   if (!sdrList.length) {
     grid.innerHTML = '<div class="empty-state">Nenhum SDR encontrado</div>';
