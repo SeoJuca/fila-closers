@@ -43,6 +43,7 @@
       border-bottom: 3px solid var(--yellow);
     }
     .logo-wrap img { height: 64px; object-fit: contain; }
+    /* ── HEADER CENTER TITLE (override) ── */
     .header-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 2rem;
@@ -455,8 +456,10 @@
       letter-spacing: 4px;
       color: var(--yellow);
       text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      position: absolute;
-      left: 50%; transform: translateX(-50%);
+      flex: 1;
+      text-align: center;
+      padding: 0 20px;
+      pointer-events: none;
     }
     header { position: relative; }
 
@@ -989,6 +992,40 @@
     .chart-wrap { width: 100%; overflow-x: auto; padding-bottom: 8px; }
     .chart-svg { display: block; }
 
+    /* ── DIA DA SEMANA ── */
+    .dow-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .dow-name {
+      font-size: .82rem; font-weight: 800;
+      min-width: 36px; color: rgba(255,255,255,0.8);
+    }
+    .dow-bar-wrap {
+      flex: 1; height: 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px; overflow: hidden;
+    }
+    .dow-bar-fill {
+      height: 100%; border-radius: 99px;
+      transition: width .7s cubic-bezier(.34,1.56,.64,1);
+    }
+    .dow-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.15rem; min-width: 40px; text-align: right;
+    }
+    .dow-detail {
+      font-size: .68rem; color: #555;
+      min-width: 42px; text-align: right;
+    }
+    .dow-badge {
+      font-size: .65rem; font-weight: 900;
+      padding: 3px 8px; border-radius: 99px;
+      white-space: nowrap; letter-spacing: .3px;
+    }
+    .dow-best { background: rgba(110,177,80,0.15); color: #6EB150; border: 1px solid rgba(110,177,80,0.3); }
+    .dow-worst { background: rgba(255,107,107,0.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.25); }
+
     @media (max-width: 900px) {
       .ind-wrap { padding: 20px; }
       .ind-row { grid-template-columns: 1fr; }
@@ -1231,6 +1268,18 @@
       <div class="ind-card ind-card-full">
         <div class="ind-card-title">📉 Evolução Diária de Agendamentos</div>
         <div class="chart-wrap" id="ind-chart"></div>
+      </div>
+    </div>
+
+    <!-- ROW 5: Dia da semana mais/menos efetivo -->
+    <div class="ind-row">
+      <div class="ind-card">
+        <div class="ind-card-title">📆 Agendamentos por Dia da Semana <span class="ind-formula">(volume total)</span></div>
+        <div id="ind-dow-agend"></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">✅ Efetivação por Dia da Semana <span class="ind-formula">(efetivadas ÷ total agendado)</span></div>
+        <div id="ind-dow-ef"></div>
       </div>
     </div>
 
@@ -2046,6 +2095,8 @@ function renderIndicadores() {
   renderSDRCampeao(month, year);
   renderRankingSDR(month, year);
   renderChart(month, year);
+  renderDowAgend(mesAgend, month, year);
+  renderDowEfetividade(mesAgend, month, year);
 }
 
 // ── 1. PÓDIO Top 3 Closers Efetivadas ──
@@ -2158,12 +2209,10 @@ function renderSDRCampeao(month, year) {
 
   const workdaysElapsed = countWorkdaysElapsed(year, month, indDate);
 
-  // Para cada SDR, conta quantos dias do mês ele bateu a meta
+  // Conta quantos dias cada SDR bateu a meta no mês
   const results = sdrList.map(sdr => {
     const metaDia = metaMap[sdr.cargo] || 0;
     if (!metaDia) return { ...sdr, diasBatidos: 0, metaDia };
-
-    // Agrupa agendamentos do SDR por dia no mês
     const byDay = {};
     agendamentos.forEach(r => {
       if (r.sdr !== sdr.name) return;
@@ -2173,15 +2222,32 @@ function renderSDRCampeao(month, year) {
       if (isNaN(dt) || dt.getMonth() !== month || dt.getFullYear() !== year) return;
       byDay[dp] = (byDay[dp] || 0) + 1;
     });
-
     const diasBatidos = Object.values(byDay).filter(v => v >= metaDia).length;
     return { ...sdr, diasBatidos, metaDia };
   }).sort((a,b) => b.diasBatidos - a.diasBatidos);
 
-  const ranks = ['r1','r2','r3'];
-  el.innerHTML = results.map((sdr, i) => `
+  // Calcula o troféu com base na contagem real (empate = mesmo troféu)
+  // Percorre e atribui rank baseado no valor, não na posição
+  const rankColors  = { 1: 'r1', 2: 'r2', 3: 'r3' };
+  const rankEmojis  = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  let currentRank = 1;
+  let prevDias    = null;
+  const ranked = results.map((sdr, i) => {
+    if (prevDias !== null && sdr.diasBatidos < prevDias) {
+      // Avança o rank pelo número de pessoas que ficaram à frente
+      currentRank = i + 1;
+    }
+    prevDias = sdr.diasBatidos;
+    const rank = currentRank <= 3 ? currentRank : null;
+    return { ...sdr, rank };
+  });
+
+  el.innerHTML = ranked.map(sdr => {
+    const rankClass = sdr.rank ? rankColors[sdr.rank] : '';
+    const trophy    = sdr.rank ? rankEmojis[sdr.rank] : '';
+    return `
     <div class="sdr-champ-item">
-      <div class="sdr-champ-rank ${ranks[i]||''}">${i+1}º</div>
+      <div class="sdr-champ-rank ${rankClass}">${trophy || '—'}</div>
       <div class="sdr-champ-avatar">${initials(sdr.name)}</div>
       <div class="sdr-champ-info">
         <div class="sdr-champ-name">${sdr.name}</div>
@@ -2191,7 +2257,8 @@ function renderSDRCampeao(month, year) {
         <div class="sdr-champ-days">${sdr.diasBatidos}</div>
         <div class="sdr-champ-days-label">dias batidos<br>de ${workdaysElapsed}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── 5. RANKING SDR — Agendamentos no mês ──
@@ -2291,6 +2358,93 @@ function renderChart(month, year) {
 }
 
 // Update showScreen to render indicadores
+// ── 7. DIA DA SEMANA — Volume de Agendamentos ──
+function renderDowAgend(mesAgend, month, year) {
+  const el = document.getElementById('ind-dow-agend');
+  const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const counts = { 1:0, 2:0, 3:0, 4:0, 5:0 }; // seg a sex
+
+  mesAgend.forEach(r => {
+    const dp = extractDatePart(r.carimbo);
+    if (!dp) return;
+    const dt = parseBRDate(dp);
+    if (isNaN(dt)) return;
+    const dow = dt.getDay(); // 0=dom, 1=seg...6=sab
+    if (dow >= 1 && dow <= 5) counts[dow] = (counts[dow] || 0) + 1;
+  });
+
+  const maxVal = Math.max(...Object.values(counts), 1);
+  const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+  const maxDow = sorted[0][1];
+  const minDow = sorted[sorted.length-1][1];
+
+  el.innerHTML = Object.entries(counts).map(([dow, val]) => {
+    const pct   = Math.round(val / maxVal * 100);
+    const isMax = val === maxDow && maxDow > 0;
+    const isMin = val === minDow;
+    const color = isMax ? '#6EB150' : isMin ? '#ff6b6b' : 'rgba(255,255,255,0.2)';
+    const badge = isMax && isMin ? '' :
+                  isMax ? '<span class="dow-badge dow-best">🔥 Melhor</span>' :
+                  isMin ? '<span class="dow-badge dow-worst">❄️ Menor</span>' : '';
+    return `<div class="dow-row">
+      <div class="dow-name">${DAYS[+dow]}</div>
+      <div class="dow-bar-wrap"><div class="dow-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="dow-val" style="color:${color}">${val}</div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+// ── 8. DIA DA SEMANA — Taxa de Efetivação ──
+function renderDowEfetividade(mesAgend, month, year) {
+  const el = document.getElementById('ind-dow-ef');
+  const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const totalMap = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+  const efMap    = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+
+  mesAgend.forEach(r => {
+    const dp = extractDatePart(r.carimbo);
+    if (!dp) return;
+    const dt = parseBRDate(dp);
+    if (isNaN(dt)) return;
+    const dow = dt.getDay();
+    if (dow < 1 || dow > 5) return;
+    totalMap[dow]++;
+    if (r.status === 'Efetivada') efMap[dow]++;
+  });
+
+  const pcts = Object.fromEntries(
+    Object.entries(totalMap).map(([d, t]) => [d, t > 0 ? Math.round(efMap[d] / t * 100) : 0])
+  );
+  const hasData = Object.values(totalMap).some(v => v > 0);
+  if (!hasData) { el.innerHTML = '<div class="empty-state">Sem dados de efetivação no período</div>'; return; }
+
+  const maxPct = Math.max(...Object.values(pcts), 1);
+  const vals   = Object.values(pcts).filter((_, i) => Object.values(totalMap)[i] > 0);
+  const maxEf  = vals.length ? Math.max(...vals) : 0;
+  const minEf  = vals.length ? Math.min(...vals) : 0;
+
+  el.innerHTML = Object.entries(pcts).map(([dow, pct]) => {
+    const total = totalMap[+dow];
+    const ef    = efMap[+dow];
+    const barW  = maxPct > 0 ? Math.round(pct / maxPct * 100) : 0;
+    const isMax = pct === maxEf && total > 0;
+    const isMin = pct === minEf && total > 0;
+    const color = isMax ? '#6EB150' : isMin && total > 0 ? '#ff6b6b' : 'rgba(255,255,255,0.2)';
+    const badge = total === 0 ? '<span class="dow-badge" style="color:#333">sem dados</span>' :
+                  isMax && isMin ? '' :
+                  isMax ? '<span class="dow-badge dow-best">🔥 Melhor</span>' :
+                  isMin ? '<span class="dow-badge dow-worst">❄️ Pior</span>' : '';
+    return `<div class="dow-row">
+      <div class="dow-name">${DAYS[+dow]}</div>
+      <div class="dow-bar-wrap"><div class="dow-bar-fill" style="width:${barW}%;background:${color}"></div></div>
+      <div class="dow-val" style="color:${color}">${total > 0 ? pct + '%' : '—'}</div>
+      <div class="dow-detail">${total > 0 ? ef + '/' + total : ''}</div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
 setInterval(loadAgendamentos, 90000);
 </script>
 </body>
