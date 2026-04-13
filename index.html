@@ -1507,7 +1507,7 @@ function toast(msg, ok=true) {
   t.style.background = ok ? 'var(--yellow)' : '#b71c1c';
   t.style.color = ok ? 'var(--dark)' : '#fff';
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3500);
+  setTimeout(() => t.classList.remove('show'), 6000);
 }
 async function fetchRaw(gid) {
   const r = await fetch(`${SHEET_BASE}?gid=${gid}&single=true&output=csv&cb=${Date.now()}`);
@@ -1983,6 +1983,8 @@ function renderCloserCards() {
       hasPend ? `<div class="pend-badge pend-badge-real" data-type="pend">🔴 ${pendentes.length} pendente${pendentes.length > 1 ? 's' : ''}</div>` : '',
       hasFut  ? `<div class="pend-badge pend-badge-fut"  data-type="fut" >🔵 ${futuras.length} futura${futuras.length > 1 ? 's' : ''}</div>` : '',
     ].join('');
+
+    const offQueue = c.emFila === false;
 
     const div = document.createElement('div');
     div.className = 'login-card' + (offQueue ? ' off-queue' : '');
