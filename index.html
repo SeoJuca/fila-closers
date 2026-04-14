@@ -335,6 +335,14 @@
       text-align: center;
       position: relative;
     }
+
+    .stat-breakdown {
+      display: flex; align-items: center; gap: 6px;
+      font-size: .65rem; margin-top: 6px; justify-content: center;
+    }
+    .sb-sdr { color: #6EB150; font-weight: 800; }
+    .sb-sep { color: rgba(255,255,255,0.3); }
+    .sb-own { color: #7eb8ff; font-weight: 800; }
     .stat-divider {
       width: 1px;
       background: linear-gradient(to bottom, transparent, rgba(110,177,80,0.4), transparent);
@@ -1726,6 +1734,11 @@
           <div class="stat-num" id="total-today">0</div>
           <div class="stat-label">Agendamentos</div>
           <div class="stat-sub" id="today-label">hoje</div>
+          <div class="stat-breakdown">
+            <span class="sb-sdr" id="total-today-sdr">0 SDR</span>
+            <span class="sb-sep">+</span>
+            <span class="sb-own" id="total-today-own">0 próprio</span>
+          </div>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-card stat-month">
@@ -1733,6 +1746,11 @@
           <div class="stat-num" id="total-month">0</div>
           <div class="stat-label">Total do Mês</div>
           <div class="stat-sub" id="month-label">este mês</div>
+          <div class="stat-breakdown">
+            <span class="sb-sdr" id="total-month-sdr">0 SDR</span>
+            <span class="sb-sep">+</span>
+            <span class="sb-own" id="total-month-own">0 próprio</span>
+          </div>
         </div>
       </div>
       <div class="scoreboard" id="scoreboard">
@@ -2351,6 +2369,16 @@ function renderScoreboard() {
   document.getElementById('total-month').textContent = totalMonth;
   document.getElementById('today-label').textContent = scoreBR;
   document.getElementById('month-label').textContent = scoreDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  // Totais SDR vs próprio para o painel verde
+  const allDaySDR  = Object.values(daySDR).reduce((a,b)=>a+b,0);
+  const allDayOwn  = Object.values(dayProp).reduce((a,b)=>a+b,0);
+  const allMonSDR  = Object.values(monSDR).reduce((a,b)=>a+b,0);
+  const allMonOwn  = Object.values(monProp).reduce((a,b)=>a+b,0);
+  document.getElementById('total-today-sdr').textContent = allDaySDR + ' SDR';
+  document.getElementById('total-today-own').textContent = allDayOwn + ' próprio';
+  document.getElementById('total-month-sdr').textContent = allMonSDR + ' SDR';
+  document.getElementById('total-month-own').textContent = allMonOwn + ' próprio';
 
   const { index: nextIdx } = calcNextCloser();
 
