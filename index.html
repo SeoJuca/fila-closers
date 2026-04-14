@@ -1351,14 +1351,14 @@
           <span class="radio-content">
             <span class="radio-emoji">🔄</span>
             <span class="radio-label">2º Reunião</span>
-            <span class="radio-desc">Retorno / Follow-up</span>
+            <span class="radio-desc">Fechamento</span>
           </span>
         </label>
       </div>
     </div>
 
     <div>
-      <label>Data da 1ª Reunião</label>
+      <label id="meeting-date-label">Data da 1ª Reunião</label>
       <input type="date" id="meeting-date" />
     </div>
 
@@ -2087,6 +2087,14 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 });
 
 document.getElementById('meeting-date').value = isoDate(new Date());
+
+// Atualiza label da data conforme tipo de reunião selecionado
+document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const lbl = document.getElementById('meeting-date-label');
+    if (lbl) lbl.textContent = radio.value === '2º Reunião' ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
+  });
+});
 
 // ── INIT ──
 (async () => {
