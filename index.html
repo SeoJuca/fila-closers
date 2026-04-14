@@ -1140,15 +1140,50 @@
     .lead-empty { text-align: center; color: #555; padding: 24px; font-size: .9rem; }
 
     /* Popup 4 — data display */
-    .popup4-date-display {
-      background: rgba(110,177,80,0.08);
-      border: 1.5px solid rgba(110,177,80,0.25);
-      border-radius: 12px;
-      padding: 18px 20px;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 2rem; color: var(--yellow);
-      text-align: center; letter-spacing: 3px;
+    /* Popup 4 — date picker */
+    .popup4-date-picker {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      transition: border-color .2s;
     }
+    .popup4-date-picker:focus-within {
+      border-color: rgba(110,177,80,0.4);
+    }
+    .popup4-date-label-text {
+      display: block;
+      font-size: .7rem; color: #666;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      margin-bottom: 14px; font-weight: 700;
+    }
+    .popup4-date-field {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      outline: none; text-align: center;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .popup4-date-field:focus {
+      border-color: var(--yellow);
+      box-shadow: 0 0 0 3px rgba(110,177,80,0.15);
+    }
+    .popup4-date-field::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+    .popup4-date-hint {
+      font-size: .72rem; color: #555;
+      margin-top: 10px; letter-spacing: .5px;
+    }
+    .popup4-date-field:valid ~ .popup4-date-hint,
+    .popup4-date-picker:has(input:valid) .popup4-date-hint { color: #6EB150; }
+    /* Disable btn style */
+    .btn:disabled { opacity: .4; cursor: not-allowed; filter: none; }
 
     .sdr-screen-wrap {
       max-width: 1100px;
@@ -1916,17 +1951,28 @@
 <!-- POPUP 4 — Confirma data da 2ª reunião -->
 <div id="popup-confirma-data" class="reuniao2-overlay" style="display:none">
   <div class="reuniao2-box">
-    <div class="reuniao2-title">📅 Confirmar Data</div>
-    <div class="reuniao2-sub">
-      2ª reunião com <span class="reuniao2-closer-name" id="popup4-lead-name"></span><br>
-      através de <span class="reuniao2-closer-name" id="popup4-closer-name"></span>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+      <div>
+        <div class="reuniao2-title">📅 Data da 2ª Reunião</div>
+        <div class="reuniao2-sub" style="margin:0">
+          <span class="reuniao2-closer-name" id="popup4-lead-name"></span>
+          &nbsp;·&nbsp;
+          <span id="popup4-closer-name" style="color:#888"></span>
+        </div>
+      </div>
+      <button class="pizza-close-btn" onclick="popup4FecharTudo()" title="Fechar e resetar">✕</button>
     </div>
 
-    <label style="font-size:.75rem;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:8px">Data da reunião</label>
-    <input type="date" id="popup4-date-input" style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;outline:none" />
-    <div class="reuniao2-btns" style="margin-top:16px">
-      <button class="btn btn-secondary" onclick="popup4Fechar()">← Voltar</button>
-      <button class="btn btn-primary" id="popup4-confirm-btn" onclick="popup4Confirmar()">✅ Salvar e agendar</button>
+    <div class="popup4-date-picker">
+      <label class="popup4-date-label-text">Selecione a data</label>
+      <input type="date" id="popup4-date-input" class="popup4-date-field"
+             onchange="document.getElementById('popup4-confirm-btn').disabled = !this.value" />
+      <div class="popup4-date-hint" id="popup4-date-hint">Nenhuma data selecionada</div>
+    </div>
+
+    <div class="reuniao2-btns" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="popup4Voltar()">← Voltar</button>
+      <button class="btn btn-primary" id="popup4-confirm-btn" onclick="popup4Confirmar()" disabled>✅ Confirmar</button>
     </div>
   </div>
 </div>
@@ -2560,8 +2606,21 @@ function selectLead2a(leadName, closerName) {
 }
 
 // Popup 4 — Corrigir: mostra input de data
-function popup4Fechar() {
+function popup4Voltar() {
+  // Volta para a lista de leads do mesmo closer
   document.getElementById('popup-confirma-data').style.display = 'none';
+  document.getElementById('popup4-date-input').value = '';
+  document.getElementById('popup4-confirm-btn').disabled = true;
+  if (r2SelectedCloser) openPopup3(r2SelectedCloser);
+}
+
+function popup4FecharTudo() {
+  // Fecha tudo e reseta para 1ª reunião
+  document.getElementById('popup-confirma-data').style.display = 'none';
+  document.getElementById('popup4-date-input').value = '';
+  document.getElementById('popup4-confirm-btn').disabled = true;
+  r2SelectedCloser = null;
+  r2SelectedLead   = null;
   resetTo1aReuniao();
 }
 
@@ -2616,20 +2675,21 @@ async function popup4Confirmar() {
     setTimeout(loadAgendamentos, 2000);
 
   } catch(e) {
-    toast('Erro ao enviar. Verifique a conexão.', false);
+    // no-cors não lança erros de rede normalmente — só log silencioso
+    console.error('popup4:', e);
   } finally {
-    btn.disabled = false; btn.textContent = '✅ Confirmar e agendar';
+    btn.disabled = false; btn.textContent = '✅ Confirmar';
   }
 }
 
 // Fechar popups clicando fora
-['popup-seleciona-closer','popup-seleciona-lead','popup-confirma-data'].forEach(id => {
+['popup-seleciona-closer','popup-seleciona-lead'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
-    if (e.target === this) {
-      this.style.display = 'none';
-      resetTo1aReuniao(); // volta para 1ª reunião se fechar sem completar
-    }
+    if (e.target === this) { this.style.display = 'none'; resetTo1aReuniao(); }
   });
+});
+document.getElementById('popup-confirma-data').addEventListener('click', function(e) {
+  if (e.target === this) popup4FecharTudo();
 });
 
 // ── INIT ──
