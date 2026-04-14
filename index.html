@@ -958,18 +958,37 @@
       display: none;
       position: fixed;
       bottom: 16px; right: 16px;
-      background: rgba(0,0,0,0.7);
-      border: 1px solid rgba(110,177,80,0.3);
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-size: .72rem;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(110,177,80,0.35);
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: .75rem;
       color: var(--yellow);
       letter-spacing: 1px;
       font-weight: 800;
       z-index: 9998;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
+      cursor: pointer;
+      user-select: none;
+      transition: background .2s, border-color .2s, transform .15s;
+      display: none;
+      align-items: center;
+      gap: 8px;
     }
-    body.tv-mode #tv-status-badge { display: block; }
+    body.tv-mode #tv-status-badge { display: flex; }
+    #tv-status-badge:hover {
+      background: rgba(200,30,30,0.7);
+      border-color: rgba(255,80,80,0.5);
+      color: #fff;
+      transform: scale(1.04);
+    }
+    #tv-status-badge:hover::after {
+      content: ' — clique para sair';
+      font-size: .65rem;
+      color: rgba(255,255,255,0.7);
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
     .radio-group { display: flex; gap: 10px; }
     .radio-option { flex: 1; position: relative; cursor: pointer; user-select: none; }
     .radio-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
@@ -1358,7 +1377,7 @@
 <body>
 
 <div id="tv-progress-bar"></div>
-<div id="tv-status-badge">📺 MODO TV</div>
+<div id="tv-status-badge" onclick="exitTVMode()">📺 MODO TV</div>
 
 <header>
   <div class="logo-wrap">
@@ -3313,6 +3332,17 @@ let tvTimer      = null;
 let tvScroll     = null;
 let tvProgress   = null;
 let tvPhase      = 'sdr'; // 'sdr' | 'indicadores'
+
+function exitTVMode() {
+  if (!tvMode) return;
+  tvMode = false;
+  document.body.classList.remove('tv-mode');
+  const btn = document.getElementById('tv-toggle-btn');
+  if (btn) { btn.classList.remove('active'); btn.title = 'Modo TV'; }
+  stopTVMode();
+  window.scrollTo({ top: 0 });
+  showScreen('agendamento');
+}
 
 function toggleTVMode() {
   tvMode = !tvMode;
