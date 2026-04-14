@@ -1527,13 +1527,6 @@
     <div class="card-title">📋 Novo Agendamento</div>
 
     <div>
-      <label>Seu nome (SDR)</label>
-      <select id="sdr-select">
-        <option value="">Carregando...</option>
-      </select>
-    </div>
-
-    <div>
       <label>Tipo de Reunião</label>
       <div class="radio-group">
         <label class="radio-option" id="radio-opt-1">
@@ -1557,6 +1550,13 @@
       </div>
     </div>
 
+    <div class="score-lead-wrap" id="sdr-name-wrap">
+      <label>Seu nome (SDR)</label>
+      <select id="sdr-select">
+        <option value="">Selecione seu nome</option>
+      </select>
+    </div>
+
     <div class="score-lead-wrap" id="lead-name-wrap">
       <label>Nome do Lead</label>
       <input type="text" id="lead-name" placeholder="Digite o nome do lead..." />
@@ -1568,12 +1568,12 @@
              oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
     </div>
 
-    <div>
+    <div class="score-lead-wrap" id="meeting-date-wrap">
       <label id="meeting-date-label">Data da 1ª Reunião</label>
       <input type="date" id="meeting-date" />
     </div>
 
-    <div class="next-closer-box">
+    <div class="next-closer-box score-lead-wrap" id="next-closer-wrap">
       <span class="nc-label">Próximo Closer</span>
       <span class="nc-name" id="next-closer-name">—</span>
     </div>
@@ -2428,20 +2428,34 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 
 document.getElementById('meeting-date').value = isoDate(new Date());
 
-// Atualiza label da data e visibilidade do Score Lead e Nome do Lead conforme tipo selecionado
-document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
-  radio.addEventListener('change', () => {
-    const lbl       = document.getElementById('meeting-date-label');
-    const scoreWrap = document.getElementById('score-lead-wrap');
-    const nameWrap  = document.getElementById('lead-name-wrap');
-    const is2       = radio.value === '2º Reunião';
-    if (lbl)       lbl.textContent = is2 ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
-    if (scoreWrap) scoreWrap.classList.toggle('hidden', is2);
-    if (nameWrap)  nameWrap.classList.toggle('hidden', is2);
-    // Limpa o lead quando troca de tipo
-    if (is2) document.getElementById('lead-name').value = '';
+// Radio: 1ª mostra campos, 2ª esconde campos e abre popup de closer
+document.querySelector('input[name="tipo_reuniao"][value="2º Reunião"]').addEventListener('change', function() {
+  if (!this.checked) return;
+  // Esconde campos do formulário
+  ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.add('hidden');
+  });
+  document.getElementById('lead-name').value = '';
+  // Abre direto o popup de selecionar closer
+  openPopup2();
+});
+
+document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEventListener('change', function() {
+  if (!this.checked) return;
+  ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('hidden');
   });
 });
+
+// Reseta para 1ª reunião e reexibe campos
+function resetTo1aReuniao() {
+  const r1 = document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]');
+  if (r1) r1.checked = true;
+  ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.remove('hidden');
+  });
+  document.getElementById('lead-name').value = '';
+}
 
 // ══════════════════════════════════════════════════════════
 //  FLUXO 2ª REUNIÃO — 3 POPUPS
@@ -2558,9 +2572,9 @@ function selectLead2a(leadName, closerName) {
   document.getElementById('popup4-date-label').textContent  = dataBR;
   document.getElementById('popup4-date-input').value        = dataInput || isoDate(new Date());
 
-  // Garante estado inicial de confirmação
-  document.getElementById('popup4-confirm-state').style.display = 'block';
-  document.getElementById('popup4-edit-state').style.display    = 'none';
+  // Abre direto na tela de definir data
+  document.getElementById('popup4-confirm-state').style.display = 'none';
+  document.getElementById('popup4-edit-state').style.display    = 'block';
   document.getElementById('popup-confirma-data').style.display  = 'flex';
 }
 
@@ -2592,8 +2606,9 @@ function popup4SalvarData() {
 
 // Popup 4 — Confirmar e disparar webhook
 async function popup4Confirmar() {
-  const sdr  = document.getElementById('sdr-select').value;
-  if (!sdr) { toast('Selecione seu nome (SDR)!', false); return; }
+  // Na 2ª reunião o closer agenda para si mesmo
+  const sdr = r2SelectedCloser;
+  if (!sdr) { toast('Nenhum closer selecionado!', false); return; }
 
   const dataInput = document.getElementById('meeting-date').value;
   if (!dataInput) { toast('Data inválida!', false); return; }
@@ -2622,6 +2637,7 @@ async function popup4Confirmar() {
     document.getElementById('lead-name').value  = '';
     r2SelectedCloser = null;
     r2SelectedLead   = null;
+    resetTo1aReuniao();
 
     // Optimistic update
     agendamentos.push({
@@ -2643,9 +2659,12 @@ async function popup4Confirmar() {
 }
 
 // Fechar popups clicando fora
-['popup-confirma-closer','popup-seleciona-closer','popup-seleciona-lead','popup-confirma-data'].forEach(id => {
+['popup-seleciona-closer','popup-seleciona-lead','popup-confirma-data'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
-    if (e.target === this) this.style.display = 'none';
+    if (e.target === this) {
+      this.style.display = 'none';
+      resetTo1aReuniao(); // volta para 1ª reunião se fechar sem completar
+    }
   });
 });
 
