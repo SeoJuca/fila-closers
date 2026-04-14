@@ -758,36 +758,27 @@
       letter-spacing: 1px; text-transform: uppercase;
       margin-top: 4px; display: block;
     }
+
+    /* ── STATS DO MÊS ── */
     .dash-stats-month {
       margin-top: 12px;
       background: rgba(255,255,255,0.025);
       border: 1px solid rgba(255,255,255,0.06);
     }
-    .dash-stat-month {
-      cursor: pointer;
-      transition: background .2s;
-      position: relative;
-    }
+    .dash-stat-month { cursor: pointer; transition: background .2s; }
     .dash-stat-month:hover { background: rgba(255,255,255,0.06); }
     .dash-stat-hint {
-      display: block;
-      font-size: .58rem; color: #444;
-      letter-spacing: 1px; text-transform: uppercase;
-      margin-top: 2px;
+      display: block; font-size: .58rem; color: #444;
+      letter-spacing: 1px; text-transform: uppercase; margin-top: 2px;
       transition: color .2s;
     }
     .dash-stat-month:hover .dash-stat-hint { color: var(--yellow); }
-
-    /* Cores distintas para stats do mês */
-    .month-total { color: #a78bfa; }   /* roxo */
-    .month-ef    { color: #34d399; }   /* turquesa */
-    .month-ns    { color: #fb923c; }   /* laranja */
-    .month-pend  { color: #60a5fa; }   /* azul claro */
-
-    /* Lead item na lista do mês */
+    .month-total { color: #a78bfa; }
+    .month-ef    { color: #34d399; }
+    .month-ns    { color: #fb923c; }
+    .month-pend  { color: #60a5fa; }
     .month-lead-item {
-      display: flex; align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px;
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.07);
@@ -800,6 +791,7 @@
       font-size: .68rem; font-weight: 800;
       padding: 3px 10px; border-radius: 99px;
     }
+    .dash-table-wrap { margin: 0 40px 40px; overflow-x: auto; }
     .dash-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
     .dash-table thead tr { background: rgba(110,177,80,0.08); }
     .dash-table th {
@@ -1535,6 +1527,13 @@
     <div class="card-title">📋 Novo Agendamento</div>
 
     <div>
+      <label>Seu nome (SDR)</label>
+      <select id="sdr-select">
+        <option value="">Carregando...</option>
+      </select>
+    </div>
+
+    <div>
       <label>Tipo de Reunião</label>
       <div class="radio-group">
         <label class="radio-option" id="radio-opt-1">
@@ -1558,13 +1557,6 @@
       </div>
     </div>
 
-    <div class="score-lead-wrap" id="sdr-name-wrap">
-      <label>Seu nome (SDR)</label>
-      <select id="sdr-select">
-        <option value="">Selecione seu nome</option>
-      </select>
-    </div>
-
     <div class="score-lead-wrap" id="lead-name-wrap">
       <label>Nome do Lead</label>
       <input type="text" id="lead-name" placeholder="Digite o nome do lead..." />
@@ -1576,12 +1568,12 @@
              oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
     </div>
 
-    <div id="meeting-date-wrap" class="score-lead-wrap">
+    <div>
       <label id="meeting-date-label">Data da 1ª Reunião</label>
       <input type="date" id="meeting-date" />
     </div>
 
-    <div class="next-closer-box" id="next-closer-wrap">
+    <div class="next-closer-box">
       <span class="nc-label">Próximo Closer</span>
       <span class="nc-name" id="next-closer-name">—</span>
     </div>
@@ -1957,7 +1949,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div>
         <div class="reuniao2-title" id="month-list-title"></div>
-        <div class="reuniao2-sub" style="margin:0" id="month-list-sub"></div>
+        <div style="font-size:.78rem;color:#777;margin-top:2px" id="month-list-sub"></div>
       </div>
       <button class="pizza-close-btn" onclick="document.getElementById('modal-month-list').style.display='none'">✕</button>
     </div>
@@ -2346,14 +2338,19 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   if (!data) { toast('Escolha a data da reunião!', false); return; }
   if (!closers.length) { toast('Closers não carregados!', false); return; }
 
-  // 2ª Reunião é sempre agendada via popup4Confirmar — btn-schedule só lida com 1ª
+  // Fluxo especial para 2ª Reunião — abre popup se lead ainda não foi selecionado
   if (tipoReuniao === '2º Reunião') {
-    openPopup2();
-    return;
+    if (!lead) {
+      // Lead ainda não selecionado → abre o fluxo de popups
+      openReuniao2Flow();
+      return;
+    }
+    // Lead já selecionado via popup → segue normalmente sem score
+  } else {
+    // 1ª Reunião → valida score
+    if (!lead)  { toast('Informe o nome do lead!', false); return; }
+    if (!score || isNaN(score) || parseInt(score) < 0) { toast('Informe o Score Lead!', false); return; }
   }
-  // 1ª Reunião → valida campos
-  if (!lead)  { toast('Informe o nome do lead!', false); return; }
-  if (!score || isNaN(score) || parseInt(score) < 0) { toast('Informe o Lead Score!', false); return; }
 
   // Determina o closer: se 2ª reunião e foi escolhido no popup, usa r2SelectedCloser
   const closerFinal = (tipoReuniao === '2º Reunião' && r2SelectedCloser)
@@ -2431,27 +2428,19 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 
 document.getElementById('meeting-date').value = isoDate(new Date());
 
-// Radio change: mostra/esconde campos conforme tipo
-// Para 2ª reunião: abre popup direto ao clicar
-document.querySelector('input[name="tipo_reuniao"][value="2º Reunião"]').addEventListener('change', function() {
-  if (this.checked) {
-    ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.add('hidden');
-    });
-    document.getElementById('lead-name').value = '';
-    openPopup2();
-  }
-});
-
-document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEventListener('change', function() {
-  if (this.checked) {
-    ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('hidden');
-    });
-    document.getElementById('meeting-date-label').textContent = 'Data da 1ª Reunião';
-  }
+// Atualiza label da data e visibilidade do Score Lead e Nome do Lead conforme tipo selecionado
+document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const lbl       = document.getElementById('meeting-date-label');
+    const scoreWrap = document.getElementById('score-lead-wrap');
+    const nameWrap  = document.getElementById('lead-name-wrap');
+    const is2       = radio.value === '2º Reunião';
+    if (lbl)       lbl.textContent = is2 ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
+    if (scoreWrap) scoreWrap.classList.toggle('hidden', is2);
+    if (nameWrap)  nameWrap.classList.toggle('hidden', is2);
+    // Limpa o lead quando troca de tipo
+    if (is2) document.getElementById('lead-name').value = '';
+  });
 });
 
 // ══════════════════════════════════════════════════════════
@@ -2460,7 +2449,25 @@ document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEv
 let r2SelectedCloser = null; // closer escolhido no fluxo de 2ª reunião
 let r2SelectedLead   = null;   // lead escolhido no fluxo de 2ª reunião
 
-// Popup 1 removido — 2ª reunião abre direto no popup 2 (seleciona closer)
+// Abre o fluxo — chamado ao clicar em "Agendar Reunião" quando tipo = 2ª
+function openReuniao2Flow() {
+  const { name: nextName } = calcNextCloser();
+  r2SelectedCloser = nextName;
+  document.getElementById('popup1-closer-name').textContent = nextName;
+  document.getElementById('popup-confirma-closer').style.display = 'flex';
+}
+
+// Popup 1 — Confirmar closer → vai para popup 3
+function popup1Confirmar() {
+  document.getElementById('popup-confirma-closer').style.display = 'none';
+  openPopup3(r2SelectedCloser);
+}
+
+// Popup 1 — Trocar closer → vai para popup 2
+function popup1Trocar() {
+  document.getElementById('popup-confirma-closer').style.display = 'none';
+  openPopup2();
+}
 
 // Popup 2 — Grid de closers para selecionar
 function openPopup2() {
@@ -2551,9 +2558,9 @@ function selectLead2a(leadName, closerName) {
   document.getElementById('popup4-date-label').textContent  = dataBR;
   document.getElementById('popup4-date-input').value        = dataInput || isoDate(new Date());
 
-  // Abre direto na tela de definir a data (sem etapa de confirmação)
-  document.getElementById('popup4-confirm-state').style.display = 'none';
-  document.getElementById('popup4-edit-state').style.display    = 'block';
+  // Garante estado inicial de confirmação
+  document.getElementById('popup4-confirm-state').style.display = 'block';
+  document.getElementById('popup4-edit-state').style.display    = 'none';
   document.getElementById('popup-confirma-data').style.display  = 'flex';
 }
 
@@ -2585,12 +2592,11 @@ function popup4SalvarData() {
 
 // Popup 4 — Confirmar e disparar webhook
 async function popup4Confirmar() {
-  // Na 2ª reunião, o closer se agenda para si mesmo
-  const sdr = r2SelectedCloser;
-  if (!sdr) { toast('Nenhum closer selecionado!', false); return; }
+  const sdr  = document.getElementById('sdr-select').value;
+  if (!sdr) { toast('Selecione seu nome (SDR)!', false); return; }
 
-  const dataInput = document.getElementById('popup4-date-input').value;
-  if (!dataInput) { toast('Defina a data da reunião!', false); return; }
+  const dataInput = document.getElementById('meeting-date').value;
+  if (!dataInput) { toast('Data inválida!', false); return; }
   const [y,m,d] = dataInput.split('-');
   const dataFmt  = `${d}/${m}/${y}`;
 
@@ -2612,13 +2618,10 @@ async function popup4Confirmar() {
     document.getElementById('popup-confirma-data').style.display = 'none';
     toast(`✅ 2ª Reunião agendada! ${r2SelectedCloser} recebeu ${r2SelectedLead} para ${dataFmt}.`);
 
-    // Limpa estado e reseta radio para 1ª reunião
+    // Limpa estado
     document.getElementById('lead-name').value  = '';
     r2SelectedCloser = null;
     r2SelectedLead   = null;
-    // Reseta radio para 1ª reunião e mostra todos os campos
-    const radio1 = document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]');
-    if (radio1) { radio1.checked = true; radio1.dispatchEvent(new Event('change')); }
 
     // Optimistic update
     agendamentos.push({
@@ -2903,43 +2906,18 @@ function renderDashboard() {
   document.getElementById('dash-pending').textContent    = pending;
 
   // ── Stats do mês ──
-  const month = dashDate.getMonth();
-  const year  = dashDate.getFullYear();
-  const reunioesMes = agendamentos.filter(row => {
-    if (row.closer !== loggedCloser.name) return false;
-    const dp = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+  const _m = dashDate.getMonth(), _y = dashDate.getFullYear();
+  const _mes = agendamentos.filter(r => {
+    if (r.closer !== loggedCloser.name) return false;
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return false;
     const dt = parseBRDate(dp);
-    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+    return !isNaN(dt) && dt.getMonth() === _m && dt.getFullYear() === _y;
   });
-  const mesTot  = reunioesMes.length;
-  const mesEf   = reunioesMes.filter(r => r.status === 'Efetivada').length;
-  const mesNs   = reunioesMes.filter(r => r.status === 'No-show').length;
-  const mesPend = mesTot - mesEf - mesNs;
-  document.getElementById('dash-mes-total').textContent      = mesTot;
-  document.getElementById('dash-mes-efetivadas').textContent = mesEf;
-  document.getElementById('dash-mes-noshow').textContent     = mesNs;
-  document.getElementById('dash-mes-pending').textContent    = mesPend;
-
-  // ── Stats do mês ──
-  const month = dashDate.getMonth();
-  const year  = dashDate.getFullYear();
-  const reunioesMes = agendamentos.filter(row => {
-    if (row.closer !== loggedCloser.name) return false;
-    const dp = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
-    if (!dp) return false;
-    const dt = parseBRDate(dp);
-    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
-  });
-  const mesTot  = reunioesMes.length;
-  const mesEf   = reunioesMes.filter(r => r.status === 'Efetivada').length;
-  const mesNs   = reunioesMes.filter(r => r.status === 'No-show').length;
-  const mesPend = mesTot - mesEf - mesNs;
-
-  document.getElementById('dash-mes-total').textContent      = mesTot;
-  document.getElementById('dash-mes-efetivadas').textContent = mesEf;
-  document.getElementById('dash-mes-noshow').textContent     = mesNs;
-  document.getElementById('dash-mes-pending').textContent    = mesPend;
+  document.getElementById('dash-mes-total').textContent      = _mes.length;
+  document.getElementById('dash-mes-efetivadas').textContent = _mes.filter(r => r.status === 'Efetivada').length;
+  document.getElementById('dash-mes-noshow').textContent     = _mes.filter(r => r.status === 'No-show').length;
+  document.getElementById('dash-mes-pending').textContent    = _mes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show').length;
 
   const tbody = document.getElementById('dash-tbody');
   if (!reunioes.length) {
@@ -3976,79 +3954,45 @@ if (new URLSearchParams(window.location.search).get('tv') === '1') {
   window.addEventListener('load', () => setTimeout(toggleTVMode, 500));
 }
 
-
 // ── LISTA DO MÊS DO CLOSER ──
 function openMonthList(tipo) {
   if (!loggedCloser) return;
-
-  const month = dashDate.getMonth();
-  const year  = dashDate.getFullYear();
+  const _m = dashDate.getMonth(), _y = dashDate.getFullYear();
   const monthName = dashDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
-
-  const reunioesMes = agendamentos.filter(row => {
-    if (row.closer !== loggedCloser.name) return false;
-    const dp = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+  const all = agendamentos.filter(r => {
+    if (r.closer !== loggedCloser.name) return false;
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return false;
     const dt = parseBRDate(dp);
-    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+    return !isNaN(dt) && dt.getMonth() === _m && dt.getFullYear() === _y;
   });
-
   let filtradas, titulo, emoji;
-  switch(tipo) {
-    case 'efetivadas':
-      filtradas = reunioesMes.filter(r => r.status === 'Efetivada');
-      titulo = 'Efetivadas'; emoji = '✅'; break;
-    case 'noshow':
-      filtradas = reunioesMes.filter(r => r.status === 'No-show');
-      titulo = 'No-show'; emoji = '❌'; break;
-    case 'pendentes':
-      filtradas = reunioesMes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show');
-      titulo = 'Pendentes'; emoji = '⏳'; break;
-    default:
-      filtradas = reunioesMes;
-      titulo = 'Todas as Reuniões'; emoji = '📅';
-  }
+  if (tipo === 'efetivadas') { filtradas = all.filter(r => r.status === 'Efetivada'); titulo = 'Efetivadas'; emoji = '✅'; }
+  else if (tipo === 'noshow') { filtradas = all.filter(r => r.status === 'No-show'); titulo = 'No-show'; emoji = '❌'; }
+  else if (tipo === 'pendentes') { filtradas = all.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show'); titulo = 'Pendentes'; emoji = '⏳'; }
+  else { filtradas = all; titulo = 'Todas as Reuniões'; emoji = '📅'; }
 
-  // Ordena por dataReun
-  filtradas.sort((a,b) => {
-    const da = parseBRDate(extractDatePart(a.dataReun) || isoToBR(a.dataReun));
-    const db = parseBRDate(extractDatePart(b.dataReun) || isoToBR(b.dataReun));
-    return da - db;
-  });
+  filtradas.sort((a,b) => parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun)) - parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun)));
 
-  document.getElementById('month-list-title').textContent = `${emoji} ${titulo}`;
-  document.getElementById('month-list-sub').textContent   = `${loggedCloser.name} — ${monthName}`;
+  document.getElementById('month-list-title').textContent = emoji + ' ' + titulo;
+  document.getElementById('month-list-sub').textContent   = loggedCloser.name + ' — ' + monthName;
 
   const list = document.getElementById('month-list-leads');
-
   if (!filtradas.length) {
     list.innerHTML = '<div class="lead-empty">Nenhuma reunião nesta categoria</div>';
   } else {
-    const statusColors = {
-      'Efetivada': 'background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25)',
-      'No-show':   'background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.25)',
-    };
     list.innerHTML = filtradas.map(r => {
-      const dataExib = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
-      const statusStyle = statusColors[r.status] || 'background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)';
-      const statusText  = r.status === 'Efetivada' ? '✅ Efetivada' :
-                          r.status === 'No-show'   ? '❌ No-show' : '⏳ Pendente';
-      return `<div class="month-lead-item">
-        <div>
-          <div class="month-lead-name">${r.lead || '—'}</div>
-          <div class="month-lead-date">📅 ${dataExib}</div>
-        </div>
-        <span class="month-lead-badge" style="${statusStyle}">${statusText}</span>
-      </div>`;
+      const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+      const sc = r.status === 'Efetivada' ? 'background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25)' :
+                 r.status === 'No-show'   ? 'background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.25)' :
+                                            'background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)';
+      const st = r.status === 'Efetivada' ? '✅ Efetivada' : r.status === 'No-show' ? '❌ No-show' : '⏳ Pendente';
+      return '<div class="month-lead-item"><div><div class="month-lead-name">' + (r.lead||'—') + '</div><div class="month-lead-date">📅 ' + d + '</div></div><span class="month-lead-badge" style="' + sc + '">' + st + '</span></div>';
     }).join('');
   }
-
   document.getElementById('modal-month-list').style.display = 'flex';
 }
-
-document.getElementById('modal-month-list').addEventListener('click', function(e) {
-  if (e.target === this) this.style.display = 'none';
-});
+document.getElementById('modal-month-list').addEventListener('click', function(e) { if (e.target === this) this.style.display = 'none'; });
 
 setInterval(loadAgendamentos, 30000);
 </script>
