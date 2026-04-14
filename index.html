@@ -1490,17 +1490,6 @@
     </div>
 
     <div>
-      <label>Nome do Lead</label>
-      <input type="text" id="lead-name" placeholder="Digite o nome do lead..." />
-    </div>
-
-    <div class="score-lead-wrap" id="score-lead-wrap">
-      <label>Score Lead</label>
-      <input type="number" id="lead-score" placeholder="Ex: 85" min="0" step="1"
-             oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
-    </div>
-
-    <div>
       <label>Tipo de Reunião</label>
       <div class="radio-group">
         <label class="radio-option" id="radio-opt-1">
@@ -1522,6 +1511,17 @@
           </span>
         </label>
       </div>
+    </div>
+
+    <div class="score-lead-wrap" id="lead-name-wrap">
+      <label>Nome do Lead</label>
+      <input type="text" id="lead-name" placeholder="Digite o nome do lead..." />
+    </div>
+
+    <div class="score-lead-wrap" id="score-lead-wrap">
+      <label>Lead Score</label>
+      <input type="number" id="lead-score" placeholder="Ex: 85" min="0" step="1"
+             oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
     </div>
 
     <div>
@@ -2260,7 +2260,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
 
   try {
     await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
-    toast(`✅ Agendado! ${closer} recebeu a reunião de ${lead}.`);
+    toast(`✅ Agendado! ${closerFinal} recebeu a reunião de ${lead}.`);
     document.getElementById('lead-name').value  = '';
     document.getElementById('lead-score').value = '';
     r2SelectedCloser = null; // reseta seleção específica de 2ª reunião
@@ -2315,14 +2315,18 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 
 document.getElementById('meeting-date').value = isoDate(new Date());
 
-// Atualiza label da data e visibilidade do Score Lead conforme tipo selecionado
+// Atualiza label da data e visibilidade do Score Lead e Nome do Lead conforme tipo selecionado
 document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
   radio.addEventListener('change', () => {
-    const lbl  = document.getElementById('meeting-date-label');
-    const wrap = document.getElementById('score-lead-wrap');
-    const is2  = radio.value === '2º Reunião';
-    if (lbl)  lbl.textContent = is2 ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
-    if (wrap) wrap.classList.toggle('hidden', is2);
+    const lbl       = document.getElementById('meeting-date-label');
+    const scoreWrap = document.getElementById('score-lead-wrap');
+    const nameWrap  = document.getElementById('lead-name-wrap');
+    const is2       = radio.value === '2º Reunião';
+    if (lbl)       lbl.textContent = is2 ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
+    if (scoreWrap) scoreWrap.classList.toggle('hidden', is2);
+    if (nameWrap)  nameWrap.classList.toggle('hidden', is2);
+    // Limpa o lead quando troca de tipo
+    if (is2) document.getElementById('lead-name').value = '';
   });
 });
 
