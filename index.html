@@ -1106,6 +1106,17 @@
     .lead-item-arrow { font-size: 1rem; color: var(--yellow); opacity: .7; }
     .lead-empty { text-align: center; color: #555; padding: 24px; font-size: .9rem; }
 
+    /* Popup 4 — data display */
+    .popup4-date-display {
+      background: rgba(110,177,80,0.08);
+      border: 1.5px solid rgba(110,177,80,0.25);
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem; color: var(--yellow);
+      text-align: center; letter-spacing: 3px;
+    }
+
     .sdr-screen-wrap {
       max-width: 1100px;
       margin: 0 auto;
@@ -1845,6 +1856,36 @@
   </div>
 </div>
 
+<!-- POPUP 4 — Confirma data da 2ª reunião -->
+<div id="popup-confirma-data" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div class="reuniao2-title">📅 Confirmar Data</div>
+    <div class="reuniao2-sub">
+      2ª reunião com <span class="reuniao2-closer-name" id="popup4-lead-name"></span><br>
+      através de <span class="reuniao2-closer-name" id="popup4-closer-name"></span>
+    </div>
+
+    <!-- Estado: confirmação -->
+    <div id="popup4-confirm-state">
+      <div class="popup4-date-display" id="popup4-date-label"></div>
+      <div class="reuniao2-btns" style="margin-top:20px">
+        <button class="btn btn-secondary" onclick="popup4Corrigir()">✏️ Corrigir data</button>
+        <button class="btn btn-primary" id="popup4-confirm-btn" onclick="popup4Confirmar()">✅ Confirmar e agendar</button>
+      </div>
+    </div>
+
+    <!-- Estado: corrigir data -->
+    <div id="popup4-edit-state" style="display:none">
+      <label style="font-size:.75rem;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:8px">Nova data</label>
+      <input type="date" id="popup4-date-input" style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;outline:none" />
+      <div class="reuniao2-btns" style="margin-top:16px">
+        <button class="btn btn-secondary" onclick="popup4VoltarConfirm()">← Voltar</button>
+        <button class="btn btn-primary" onclick="popup4SalvarData()">✅ Salvar e agendar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -2334,6 +2375,7 @@ document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
 //  FLUXO 2ª REUNIÃO — 3 POPUPS
 // ══════════════════════════════════════════════════════════
 let r2SelectedCloser = null; // closer escolhido no fluxo de 2ª reunião
+let r2SelectedLead   = null;   // lead escolhido no fluxo de 2ª reunião
 
 // Abre o fluxo — chamado ao clicar em "Agendar Reunião" quando tipo = 2ª
 function openReuniao2Flow() {
@@ -2428,16 +2470,108 @@ function popup3Voltar() {
   openPopup2();
 }
 
-// Seleciona o lead e fecha todos os popups
+// Seleciona o lead → abre popup 4 para confirmar a data
 function selectLead2a(leadName, closerName) {
-  document.getElementById('lead-name').value   = leadName;
   r2SelectedCloser = closerName;
+  r2SelectedLead   = leadName;
   document.getElementById('popup-seleciona-lead').style.display = 'none';
-  toast(`✅ Lead "${leadName}" selecionado para 2ª reunião com ${closerName}!`);
+
+  // Pega a data atual do campo
+  const dataInput  = document.getElementById('meeting-date').value;
+  const [y, m, d]  = (dataInput || '').split('-');
+  const dataBR     = dataInput ? `${d}/${m}/${y}` : fmtDate(new Date());
+
+  document.getElementById('popup4-lead-name').textContent   = leadName;
+  document.getElementById('popup4-closer-name').textContent = closerName;
+  document.getElementById('popup4-date-label').textContent  = dataBR;
+  document.getElementById('popup4-date-input').value        = dataInput || isoDate(new Date());
+
+  // Garante estado inicial de confirmação
+  document.getElementById('popup4-confirm-state').style.display = 'block';
+  document.getElementById('popup4-edit-state').style.display    = 'none';
+  document.getElementById('popup-confirma-data').style.display  = 'flex';
+}
+
+// Popup 4 — Corrigir: mostra input de data
+function popup4Corrigir() {
+  document.getElementById('popup4-confirm-state').style.display = 'none';
+  document.getElementById('popup4-edit-state').style.display    = 'block';
+}
+
+// Popup 4 — Voltar para confirmação
+function popup4VoltarConfirm() {
+  document.getElementById('popup4-confirm-state').style.display = 'block';
+  document.getElementById('popup4-edit-state').style.display    = 'none';
+}
+
+// Popup 4 — Salva nova data e agenda
+function popup4SalvarData() {
+  const newDate = document.getElementById('popup4-date-input').value;
+  if (!newDate) { toast('Escolha uma data válida!', false); return; }
+  // Atualiza display e campo principal
+  const [y,m,d] = newDate.split('-');
+  document.getElementById('popup4-date-label').textContent = `${d}/${m}/${y}`;
+  document.getElementById('meeting-date').value = newDate;
+  document.getElementById('popup4-confirm-state').style.display = 'block';
+  document.getElementById('popup4-edit-state').style.display    = 'none';
+  // Segue direto para agendamento
+  popup4Confirmar();
+}
+
+// Popup 4 — Confirmar e disparar webhook
+async function popup4Confirmar() {
+  const sdr  = document.getElementById('sdr-select').value;
+  if (!sdr) { toast('Selecione seu nome (SDR)!', false); return; }
+
+  const dataInput = document.getElementById('meeting-date').value;
+  if (!dataInput) { toast('Data inválida!', false); return; }
+  const [y,m,d] = dataInput.split('-');
+  const dataFmt  = `${d}/${m}/${y}`;
+
+  const btn = document.getElementById('popup4-confirm-btn');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+  const fd = new FormData();
+  fd.append('sdr',          sdr);
+  fd.append('closer',       r2SelectedCloser);
+  fd.append('data_reuniao', dataFmt);
+  fd.append('nome_lead',    r2SelectedLead);
+  fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
+  fd.append('caminho',      'SDR');
+  fd.append('tipo_reuniao', '2º Reunião');
+
+  try {
+    await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
+
+    document.getElementById('popup-confirma-data').style.display = 'none';
+    toast(`✅ 2ª Reunião agendada! ${r2SelectedCloser} recebeu ${r2SelectedLead} para ${dataFmt}.`);
+
+    // Limpa estado
+    document.getElementById('lead-name').value  = '';
+    r2SelectedCloser = null;
+    r2SelectedLead   = null;
+
+    // Optimistic update
+    agendamentos.push({
+      carimbo:  new Date().toLocaleString('pt-BR'),
+      sdr, dataReun: dataFmt, closer: r2SelectedCloser || '', lead: r2SelectedLead || '',
+      tipoReun: '2º Reunião',
+    });
+    updateNextCloserDisplay();
+    renderScoreboard();
+
+    // Aguarda 2s e recarrega dados reais
+    setTimeout(loadAgendamentos, 2000);
+
+  } catch(e) {
+    toast('Erro ao enviar. Verifique a conexão.', false);
+  } finally {
+    btn.disabled = false; btn.textContent = '✅ Confirmar e agendar';
+  }
 }
 
 // Fechar popups clicando fora
-['popup-confirma-closer','popup-seleciona-closer','popup-seleciona-lead'].forEach(id => {
+['popup-confirma-closer','popup-seleciona-closer','popup-seleciona-lead','popup-confirma-data'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
     if (e.target === this) this.style.display = 'none';
   });
