@@ -2742,10 +2742,10 @@ function popup1aEscolha(tipo) {
   const grid = document.getElementById('popup1a-pessoa-grid');
   grid.innerHTML = '';
 
-  // Filtra sdrList por cargo
+  // SDRs vêm de sdrList (col B tem "SDR"), Closers/Vendedores vêm de closers[]
   const lista = tipo === 'sdr'
-    ? sdrList.filter(s => (s.cargo||'').toUpperCase().includes('SDR'))
-    : sdrList.filter(s => !(s.cargo||'').toUpperCase().includes('SDR'));
+    ? sdrList.map(s => ({ name: s.name, cargo: s.cargo }))
+    : closers.map(c => ({ name: c.name, cargo: 'Closer / Vendedor' }));
 
   if (!lista.length) {
     grid.innerHTML = '<div class="lead-empty">Nenhuma pessoa encontrada</div>';
