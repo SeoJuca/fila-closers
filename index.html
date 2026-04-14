@@ -1494,13 +1494,6 @@
     <div class="card-title">📋 Novo Agendamento</div>
 
     <div>
-      <label>Seu nome (SDR)</label>
-      <select id="sdr-select">
-        <option value="">Carregando...</option>
-      </select>
-    </div>
-
-    <div>
       <label>Tipo de Reunião</label>
       <div class="radio-group">
         <label class="radio-option" id="radio-opt-1">
@@ -1524,6 +1517,13 @@
       </div>
     </div>
 
+    <div class="score-lead-wrap" id="sdr-name-wrap">
+      <label>Seu nome (SDR)</label>
+      <select id="sdr-select">
+        <option value="">Selecione seu nome</option>
+      </select>
+    </div>
+
     <div class="score-lead-wrap" id="lead-name-wrap">
       <label>Nome do Lead</label>
       <input type="text" id="lead-name" placeholder="Digite o nome do lead..." />
@@ -1535,12 +1535,12 @@
              oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
     </div>
 
-    <div>
+    <div id="meeting-date-wrap" class="score-lead-wrap">
       <label id="meeting-date-label">Data da 1ª Reunião</label>
       <input type="date" id="meeting-date" />
     </div>
 
-    <div class="next-closer-box">
+    <div class="next-closer-box" id="next-closer-wrap">
       <span class="nc-label">Próximo Closer</span>
       <span class="nc-name" id="next-closer-name">—</span>
     </div>
@@ -2267,19 +2267,14 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   if (!data) { toast('Escolha a data da reunião!', false); return; }
   if (!closers.length) { toast('Closers não carregados!', false); return; }
 
-  // Fluxo especial para 2ª Reunião — abre popup se lead ainda não foi selecionado
+  // 2ª Reunião é sempre agendada via popup4Confirmar — btn-schedule só lida com 1ª
   if (tipoReuniao === '2º Reunião') {
-    if (!lead) {
-      // Lead ainda não selecionado → abre o fluxo de popups
-      openReuniao2Flow();
-      return;
-    }
-    // Lead já selecionado via popup → segue normalmente sem score
-  } else {
-    // 1ª Reunião → valida score
-    if (!lead)  { toast('Informe o nome do lead!', false); return; }
-    if (!score || isNaN(score) || parseInt(score) < 0) { toast('Informe o Score Lead!', false); return; }
+    openPopup2();
+    return;
   }
+  // 1ª Reunião → valida campos
+  if (!lead)  { toast('Informe o nome do lead!', false); return; }
+  if (!score || isNaN(score) || parseInt(score) < 0) { toast('Informe o Lead Score!', false); return; }
 
   // Determina o closer: se 2ª reunião e foi escolhido no popup, usa r2SelectedCloser
   const closerFinal = (tipoReuniao === '2º Reunião' && r2SelectedCloser)
@@ -2357,19 +2352,30 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 
 document.getElementById('meeting-date').value = isoDate(new Date());
 
-// Atualiza label da data e visibilidade do Score Lead e Nome do Lead conforme tipo selecionado
-document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
-  radio.addEventListener('change', () => {
-    const lbl       = document.getElementById('meeting-date-label');
-    const scoreWrap = document.getElementById('score-lead-wrap');
-    const nameWrap  = document.getElementById('lead-name-wrap');
-    const is2       = radio.value === '2º Reunião';
-    if (lbl)       lbl.textContent = is2 ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
-    if (scoreWrap) scoreWrap.classList.toggle('hidden', is2);
-    if (nameWrap)  nameWrap.classList.toggle('hidden', is2);
-    // Limpa o lead quando troca de tipo
-    if (is2) document.getElementById('lead-name').value = '';
-  });
+// Radio change: mostra/esconde campos conforme tipo
+// Para 2ª reunião: abre popup direto ao clicar
+document.getElementById('radio-opt-2').querySelector('input').addEventListener('change', function() {
+  if (this.checked) {
+    // Esconde campos desnecessários para 2ª reunião
+    ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    });
+    document.getElementById('lead-name').value = '';
+    // Abre direto o popup de selecionar closer
+    openPopup2();
+  }
+});
+
+document.getElementById('radio-opt-1').querySelector('input').addEventListener('change', function() {
+  if (this.checked) {
+    // Mostra todos os campos para 1ª reunião
+    ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+    });
+    document.getElementById('meeting-date-label').textContent = 'Data da 1ª Reunião';
+  }
 });
 
 // ══════════════════════════════════════════════════════════
@@ -2378,25 +2384,7 @@ document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
 let r2SelectedCloser = null; // closer escolhido no fluxo de 2ª reunião
 let r2SelectedLead   = null;   // lead escolhido no fluxo de 2ª reunião
 
-// Abre o fluxo — chamado ao clicar em "Agendar Reunião" quando tipo = 2ª
-function openReuniao2Flow() {
-  const { name: nextName } = calcNextCloser();
-  r2SelectedCloser = nextName;
-  document.getElementById('popup1-closer-name').textContent = nextName;
-  document.getElementById('popup-confirma-closer').style.display = 'flex';
-}
-
-// Popup 1 — Confirmar closer → vai para popup 3
-function popup1Confirmar() {
-  document.getElementById('popup-confirma-closer').style.display = 'none';
-  openPopup3(r2SelectedCloser);
-}
-
-// Popup 1 — Trocar closer → vai para popup 2
-function popup1Trocar() {
-  document.getElementById('popup-confirma-closer').style.display = 'none';
-  openPopup2();
-}
+// Popup 1 removido — 2ª reunião abre direto no popup 2 (seleciona closer)
 
 // Popup 2 — Grid de closers para selecionar
 function openPopup2() {
@@ -2487,9 +2475,9 @@ function selectLead2a(leadName, closerName) {
   document.getElementById('popup4-date-label').textContent  = dataBR;
   document.getElementById('popup4-date-input').value        = dataInput || isoDate(new Date());
 
-  // Garante estado inicial de confirmação
-  document.getElementById('popup4-confirm-state').style.display = 'block';
-  document.getElementById('popup4-edit-state').style.display    = 'none';
+  // Abre direto na tela de definir a data (sem etapa de confirmação)
+  document.getElementById('popup4-confirm-state').style.display = 'none';
+  document.getElementById('popup4-edit-state').style.display    = 'block';
   document.getElementById('popup-confirma-data').style.display  = 'flex';
 }
 
@@ -2547,10 +2535,13 @@ async function popup4Confirmar() {
     document.getElementById('popup-confirma-data').style.display = 'none';
     toast(`✅ 2ª Reunião agendada! ${r2SelectedCloser} recebeu ${r2SelectedLead} para ${dataFmt}.`);
 
-    // Limpa estado
+    // Limpa estado e reseta radio para 1ª reunião
     document.getElementById('lead-name').value  = '';
     r2SelectedCloser = null;
     r2SelectedLead   = null;
+    // Reseta radio para 1ª reunião e mostra todos os campos
+    const radio1 = document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]');
+    if (radio1) { radio1.checked = true; radio1.dispatchEvent(new Event('change')); }
 
     // Optimistic update
     agendamentos.push({
