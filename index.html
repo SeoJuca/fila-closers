@@ -1422,6 +1422,26 @@
     .bar-ok  { background: linear-gradient(90deg, #4a9e30, #6EB150); }
     .bar-nok { background: linear-gradient(90deg, #cc3333, #ff6b6b); }
 
+
+    /* ── MÉDIA + TENDÊNCIA SDR ── */
+    .smc-media-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .smc-media-label { font-size: .65rem; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+    .smc-media-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem; color: #aaa; letter-spacing: 1px;
+    }
+    .smc-tendencia {
+      display: flex; align-items: center; gap: 5px;
+      font-size: .72rem; font-weight: 800; padding: 3px 10px;
+      border-radius: 99px;
+    }
+    .tend-up   { background: rgba(110,177,80,0.15);  color: #6EB150; border: 1px solid rgba(110,177,80,0.3); }
+    .tend-down { background: rgba(255,107,107,0.15); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
+    .tend-flat { background: rgba(255,209,102,0.12); color: #FFD166; border: 1px solid rgba(255,209,102,0.3); }
     /* Ritmo esperado */
     .smc-ritmo {
       font-size: .68rem; color: #555;
@@ -3685,7 +3705,50 @@ function renderSDRCards(refDate) {
           <div class="smc-bar-fill ${mesOk ? 'bar-ok' : 'bar-nok'}" style="width:${Math.min(100, Math.round(countMes/Math.max(metaMes,1)*100))}%"></div>
         </div>
         <div class="smc-ritmo">Ritmo esperado: <strong>${ritmoEsperado}</strong></div>
-      </div>`;
+        ${(()=>{
+          // Média diária = agendamentos / dias úteis transcorridos
+          const media = workdaysElapsed > 0 ? (countMes / workdaysElapsed) : 0;
+          const mediaStr = media.toFixed(1);
+
+          // Tendência: compara 1ª metade vs 2ª metade dos dias úteis transcorridos
+          const midpoint = Math.floor(workdaysElapsed / 2);
+          let tend = 'flat', tendIcon = '→', tendLabel = 'Estável', tendClass = 'tend-flat';
+          if (workdaysElapsed >= 4) {
+            // Busca agendamentos por dia útil para este SDR
+            const byDay = {};
+            agendamentos.forEach(r => {
+              if (r.sdr !== sdr.name || r.tipoReun === '2º Reunião') return;
+              const dp = extractCarimboDate(r.carimbo);
+              if (!dp) return;
+              const dt = parseBRDate(dp);
+              if (!isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year)
+                byDay[dp] = (byDay[dp]||0) + 1;
+            });
+            // Ordena dias úteis do mês
+            const diasUteis = [];
+            for (let d = 1; d <= new Date(year, month+1, 0).getDate(); d++) {
+              const dt = new Date(year, month, d);
+              const dow = dt.getDay();
+              if (dow > 0 && dow < 6 && dt <= now) diasUteis.push(fmtDate(dt));
+            }
+            const primeira = diasUteis.slice(0, midpoint);
+            const segunda  = diasUteis.slice(midpoint);
+            const avg1 = primeira.length ? primeira.reduce((s,d)=>s+(byDay[d]||0),0)/primeira.length : 0;
+            const avg2 = segunda.length  ? segunda.reduce((s,d)=>s+(byDay[d]||0),0)/segunda.length  : 0;
+            if (avg2 > avg1 + 0.2)      { tendIcon='↑'; tendLabel='Subindo';  tendClass='tend-up'; }
+            else if (avg2 < avg1 - 0.2) { tendIcon='↓'; tendLabel='Caindo';   tendClass='tend-down'; }
+          }
+
+          return workdaysElapsed > 0 ? \`
+          <div class="smc-media-row">
+            <div>
+              <div class="smc-media-label">Média / dia útil</div>
+              <div class="smc-media-val">\${mediaStr}</div>
+            </div>
+            <div class="smc-tendencia \${tendClass}">\${tendIcon} \${tendLabel}</div>
+          </div>\` : '';
+        })()}
+      </div>\`;
 
     // Clique abre modal de pizza
     card.style.cursor = 'pointer';
