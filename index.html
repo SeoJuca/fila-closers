@@ -286,6 +286,15 @@
       line-height: 1;
       color: var(--yellow);
     }
+
+    .closer-breakdown {
+      display: flex; align-items: center; gap: 5px;
+      font-size: .62rem; margin-top: 2px; margin-bottom: 6px;
+      opacity: .8;
+    }
+    .breakdown-sdr  { color: #6EB150; font-weight: 800; }
+    .breakdown-sep  { color: #555; }
+    .breakdown-own  { color: #7eb8ff; font-weight: 800; }
     .closer-count-label { font-size: .65rem; color: #888; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
     .closer-month {
       margin-top: 10px;
@@ -2177,66 +2186,54 @@ async function fetchRaw(gid) {
 function calcNextCloser() {
   if (!closers.length) return { index: 0, name: '—' };
 
-  // Se há um closer forçado manualmente, retorna ele
+  // Closer forçado manualmente tem prioridade
   if (forcedCloser) {
     const idx = closers.findIndex(c => c.name === forcedCloser.name);
     return { index: idx >= 0 ? idx : 0, name: forcedCloser.name };
   }
 
-  const n = closers.length;
-
-  // Apenas closers com emFila = true entram no rodízio
+  // Apenas closers na fila (col C != "Não")
   const naFila = closers.filter(c => c.emFila !== false);
   if (!naFila.length) return { index: 0, name: closers[0].name };
 
-  // 1. Conta histórico total por closer (só os da fila)
+  // Conta só 1ª reunião agendada por SDR diferente do closer, no mês atual
+  const now = new Date();
+  const curM = now.getMonth(), curY = now.getFullYear();
   const counts = {};
   naFila.forEach(c => counts[c.name] = 0);
+
   agendamentos.forEach(row => {
-    if (row.closer && counts.hasOwnProperty(row.closer))
+    if (!row.closer || !counts.hasOwnProperty(row.closer)) return;
+    if (row.tipoReun === '2º Reunião') return;   // 2ª não conta
+    if (row.sdr === row.closer) return;           // próprio não conta
+    const dp = extractDatePart(row.carimbo);
+    if (!dp) return;
+    const dt = parseBRDate(dp);
+    if (!isNaN(dt) && dt.getMonth() === curM && dt.getFullYear() === curY)
       counts[row.closer]++;
   });
 
-  // 2. Último closer DA FILA que recebeu (mais recente pelo carimbo)
-  let lastFila = -1;
-  if (agendamentos.length > 0) {
-    const sorted = [...agendamentos]
-      .filter(r => r.closer && r.carimbo && counts.hasOwnProperty(r.closer))
-      .sort((a, b) => (a.carimbo > b.carimbo ? -1 : 1));
-    for (const row of sorted) {
-      const idx = closers.findIndex(c => c.name === row.closer);
-      if (idx !== -1) { lastFila = idx; break; }
-    }
-  }
-
-  // 3. Percorre em ordem circular na lista COMPLETA mas só escolhe quem está na fila
+  // Remove pulados desta sessão
   const available = naFila.filter(c => !skippedThisSession.has(c.name));
   if (!available.length) skippedThisSession.clear();
 
-  const eligibleCounts = naFila
-    .filter(c => !skippedThisSession.has(c.name))
-    .map(c => counts[c.name]);
-  const minCount = Math.min(...eligibleCounts);
+  const eligible = naFila.filter(c => !skippedThisSession.has(c.name));
+  const minCount = Math.min(...eligible.map(c => counts[c.name]));
 
-  const start = lastFila >= 0 ? (lastFila + 1) % n : 0;
-  for (let offset = 0; offset < n; offset++) {
-    const idx = (start + offset) % n;
-    const c = closers[idx];
-    if (c.emFila === false) continue; // pula fora da fila
-    if (!skippedThisSession.has(c.name) && counts[c.name] === minCount) {
-      return { index: idx, name: c.name };
-    }
+  // Circular pela ordem da planilha — quem tem menos recebe, desempate pela ordem
+  for (let i = 0; i < closers.length; i++) {
+    const c = closers[i];
+    if (c.emFila === false) continue;
+    if (skippedThisSession.has(c.name)) continue;
+    if (counts[c.name] === minCount) return { index: i, name: c.name };
   }
 
-  // 4. Fallback: todos pulados — reseta e repete
+  // Fallback: reseta pulados e tenta de novo
   skippedThisSession.clear();
-  for (let offset = 0; offset < n; offset++) {
-    const idx = (start + offset) % n;
-    const c = closers[idx];
+  for (let i = 0; i < closers.length; i++) {
+    const c = closers[i];
     if (c.emFila === false) continue;
-    if (counts[c.name] === minCount) {
-      return { index: idx, name: c.name };
-    }
+    if (counts[c.name] === minCount) return { index: i, name: c.name };
   }
 
   return { index: closers.findIndex(c => c.emFila !== false), name: naFila[0].name };
@@ -2325,21 +2322,28 @@ function renderScoreboard() {
     totalEl.textContent = '0'; return;
   }
 
-  const countDay = {}, countMonth = {};
-  closers.forEach(c => { countDay[c.name] = 0; countMonth[c.name] = 0; });
+  // SDR = agendado por outra pessoa; Próprio = sdr===closer (inclui 1ª e 2ª própria)
+  const daySDR={}, dayProp={}, monSDR={}, monProp={};
+  closers.forEach(c => { daySDR[c.name]=0; dayProp[c.name]=0; monSDR[c.name]=0; monProp[c.name]=0; });
 
   agendamentos.forEach(row => {
     if (!row.closer) return;
-    if (row.tipoReun === '2º Reunião') return; // placar conta só 1ª reunião (vazio = legado = 1ª)
     const dp = extractDatePart(row.carimbo);
     if (!dp) return;
     const dt = parseBRDate(dp);
-    if (dp === scoreBR)
-      countDay[row.closer] = (countDay[row.closer] || 0) + 1;
-    if (!isNaN(dt) && dt.getMonth() === scoreM && dt.getFullYear() === scoreY)
-      countMonth[row.closer] = (countMonth[row.closer] || 0) + 1;
+    const isOwn = row.sdr === row.closer;
+    if (dp === scoreBR) {
+      if (isOwn) dayProp[row.closer] = (dayProp[row.closer]||0)+1;
+      else        daySDR[row.closer]  = (daySDR[row.closer]||0)+1;
+    }
+    if (!isNaN(dt) && dt.getMonth()===scoreM && dt.getFullYear()===scoreY) {
+      if (isOwn) monProp[row.closer] = (monProp[row.closer]||0)+1;
+      else        monSDR[row.closer]  = (monSDR[row.closer]||0)+1;
+    }
   });
 
+  const countDay   = {}; closers.forEach(c => countDay[c.name]   = (daySDR[c.name]||0)+(dayProp[c.name]||0));
+  const countMonth = {}; closers.forEach(c => countMonth[c.name] = (monSDR[c.name]||0)+(monProp[c.name]||0));
   const totalDay   = Object.values(countDay).reduce((a,b)=>a+b, 0);
   const totalMonth = Object.values(countMonth).reduce((a,b)=>a+b, 0);
 
@@ -2366,11 +2370,21 @@ function renderScoreboard() {
     div.innerHTML = `
       <div class="closer-avatar">${c.initials}</div>
       <div class="closer-name">${c.name}${isPulado ? ' <span style="font-size:.6rem;opacity:.6">(pulado)</span>' : ''}${isOffQueue ? ' <span style="font-size:.6rem;opacity:.5">(fora da fila)</span>' : ''}</div>
-      <div class="closer-count">${countDay[c.name] ?? 0}</div>
+      <div class="closer-count">${(daySDR[c.name]||0)+(dayProp[c.name]||0)}</div>
       <div class="closer-count-label">reuniões hoje</div>
+      <div class="closer-breakdown">
+        <span class="breakdown-sdr">${daySDR[c.name]||0} SDR</span>
+        <span class="breakdown-sep">+</span>
+        <span class="breakdown-own">${dayProp[c.name]||0} próprio</span>
+      </div>
       <div class="closer-month">
-        <span class="month-num">${countMonth[c.name] ?? 0}</span>
+        <span class="month-num">${(monSDR[c.name]||0)+(monProp[c.name]||0)}</span>
         <span class="month-label">no mês</span>
+      </div>
+      <div class="closer-breakdown" style="margin-bottom:4px">
+        <span class="breakdown-sdr">${monSDR[c.name]||0} SDR</span>
+        <span class="breakdown-sep">+</span>
+        <span class="breakdown-own">${monProp[c.name]||0} próprio</span>
       </div>
       <div class="click-hint">${isOffQueue ? 'clique para forçar seleção' : 'clique para selecionar'}</div>`;
 
