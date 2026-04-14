@@ -2548,9 +2548,8 @@ function renderSDRCards(refDate) {
   const tipoOkGlobal = r => sdrFilter === 'Todas' || r.tipoReun === sdrFilter;
   const filterLabel  = sdrFilter === 'Todas' ? 'Todas' : sdrFilter;
 
-  // ── Total geral do mês (todos os agendamentos, col B = carimbo) ──
+  // ── Total geral do mês (SEMPRE todos os tipos, sem filtro) ──
   const totalGeralMes = agendamentos.filter(r => {
-    if (!tipoOkGlobal(r)) return false;
     const dp = extractCarimboDate(r.carimbo);
     if (!dp) return false;
     const dt = parseBRDate(dp);
