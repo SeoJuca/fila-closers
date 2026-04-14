@@ -1029,6 +1029,83 @@
     .sdr-type-btn:hover { color: #aaa; background: rgba(255,255,255,0.05); }
     .sdr-type-btn.active { background: var(--yellow); color: var(--dark); box-shadow: 0 2px 8px rgba(110,177,80,0.3); }
 
+    /* ── SCORE LEAD CONDITIONAL ── */
+    .score-lead-wrap {
+      overflow: hidden;
+      transition: max-height .35s ease, opacity .35s ease, margin-bottom .35s ease;
+      max-height: 120px; opacity: 1;
+    }
+    .score-lead-wrap.hidden {
+      max-height: 0; opacity: 0; margin-bottom: -16px; pointer-events: none;
+    }
+
+    /* ── POPUPS 2ª REUNIÃO ── */
+    .reuniao2-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.78);
+      backdrop-filter: blur(5px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1100; animation: fadeIn .2s ease;
+    }
+    .reuniao2-box {
+      background: var(--mid);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 22px; padding: 32px;
+      max-width: 480px; width: 94%;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.65);
+      animation: slideUp .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .reuniao2-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem; letter-spacing: 2px;
+      color: var(--yellow); margin-bottom: 8px;
+    }
+    .reuniao2-sub { font-size: .82rem; color: #777; margin-bottom: 24px; line-height: 1.6; }
+    .reuniao2-closer-name { color: #fff; font-weight: 900; }
+    .reuniao2-btns { display: flex; gap: 12px; }
+
+    .popup-closer-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr));
+      gap: 12px; margin-top: 4px;
+    }
+    .popup-closer-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 12px; padding: 14px 10px;
+      text-align: center; cursor: pointer; transition: all .2s;
+    }
+    .popup-closer-card:hover {
+      border-color: var(--yellow); background: rgba(110,177,80,0.1);
+      transform: translateY(-2px);
+    }
+    .popup-closer-card .pc-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--yellow));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 900; color: #fff; margin: 0 auto 8px;
+    }
+    .popup-closer-card .pc-name { font-size: .75rem; font-weight: 800; line-height: 1.3; }
+
+    .lead-list {
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 320px; overflow-y: auto; margin-top: 4px;
+    }
+    .lead-list::-webkit-scrollbar { width: 4px; }
+    .lead-list::-webkit-scrollbar-thumb { background: rgba(110,177,80,0.3); border-radius: 99px; }
+    .lead-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; cursor: pointer; transition: all .2s;
+    }
+    .lead-item:hover { border-color: var(--yellow); background: rgba(110,177,80,0.1); }
+    .lead-item-info { display: flex; flex-direction: column; gap: 3px; }
+    .lead-item-name { font-size: .9rem; font-weight: 900; }
+    .lead-item-sdr  { font-size: .7rem; color: #666; }
+    .lead-item-arrow { font-size: 1rem; color: var(--yellow); opacity: .7; }
+    .lead-empty { text-align: center; color: #555; padding: 24px; font-size: .9rem; }
+
     .sdr-screen-wrap {
       max-width: 1100px;
       margin: 0 auto;
@@ -1417,7 +1494,7 @@
       <input type="text" id="lead-name" placeholder="Digite o nome do lead..." />
     </div>
 
-    <div>
+    <div class="score-lead-wrap" id="score-lead-wrap">
       <label>Score Lead</label>
       <input type="number" id="lead-score" placeholder="Ex: 85" min="0" step="1"
              oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
@@ -1725,6 +1802,45 @@
         <div class="pizza-total-label" id="pizza-total-label"></div>
       </div>
       <div class="pizza-legend" id="pizza-legend"></div>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP 1 — Confirma closer para 2ª reunião -->
+<div id="popup-confirma-closer" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div class="reuniao2-title">🔄 2ª Reunião</div>
+    <div class="reuniao2-sub">
+      A 2ª reunião será agendada com o closer<br>
+      <span class="reuniao2-closer-name" id="popup1-closer-name"></span>?
+    </div>
+    <div class="reuniao2-btns">
+      <button class="btn btn-secondary" onclick="popup1Trocar()">🔄 Trocar closer</button>
+      <button class="btn btn-primary" onclick="popup1Confirmar()">✅ Sim, confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP 2 — Seleciona closer correto -->
+<div id="popup-seleciona-closer" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div class="reuniao2-title">👤 Selecione o Closer</div>
+    <div class="reuniao2-sub">Escolha o closer responsável pela 2ª reunião</div>
+    <div class="popup-closer-grid" id="popup2-grid"></div>
+  </div>
+</div>
+
+<!-- POPUP 3 — Lista de leads efetivados -->
+<div id="popup-seleciona-lead" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div class="reuniao2-title">📋 Selecione o Lead</div>
+    <div class="reuniao2-sub">
+      Leads efetivados por <span class="reuniao2-closer-name" id="popup3-closer-name"></span>
+      sem 2ª reunião agendada
+    </div>
+    <div class="lead-list" id="popup3-lead-list"></div>
+    <div style="margin-top:18px">
+      <button class="btn btn-secondary" style="width:100%" onclick="popup3Voltar()">← Voltar</button>
     </div>
   </div>
 </div>
@@ -2102,26 +2218,42 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   const sdr  = document.getElementById('sdr-select').value;
   const data = document.getElementById('meeting-date').value;
   const lead  = document.getElementById('lead-name').value.trim();
+  const tipoReuniao = document.querySelector('input[name="tipo_reuniao"]:checked')?.value || '1º Reunião';
   const score = document.getElementById('lead-score').value.trim();
 
-  if (!sdr)   { toast('Selecione seu nome!', false); return; }
-  if (!lead)  { toast('Informe o nome do lead!', false); return; }
-  if (!score || isNaN(score) || parseInt(score) < 0) { toast('Informe o Score Lead!', false); return; }
+  if (!sdr)  { toast('Selecione seu nome!', false); return; }
   if (!data) { toast('Escolha a data da reunião!', false); return; }
   if (!closers.length) { toast('Closers não carregados!', false); return; }
 
-  const { name: closer } = calcNextCloser();
+  // Fluxo especial para 2ª Reunião — abre popup se lead ainda não foi selecionado
+  if (tipoReuniao === '2º Reunião') {
+    if (!lead) {
+      // Lead ainda não selecionado → abre o fluxo de popups
+      openReuniao2Flow();
+      return;
+    }
+    // Lead já selecionado via popup → segue normalmente sem score
+  } else {
+    // 1ª Reunião → valida score
+    if (!lead)  { toast('Informe o nome do lead!', false); return; }
+    if (!score || isNaN(score) || parseInt(score) < 0) { toast('Informe o Score Lead!', false); return; }
+  }
+
+  // Determina o closer: se 2ª reunião e foi escolhido no popup, usa r2SelectedCloser
+  const closerFinal = (tipoReuniao === '2º Reunião' && r2SelectedCloser)
+    ? r2SelectedCloser
+    : calcNextCloser().name;
+
   const btn = document.getElementById('btn-schedule');
   btn.disabled = true; btn.textContent = '⏳ Enviando...';
 
   const [y,m,d] = data.split('-');
   const fd = new FormData();
-  const tipoReuniao = document.querySelector('input[name="tipo_reuniao"]:checked')?.value || '1º Reunião';
   fd.append('sdr',          sdr);
-  fd.append('closer',       closer);
+  fd.append('closer',       closerFinal);
   fd.append('data_reuniao', `${d}/${m}/${y}`);
   fd.append('nome_lead',    lead);
-  fd.append('score_lead',   score);
+  if (tipoReuniao === '1º Reunião') fd.append('score_lead', score);
   fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
   fd.append('caminho',      'SDR');
   fd.append('tipo_reuniao', tipoReuniao);
@@ -2131,6 +2263,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
     toast(`✅ Agendado! ${closer} recebeu a reunião de ${lead}.`);
     document.getElementById('lead-name').value  = '';
     document.getElementById('lead-score').value = '';
+    r2SelectedCloser = null; // reseta seleção específica de 2ª reunião
 
     // Reseta pulos da sessão após agendar — o closer pulado volta à fila
     skippedThisSession.clear();
@@ -2141,7 +2274,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
     // O auto-refresh de 90s vai sincronizar quando o Make já tiver processado.
     agendamentos.push({
       carimbo:  new Date().toLocaleString('pt-BR'),
-      sdr, dataReun: `${d}/${m}/${y}`, closer, lead,
+      sdr, dataReun: `${d}/${m}/${y}`, closer: closerFinal, lead,
       tipoReun: tipoReuniao,
     });
     updateNextCloserDisplay();
@@ -2182,11 +2315,127 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 
 document.getElementById('meeting-date').value = isoDate(new Date());
 
-// Atualiza label da data conforme tipo de reunião selecionado
+// Atualiza label da data e visibilidade do Score Lead conforme tipo selecionado
 document.querySelectorAll('input[name="tipo_reuniao"]').forEach(radio => {
   radio.addEventListener('change', () => {
-    const lbl = document.getElementById('meeting-date-label');
-    if (lbl) lbl.textContent = radio.value === '2º Reunião' ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
+    const lbl  = document.getElementById('meeting-date-label');
+    const wrap = document.getElementById('score-lead-wrap');
+    const is2  = radio.value === '2º Reunião';
+    if (lbl)  lbl.textContent = is2 ? 'Data da 2ª Reunião' : 'Data da 1ª Reunião';
+    if (wrap) wrap.classList.toggle('hidden', is2);
+  });
+});
+
+// ══════════════════════════════════════════════════════════
+//  FLUXO 2ª REUNIÃO — 3 POPUPS
+// ══════════════════════════════════════════════════════════
+let r2SelectedCloser = null; // closer escolhido no fluxo de 2ª reunião
+
+// Abre o fluxo — chamado ao clicar em "Agendar Reunião" quando tipo = 2ª
+function openReuniao2Flow() {
+  const { name: nextName } = calcNextCloser();
+  r2SelectedCloser = nextName;
+  document.getElementById('popup1-closer-name').textContent = nextName;
+  document.getElementById('popup-confirma-closer').style.display = 'flex';
+}
+
+// Popup 1 — Confirmar closer → vai para popup 3
+function popup1Confirmar() {
+  document.getElementById('popup-confirma-closer').style.display = 'none';
+  openPopup3(r2SelectedCloser);
+}
+
+// Popup 1 — Trocar closer → vai para popup 2
+function popup1Trocar() {
+  document.getElementById('popup-confirma-closer').style.display = 'none';
+  openPopup2();
+}
+
+// Popup 2 — Grid de closers para selecionar
+function openPopup2() {
+  const grid = document.getElementById('popup2-grid');
+  grid.innerHTML = '';
+  closers.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'popup-closer-card';
+    card.innerHTML = `
+      <div class="pc-avatar">${c.initials}</div>
+      <div class="pc-name">${c.name}</div>`;
+    card.addEventListener('click', () => {
+      r2SelectedCloser = c.name;
+      document.getElementById('popup-seleciona-closer').style.display = 'none';
+      openPopup3(c.name);
+    });
+    grid.appendChild(card);
+  });
+  document.getElementById('popup-seleciona-closer').style.display = 'flex';
+}
+
+// Popup 3 — Lista de leads efetivados sem 2ª reunião
+function openPopup3(closerName) {
+  document.getElementById('popup3-closer-name').textContent = closerName;
+
+  // Leads efetivados pelo closer (col D = closer, status = Efetivada)
+  const efetivados = agendamentos.filter(r =>
+    r.closer === closerName && r.status === 'Efetivada' && r.tipoReun !== '2º Reunião'
+  );
+
+  // Remove os que já têm uma 2ª reunião agendada (cruza pelo nome do lead)
+  const com2a = new Set(
+    agendamentos
+      .filter(r => r.tipoReun === '2º Reunião')
+      .map(r => r.lead.trim().toLowerCase())
+  );
+  const elegíveis = efetivados.filter(r =>
+    r.lead && !com2a.has(r.lead.trim().toLowerCase())
+  );
+
+  // Ordena por data da reunião (mais recente primeiro)
+  elegíveis.sort((a,b) => {
+    const da = parseBRDate(extractDatePart(a.dataReun) || isoToBR(a.dataReun));
+    const db = parseBRDate(extractDatePart(b.dataReun) || isoToBR(b.dataReun));
+    return db - da;
+  });
+
+  const list = document.getElementById('popup3-lead-list');
+  if (!elegíveis.length) {
+    list.innerHTML = '<div class="lead-empty">😕 Nenhum lead elegível encontrado.<br>Todos os efetivados já possuem 2ª reunião agendada.</div>';
+  } else {
+    list.innerHTML = '';
+    elegíveis.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'lead-item';
+      item.innerHTML = `
+        <div class="lead-item-info">
+          <div class="lead-item-name">${r.lead}</div>
+          <div class="lead-item-sdr">📋 Agendado por ${r.sdr || '—'}</div>
+        </div>
+        <div class="lead-item-arrow">→</div>`;
+      item.addEventListener('click', () => selectLead2a(r.lead, closerName));
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('popup-seleciona-lead').style.display = 'flex';
+}
+
+// Popup 3 — Voltar para popup 2
+function popup3Voltar() {
+  document.getElementById('popup-seleciona-lead').style.display = 'none';
+  openPopup2();
+}
+
+// Seleciona o lead e fecha todos os popups
+function selectLead2a(leadName, closerName) {
+  document.getElementById('lead-name').value   = leadName;
+  r2SelectedCloser = closerName;
+  document.getElementById('popup-seleciona-lead').style.display = 'none';
+  toast(`✅ Lead "${leadName}" selecionado para 2ª reunião com ${closerName}!`);
+}
+
+// Fechar popups clicando fora
+['popup-confirma-closer','popup-seleciona-closer','popup-seleciona-lead'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
   });
 });
 
