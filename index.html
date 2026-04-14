@@ -912,7 +912,64 @@
     .pizza-legend-pct { font-size: .72rem; color: #666; min-width: 38px; text-align: right; }
     .pizza-empty { text-align: center; color: #555; padding: 32px 0; font-size: .9rem; }
 
-    /* ── RADIO BOX TIPO REUNIÃO ── */
+    /* ── MODO TV ── */
+    .tv-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.6);
+      border-radius: 8px;
+      width: 36px; height: 36px;
+      font-size: 1rem; cursor: pointer;
+      transition: all .2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tv-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    .tv-btn.active {
+      background: var(--yellow);
+      border-color: var(--yellow);
+      color: var(--dark);
+      box-shadow: 0 0 12px rgba(110,177,80,0.5);
+    }
+
+    /* Oculta nav em modo TV */
+    body.tv-mode .header-nav { display: none; }
+    body.tv-mode .tv-btn { display: flex; }
+    body.tv-mode header {
+      padding: 10px 24px;
+    }
+    body.tv-mode .logo-wrap img { height: 44px; }
+    body.tv-mode .header-center-title { font-size: 1.2rem; }
+
+    /* Indicador de progresso TV */
+    #tv-progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--yellow);
+      width: 0%;
+      z-index: 9999;
+      transition: none;
+      display: none;
+    }
+    body.tv-mode #tv-progress-bar { display: block; }
+
+    /* Badge TV no header */
+    #tv-status-badge {
+      display: none;
+      position: fixed;
+      bottom: 16px; right: 16px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(110,177,80,0.3);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: .72rem;
+      color: var(--yellow);
+      letter-spacing: 1px;
+      font-weight: 800;
+      z-index: 9998;
+      backdrop-filter: blur(4px);
+    }
+    body.tv-mode #tv-status-badge { display: block; }
     .radio-group { display: flex; gap: 10px; }
     .radio-option { flex: 1; position: relative; cursor: pointer; user-select: none; }
     .radio-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
@@ -1300,11 +1357,15 @@
 </head>
 <body>
 
+<div id="tv-progress-bar"></div>
+<div id="tv-status-badge">📺 MODO TV</div>
+
 <header>
   <div class="logo-wrap">
     <img src="https://github.com/jonathanseojuca/fila-closers/blob/main/images/Logo.png?raw=true" alt="Mercadinho do Seo Juca" onerror="this.style.display='none'" />
   </div>
   <div class="header-center-title">Agendamentos Seo Juca</div>
+  <button class="tv-btn" id="tv-toggle-btn" onclick="toggleTVMode()" title="Modo TV">📺</button>
   <div class="header-nav">
     <button class="nav-tab active" id="tab-agendamento" onclick="showScreen('agendamento')">📋 Agendamento</button>
     <button class="nav-tab" id="tab-sdr" onclick="showScreen('sdr')">🎯 SDR</button>
@@ -3242,7 +3303,141 @@ document.getElementById('pizza-overlay').addEventListener('click', function(e) {
   if (e.target === this) closePizzaModal();
 });
 
-setInterval(loadAgendamentos, 90000);
+
+// ══════════════════════════════════════════════════════════
+//  MODO TV
+//  Fluxo: SDR (6s) → Indicadores (scroll lento até o fim) → repete
+// ══════════════════════════════════════════════════════════
+let tvMode       = false;
+let tvTimer      = null;
+let tvScroll     = null;
+let tvProgress   = null;
+let tvPhase      = 'sdr'; // 'sdr' | 'indicadores'
+
+function toggleTVMode() {
+  tvMode = !tvMode;
+  const btn = document.getElementById('tv-toggle-btn');
+  if (tvMode) {
+    document.body.classList.add('tv-mode');
+    btn.classList.add('active');
+    btn.title = 'Sair do Modo TV';
+    startTVMode();
+  } else {
+    document.body.classList.remove('tv-mode');
+    btn.classList.remove('active');
+    btn.title = 'Modo TV';
+    stopTVMode();
+  }
+}
+
+function startTVMode() {
+  stopTVMode(); // limpa qualquer ciclo anterior
+  runTVCycle();
+}
+
+function stopTVMode() {
+  clearTimeout(tvTimer);
+  cancelAnimationFrame(tvScroll);
+  clearInterval(tvProgress);
+  tvScroll   = null;
+  tvTimer    = null;
+  tvProgress = null;
+  const bar  = document.getElementById('tv-progress-bar');
+  if (bar) { bar.style.width = '0%'; bar.style.transition = 'none'; }
+  document.getElementById('tv-status-badge').textContent = '📺 MODO TV';
+}
+
+function runTVCycle() {
+  if (!tvMode) return;
+
+  // ── FASE 1: Mostra tela SDR por 6 segundos ──
+  tvPhase = 'sdr';
+  showScreen('sdr');
+  window.scrollTo({ top: 0 });
+  updateTVBadge('📺 SDR — 6s');
+
+  animateProgress(6000, () => {
+    if (!tvMode) return;
+
+    // ── FASE 2: Vai para Indicadores e rola devagar ──
+    tvPhase = 'indicadores';
+    showScreen('indicadores');
+    window.scrollTo({ top: 0 });
+    updateTVBadge('📺 Indicadores — rolando...');
+
+    // Pequeno delay para renderizar antes de rolar
+    tvTimer = setTimeout(() => {
+      if (!tvMode) return;
+      scrollToBottomSlow(() => {
+        if (!tvMode) return;
+        // Chegou ao fim → aguarda 2s e reinicia
+        tvTimer = setTimeout(() => {
+          window.scrollTo({ top: 0 });
+          runTVCycle();
+        }, 2000);
+      });
+    }, 800);
+  });
+}
+
+// Anima a barra de progresso e chama callback ao fim
+function animateProgress(duration, callback) {
+  const bar = document.getElementById('tv-progress-bar');
+  if (bar) {
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    // Força reflow
+    bar.getBoundingClientRect();
+    bar.style.transition = `width ${duration}ms linear`;
+    bar.style.width = '100%';
+  }
+  tvTimer = setTimeout(() => {
+    if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+    callback();
+  }, duration);
+}
+
+// Rola a página devagar até o fim, chama callback ao chegar
+function scrollToBottomSlow(callback) {
+  const totalHeight = document.body.scrollHeight - window.innerHeight;
+  if (totalHeight <= 0) { callback(); return; }
+
+  // Velocidade: pixels por segundo — ajuste aqui para mais rápido/lento
+  const pxPerSec = 60;
+  let lastTime   = null;
+  let scrolled   = window.scrollY;
+
+  function step(ts) {
+    if (!tvMode) return;
+    if (!lastTime) lastTime = ts;
+    const dt  = (ts - lastTime) / 1000;
+    lastTime  = ts;
+    scrolled += pxPerSec * dt;
+
+    const target = Math.min(scrolled, totalHeight);
+    window.scrollTo({ top: target });
+
+    if (target >= totalHeight) {
+      updateTVBadge('📺 Indicadores — fim ✓');
+      callback();
+    } else {
+      tvScroll = requestAnimationFrame(step);
+    }
+  }
+  tvScroll = requestAnimationFrame(step);
+}
+
+function updateTVBadge(msg) {
+  const el = document.getElementById('tv-status-badge');
+  if (el) el.textContent = msg;
+}
+
+// Ativa modo TV com parâmetro URL ?tv=1
+if (new URLSearchParams(window.location.search).get('tv') === '1') {
+  window.addEventListener('load', () => setTimeout(toggleTVMode, 500));
+}
+
+setInterval(loadAgendamentos, 30000);
 </script>
 </body>
 </html>
