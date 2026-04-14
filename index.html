@@ -911,6 +911,44 @@
     }
     .pizza-legend-pct { font-size: .72rem; color: #666; min-width: 38px; text-align: right; }
     .pizza-empty { text-align: center; color: #555; padding: 32px 0; font-size: .9rem; }
+
+    /* ── RADIO BOX TIPO REUNIÃO ── */
+    .radio-group { display: flex; gap: 10px; }
+    .radio-option { flex: 1; position: relative; cursor: pointer; user-select: none; }
+    .radio-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .radio-content {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 14px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px; transition: all .2s; text-align: center;
+    }
+    .radio-option:hover .radio-content { border-color: rgba(110,177,80,0.35); background: rgba(110,177,80,0.06); }
+    .radio-option input:checked ~ .radio-content {
+      border-color: var(--yellow); background: rgba(110,177,80,0.12);
+      box-shadow: 0 0 0 1px rgba(110,177,80,0.25);
+    }
+    .radio-emoji { font-size: 1.4rem; line-height: 1; }
+    .radio-label { font-size: .88rem; font-weight: 900; color: var(--white); letter-spacing: .5px; }
+    .radio-option input:checked ~ .radio-content .radio-label { color: var(--yellow); }
+    .radio-desc { font-size: .65rem; color: #666; letter-spacing: .5px; }
+
+    /* ── SDR SELETOR TRIPLO ── */
+    .sdr-type-selector {
+      display: flex; gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 4px;
+    }
+    .sdr-type-btn {
+      flex: 1; padding: 7px 10px; border: none; border-radius: 7px;
+      font-family: 'Nunito', sans-serif; font-size: .75rem; font-weight: 800;
+      letter-spacing: .5px; cursor: pointer; transition: all .2s;
+      color: #666; background: transparent;
+    }
+    .sdr-type-btn:hover { color: #aaa; background: rgba(255,255,255,0.05); }
+    .sdr-type-btn.active { background: var(--yellow); color: var(--dark); box-shadow: 0 2px 8px rgba(110,177,80,0.3); }
+
     .sdr-screen-wrap {
       max-width: 1100px;
       margin: 0 auto;
@@ -1296,6 +1334,30 @@
     </div>
 
     <div>
+      <label>Tipo de Reunião</label>
+      <div class="radio-group">
+        <label class="radio-option" id="radio-opt-1">
+          <input type="radio" name="tipo_reuniao" value="1º Reunião" checked />
+          <span class="radio-visual"></span>
+          <span class="radio-content">
+            <span class="radio-emoji">🥇</span>
+            <span class="radio-label">1º Reunião</span>
+            <span class="radio-desc">Primeiro contato</span>
+          </span>
+        </label>
+        <label class="radio-option" id="radio-opt-2">
+          <input type="radio" name="tipo_reuniao" value="2º Reunião" />
+          <span class="radio-visual"></span>
+          <span class="radio-content">
+            <span class="radio-emoji">🔄</span>
+            <span class="radio-label">2º Reunião</span>
+            <span class="radio-desc">Retorno / Follow-up</span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div>
       <label>Data da 1ª Reunião</label>
       <input type="date" id="meeting-date" />
     </div>
@@ -1379,10 +1441,17 @@
   <div class="sdr-screen-wrap">
     <div class="sdr-top-row">
       <div class="sdr-screen-title">🎯 Meta de Agendamentos</div>
-      <div class="date-nav" style="margin:0">
-        <button class="nav-btn" onclick="sdrPrevDay()">◀</button>
-        <div class="date-display" id="sdr-date-label" style="min-width:150px;text-align:center"></div>
-        <button class="nav-btn" onclick="sdrNextDay()">▶</button>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="sdr-type-selector">
+          <button class="sdr-type-btn active" id="sdr-btn-1" onclick="setSdrFilter('1º Reunião')">🥇 1ª Reunião</button>
+          <button class="sdr-type-btn" id="sdr-btn-2" onclick="setSdrFilter('2º Reunião')">🔄 2ª Reunião</button>
+          <button class="sdr-type-btn" id="sdr-btn-all" onclick="setSdrFilter('Todas')">📊 Todas</button>
+        </div>
+        <div class="date-nav" style="margin:0">
+          <button class="nav-btn" onclick="sdrPrevDay()">◀</button>
+          <div class="date-display" id="sdr-date-label" style="min-width:150px;text-align:center"></div>
+          <button class="nav-btn" onclick="sdrNextDay()">▶</button>
+        </div>
       </div>
     </div>
     <div class="sdr-month-info" id="sdr-month-info"></div>
@@ -1438,7 +1507,7 @@
     </div>
     <div class="dash-table-wrap">
       <table class="dash-table">
-        <thead><tr><th>#</th><th>Lead</th><th>Horário Agend.</th><th>Efetivada</th><th>No-show</th></tr></thead>
+        <thead><tr><th>#</th><th>Lead</th><th>Tipo</th><th>Horário Agend.</th><th>Efetivada</th><th>No-show</th></tr></thead>
         <tbody id="dash-tbody"></tbody>
       </table>
     </div>
@@ -1458,54 +1527,78 @@
       </div>
     </div>
 
-    <!-- ROW 1: Pódio + SDR Campeão -->
+    <!-- ROW 1: Dois Pódios -->
     <div class="ind-row">
-      <div class="ind-card ind-card-wide">
-        <div class="ind-card-title">🥇 Top 3 Closers — Reuniões Efetivadas</div>
-        <div class="podium-wrap" id="ind-podium"></div>
+      <div class="ind-card">
+        <div class="ind-card-title">🥇 Top 3 Closers — 1ª Reunião Efetivada</div>
+        <div class="podium-wrap" id="ind-podium-1"></div>
       </div>
       <div class="ind-card">
-        <div class="ind-card-title">🎯 SDR Campeão de Meta</div>
+        <div class="ind-card-title">🔄 Top 3 Closers — 2ª Reunião Efetivada</div>
+        <div class="podium-wrap" id="ind-podium-2"></div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Efetividade + No-show 1ª Reunião -->
+    <div class="ind-row">
+      <div class="ind-card">
+        <div class="ind-card-title">📈 Efetividade por Closer — 1ª Reunião <span class="ind-formula">(efetivadas ÷ total)</span></div>
+        <div id="ind-efetividade-1"></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">❌ No-show por Closer — 1ª Reunião <span class="ind-formula">(no-show ÷ total)</span></div>
+        <div id="ind-noshow-1"></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Efetividade + No-show 2ª Reunião -->
+    <div class="ind-row">
+      <div class="ind-card">
+        <div class="ind-card-title">📈 Efetividade por Closer — 2ª Reunião <span class="ind-formula">(efetivadas ÷ total)</span></div>
+        <div id="ind-efetividade-2"></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">❌ No-show por Closer — 2ª Reunião <span class="ind-formula">(no-show ÷ total)</span></div>
+        <div id="ind-noshow-2"></div>
+      </div>
+    </div>
+
+    <!-- ROW 4: SDR Campeão + Ranking SDR -->
+    <div class="ind-row">
+      <div class="ind-card">
+        <div class="ind-card-title">🎯 SDR Campeão de Meta <span class="ind-formula">(1ª reunião)</span></div>
         <div id="ind-sdr-meta"></div>
       </div>
-    </div>
-
-    <!-- ROW 2: Efetividade + No-show -->
-    <div class="ind-row">
       <div class="ind-card">
-        <div class="ind-card-title">📈 Efetividade por Closer <span class="ind-formula">(efetivadas ÷ total agendado)</span></div>
-        <div id="ind-efetividade"></div>
-      </div>
-      <div class="ind-card">
-        <div class="ind-card-title">❌ Taxa de No-show por Closer <span class="ind-formula">(no-show ÷ total agendado)</span></div>
-        <div id="ind-noshow"></div>
-      </div>
-    </div>
-
-    <!-- ROW 3: Ranking SDR -->
-    <div class="ind-row">
-      <div class="ind-card ind-card-full">
-        <div class="ind-card-title">📊 Ranking de Agendamentos por SDR</div>
+        <div class="ind-card-title">📊 Ranking de Agendamentos por SDR <span class="ind-formula">(1ª reunião)</span></div>
         <div id="ind-ranking-sdr"></div>
       </div>
     </div>
 
-    <!-- ROW 4: Gráfico evolução diária -->
+    <!-- ROW 5: Gráfico evolução 1ª Reunião -->
     <div class="ind-row">
       <div class="ind-card ind-card-full">
-        <div class="ind-card-title">📉 Evolução Diária de Agendamentos</div>
+        <div class="ind-card-title">📉 Evolução Diária — 1ª Reunião</div>
         <div class="chart-wrap" id="ind-chart"></div>
       </div>
     </div>
 
-    <!-- ROW 5: Dia da semana mais/menos efetivo -->
+    <!-- ROW 6: Gráfico evolução 2ª Reunião -->
+    <div class="ind-row">
+      <div class="ind-card ind-card-full">
+        <div class="ind-card-title">📉 Evolução Diária — 2ª Reunião</div>
+        <div class="chart-wrap" id="ind-chart-2"></div>
+      </div>
+    </div>
+
+    <!-- ROW 7: Dia da semana (somente 1ª reunião) -->
     <div class="ind-row">
       <div class="ind-card">
-        <div class="ind-card-title">📆 Agendamentos por Dia da Semana <span class="ind-formula">(volume total)</span></div>
+        <div class="ind-card-title">📆 Agendamentos por Dia da Semana <span class="ind-formula">(1ª reunião · volume)</span></div>
         <div id="ind-dow-agend"></div>
       </div>
       <div class="ind-card">
-        <div class="ind-card-title">✅ Efetivação por Dia da Semana <span class="ind-formula">(efetivadas ÷ total agendado)</span></div>
+        <div class="ind-card-title">✅ Efetivação por Dia da Semana <span class="ind-formula">(1ª reunião)</span></div>
         <div id="ind-dow-ef"></div>
       </div>
     </div>
@@ -1747,6 +1840,7 @@ async function loadAgendamentos() {
       lead:     (cols[5]||'').trim(),   // F - Nome Lead
       status:   (cols[6]||'').trim(),   // G - Status
       tsStatus: (cols[7]||'').trim(),   // H - Timestamp status
+      tipoReun: (cols[8]||'').trim(),   // I - Tipo de Reunião
     })).filter(r => r.sdr || r.carimbo);
 
     updateNextCloserDisplay();
@@ -1930,12 +2024,14 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
 
   const [y,m,d] = data.split('-');
   const fd = new FormData();
+  const tipoReuniao = document.querySelector('input[name="tipo_reuniao"]:checked')?.value || '1º Reunião';
   fd.append('sdr',          sdr);
   fd.append('closer',       closer);
   fd.append('data_reuniao', `${d}/${m}/${y}`);
   fd.append('nome_lead',    lead);
   fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
   fd.append('caminho',      'SDR');
+  fd.append('tipo_reuniao', tipoReuniao);
 
   try {
     await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
@@ -1952,6 +2048,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
     agendamentos.push({
       carimbo:  new Date().toLocaleString('pt-BR'),
       sdr, dataReun: `${d}/${m}/${y}`, closer, lead,
+      tipoReun: tipoReuniao,
     });
     updateNextCloserDisplay();
     renderScoreboard();
@@ -2006,6 +2103,7 @@ let forcedCloser    = null;  // closer fora da fila selecionado manualmente
 let closerPasswords = {};
 let dashDate        = new Date();
 let sdrDate         = new Date();
+let sdrFilter       = '1º Reunião'; // '1º Reunião' | '2º Reunião' | 'Todas'
 
 function showScreen(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -2348,6 +2446,17 @@ let sdrList  = [];  // [{name, cargo}]
 let metaMap  = {};  // { 'SDR Junior': 6, 'SDR Pleno': 8 }
 
 // Conta dias úteis (seg-sex) de um mês/ano
+function setSdrFilter(f) {
+  sdrFilter = f;
+  ['1', '2', 'all'].forEach(k => {
+    const el = document.getElementById('sdr-btn-' + k);
+    if (el) el.classList.remove('active');
+  });
+  const map = {'1º Reunião':'1','2º Reunião':'2','Todas':'all'};
+  const btn = document.getElementById('sdr-btn-' + map[f]);
+  if (btn) btn.classList.add('active');
+  renderSDRCards(sdrDate);
+}
 function sdrPrevDay() { sdrDate.setDate(sdrDate.getDate()-1); renderSDRCards(sdrDate); }
 function sdrNextDay() { sdrDate.setDate(sdrDate.getDate()+1); renderSDRCards(sdrDate); }
 
@@ -2423,8 +2532,13 @@ function renderSDRCards(refDate) {
   const workdaysTotal   = countWorkdays(year, month);
   const workdaysElapsed = countWorkdaysElapsed(year, month, now);
 
+  // Filtro de tipo para os totais
+  const tipoOkGlobal = r => sdrFilter === 'Todas' || r.tipoReun === sdrFilter;
+  const filterLabel  = sdrFilter === 'Todas' ? 'Todas' : sdrFilter;
+
   // ── Total geral do mês (todos os agendamentos, col B = carimbo) ──
   const totalGeralMes = agendamentos.filter(r => {
+    if (!tipoOkGlobal(r)) return false;
     const dp = extractCarimboDate(r.carimbo);
     if (!dp) return false;
     const dt = parseBRDate(dp);
@@ -2435,6 +2549,7 @@ function renderSDRCards(refDate) {
   const sdrNames = sdrList.map(s => s.name);
   const totalSDRMes = agendamentos.filter(r => {
     if (!sdrNames.includes(r.sdr)) return false;
+    if (!tipoOkGlobal(r)) return false;
     const dp = extractCarimboDate(r.carimbo);
     if (!dp) return false;
     const dt = parseBRDate(dp);
@@ -2445,7 +2560,7 @@ function renderSDRCards(refDate) {
     <span>${monthName} — ${workdaysTotal} dias úteis</span>
     <div class="sdr-totals-wrap">
       <span class="sdr-total-mes">📊 Total geral do mês: <strong>${totalGeralMes}</strong></span>
-      <span class="sdr-total-mes sdr-total-sdr">👥 Agendado pelos SDRs: <strong>${totalSDRMes}</strong></span>
+      <span class="sdr-total-mes sdr-total-sdr">👥 SDRs (${filterLabel}): <strong>${totalSDRMes}</strong></span>
     </div>`;
 
   if (!sdrList.length) {
@@ -2458,14 +2573,18 @@ function renderSDRCards(refDate) {
     const metaDia = metaMap[sdr.cargo] || 0;
     const metaMes = metaDia * workdaysTotal;
 
+    // Filtra por tipo de reunião conforme seletor
+    const tipoOk = r => sdrFilter === 'Todas' || r.tipoReun === sdrFilter;
+
     // Conta agendamentos do dia selecionado (col B = carimbo)
     const countHoje = agendamentos.filter(r =>
-      r.sdr === sdr.name && extractCarimboDate(r.carimbo) === todayBR
+      r.sdr === sdr.name && extractCarimboDate(r.carimbo) === todayBR && tipoOk(r)
     ).length;
 
     // Conta agendamentos no mês (col B = carimbo)
     const countMes = agendamentos.filter(r => {
       if (r.sdr !== sdr.name) return false;
+      if (!tipoOk(r)) return false;
       const dp = extractCarimboDate(r.carimbo);
       if (!dp) return false;
       const dt = parseBRDate(dp);
@@ -2555,20 +2674,41 @@ function renderIndicadores() {
     return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
   });
 
-  renderPodium(agendamentos, month, year);
-  renderEfetividade(agendamentos, month, year);
-  renderNoshow(agendamentos, month, year);
+  // Dados filtrados por tipo de reunião
+  const mes1 = agendamentos.filter(r => {
+    if (r.tipoReun && r.tipoReun !== '1º Reunião') return false;
+    const dp = extractDatePart(r.carimbo);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
+  const mes2 = agendamentos.filter(r => {
+    if (!r.tipoReun || r.tipoReun !== '2º Reunião') return false;
+    const dp = extractDatePart(r.carimbo);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
+
+  renderPodiumTipo(agendamentos, month, year, '1º Reunião', 'ind-podium-1');
+  renderPodiumTipo(agendamentos, month, year, '2º Reunião', 'ind-podium-2');
+  renderEfetividadeTipo(agendamentos, month, year, '1º Reunião', 'ind-efetividade-1');
+  renderEfetividadeTipo(agendamentos, month, year, '2º Reunião', 'ind-efetividade-2');
+  renderNoshowTipo(agendamentos, month, year, '1º Reunião', 'ind-noshow-1');
+  renderNoshowTipo(agendamentos, month, year, '2º Reunião', 'ind-noshow-2');
   renderSDRCampeao(month, year);
   renderRankingSDR(month, year);
   renderChart(month, year);
-  renderDowAgend(mesAgend, month, year);
-  renderDowEfetividade(agendamentos, month, year); // usa dataReun — precisa do histórico completo
+  renderChartTipo(month, year, '2º Reunião', 'ind-chart-2');
+  renderDowAgend(mes1, month, year);
+  renderDowEfetividade(agendamentos, month, year);
 }
 
-// ── 1. PÓDIO Top 3 Closers Efetivadas ──
-function renderPodium(allAgend, month, year) {
-  const el = document.getElementById('ind-podium');
+// ── 1. PÓDIO Top 3 Closers por Tipo ──
+function renderPodiumTipo(allAgend, month, year, tipo, elId) {
+  const el = document.getElementById(elId);
   const data = allAgend.filter(r => {
+    if (r.tipoReun !== tipo) return false;
     const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return false;
     const dt = parseBRDate(dp);
@@ -2614,10 +2754,11 @@ function renderPodium(allAgend, month, year) {
   }).join('');
 }
 
-// ── 2. EFETIVIDADE por Closer — usa dataReun (col D) ──
-function renderEfetividade(allAgend, month, year) {
-  const el = document.getElementById('ind-efetividade');
+// ── 2. EFETIVIDADE por Closer — usa dataReun (col D), filtrável por tipo ──
+function renderEfetividadeTipo(allAgend, month, year, tipo, elId) {
+  const el = document.getElementById(elId);
   const data = allAgend.filter(r => {
+    if (r.tipoReun !== tipo) return false;
     const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return false;
     const dt = parseBRDate(dp);
@@ -2650,10 +2791,11 @@ function renderEfetividade(allAgend, month, year) {
   }).join('');
 }
 
-// ── 3. NO-SHOW por Closer — usa dataReun (col D) ──
-function renderNoshow(allAgend, month, year) {
-  const el = document.getElementById('ind-noshow');
+// ── 3. NO-SHOW por Closer — usa dataReun (col D), filtrável por tipo ──
+function renderNoshowTipo(allAgend, month, year, tipo, elId) {
+  const el = document.getElementById(elId);
   const data = allAgend.filter(r => {
+    if (r.tipoReun !== tipo) return false;
     const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return false;
     const dt = parseBRDate(dp);
@@ -2700,6 +2842,7 @@ function renderSDRCampeao(month, year) {
     const byDay = {};
     agendamentos.forEach(r => {
       if (r.sdr !== sdr.name) return;
+      if (r.tipoReun && r.tipoReun !== '1º Reunião') return; // só 1ª reunião
       const dp = extractDatePart(r.carimbo);
       if (!dp) return;
       const dt = parseBRDate(dp);
@@ -2757,6 +2900,7 @@ function renderRankingSDR(month, year) {
     const metaMes = metaDia * workdaysTotal;
     const count = agendamentos.filter(r => {
       if (r.sdr !== sdr.name) return false;
+      if (r.tipoReun && r.tipoReun !== '1º Reunião') return false; // só 1ª reunião
       const dp = extractDatePart(r.carimbo);
       if (!dp) return false;
       const dt = parseBRDate(dp);
@@ -2781,62 +2925,84 @@ function renderRankingSDR(month, year) {
   }).join('');
 }
 
-// ── 6. GRÁFICO DE EVOLUÇÃO DIÁRIA ──
-function renderChart(month, year) {
-  const el = document.getElementById('ind-chart');
+// ── 6. GRÁFICO DE EVOLUÇÃO DIÁRIA — genérico por tipo ──
+function renderChartTipo(month, year, tipo, elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  // Conta agendamentos por dia (todos os SDRs)
   const byDay = {};
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
     const dow  = date.getDay();
-    if (dow === 0 || dow === 6) continue; // só dias úteis
-    const key = fmtDate(date);
-    byDay[key] = 0;
+    if (dow === 0 || dow === 6) continue;
+    byDay[fmtDate(date)] = 0;
   }
   agendamentos.forEach(r => {
+    if (tipo && r.tipoReun !== tipo) return;
+    const dp = extractDatePart(r.carimbo);
+    if (byDay.hasOwnProperty(dp)) byDay[dp]++;
+  });
+  drawBarChart(el, byDay, tipo);
+}
+
+function renderChart(month, year) {
+  const el = document.getElementById('ind-chart');
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Conta apenas 1ª reunião
+  const byDay = {};
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const dow  = date.getDay();
+    if (dow === 0 || dow === 6) continue;
+    byDay[fmtDate(date)] = 0;
+  }
+  agendamentos.forEach(r => {
+    if (r.tipoReun && r.tipoReun !== '1º Reunião') return; // só 1ª reunião
     const dp = extractDatePart(r.carimbo);
     if (byDay.hasOwnProperty(dp)) byDay[dp]++;
   });
 
+  drawBarChart(el, byDay, '1º Reunião');
+}
+
+// Shared bar chart drawing function
+function drawBarChart(el, byDay, tipo) {
   const days   = Object.keys(byDay);
   const values = Object.values(byDay);
   const maxVal = Math.max(...values, 1);
 
   const W = Math.max(days.length * 36 + 60, 400);
   const H = 180;
-  const barW  = 24;
-  const barGap = 12;
-  const padL  = 36;
-  const padB  = 36;
-  const padT  = 16;
+  const barW = 24, barGap = 12, padL = 36, padB = 36, padT = 16;
   const chartH = H - padB - padT;
+  // 2ª reunião usa cor azul; 1ª usa verde/amarelo/vermelho baseado na meta
+  const is2nd = tipo === '2º Reunião';
 
-  // Y axis gridlines
   const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p => {
-    const y = padT + chartH - (p * chartH);
+    const y   = padT + chartH - (p * chartH);
     const val = Math.round(p * maxVal);
     return `<line x1="${padL}" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
             <text x="${padL - 6}" y="${y + 4}" fill="#555" font-size="9" text-anchor="end" font-family="Nunito">${val}</text>`;
   }).join('');
 
   const bars = days.map((day, i) => {
-    const x    = padL + i * (barW + barGap);
-    const val  = values[i];
-    const bh   = Math.max(val / maxVal * chartH, val > 0 ? 3 : 0);
-    const y    = padT + chartH - bh;
-    const col  = val >= (metaMap['SDR Pleno'] || 8) ? '#6EB150' :
-                 val >= (metaMap['SDR Junior'] || 6) ? '#FFD166' : '#ff6b6b';
-    const dd   = day.substring(0,5); // DD/MM
+    const x   = padL + i * (barW + barGap);
+    const val = values[i];
+    const bh  = Math.max(val / maxVal * chartH, val > 0 ? 3 : 0);
+    const y   = padT + chartH - bh;
+    const col = is2nd ? '#7eb8ff' :
+                val >= (metaMap['SDR Pleno'] || 8) ? '#6EB150' :
+                val >= (metaMap['SDR Junior'] || 6) ? '#FFD166' : '#ff6b6b';
+    const dd  = day.substring(0, 5);
     return `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="4" fill="${col}" opacity="0.85"/>
-            ${val > 0 ? `<text x="${x + barW/2}" y="${y - 4}" fill="${col}" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">${val}</text>` : ''}
-            <text x="${x + barW/2}" y="${H - 8}" fill="#555" font-size="8" text-anchor="middle" font-family="Nunito" transform="rotate(-35, ${x + barW/2}, ${H - 8})">${dd}</text>`;
+            ${val > 0 ? `<text x="${x+barW/2}" y="${y-4}" fill="${col}" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">${val}</text>` : ''}
+            <text x="${x+barW/2}" y="${H-8}" fill="#555" font-size="8" text-anchor="middle" font-family="Nunito" transform="rotate(-35,${x+barW/2},${H-8})">${dd}</text>`;
   }).join('');
 
   el.innerHTML = `<svg class="chart-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
     ${gridLines}
-    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + chartH}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+chartH}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
     ${bars}
   </svg>`;
 }
