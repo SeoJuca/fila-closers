@@ -1064,20 +1064,6 @@
     .radio-desc { font-size: .65rem; color: #666; letter-spacing: .5px; }
 
     /* ── SDR SELETOR TRIPLO ── */
-    .sdr-type-selector {
-      display: flex; gap: 6px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px; padding: 4px;
-    }
-    .sdr-type-btn {
-      flex: 1; padding: 7px 10px; border: none; border-radius: 7px;
-      font-family: 'Nunito', sans-serif; font-size: .75rem; font-weight: 800;
-      letter-spacing: .5px; cursor: pointer; transition: all .2s;
-      color: #666; background: transparent;
-    }
-    .sdr-type-btn:hover { color: #aaa; background: rgba(255,255,255,0.05); }
-    .sdr-type-btn.active { background: var(--yellow); color: var(--dark); box-shadow: 0 2px 8px rgba(110,177,80,0.3); }
 
 
     /* ── VENDAS / FATURAMENTO ── */
@@ -1796,11 +1782,6 @@
     <div class="sdr-top-row">
       <div class="sdr-screen-title">🎯 Meta de Agendamentos</div>
       <div style="display:flex;align-items:center;gap:16px">
-        <div class="sdr-type-selector">
-          <button class="sdr-type-btn active" id="sdr-btn-1" onclick="setSdrFilter('1º Reunião')">🥇 1ª Reunião</button>
-          <button class="sdr-type-btn" id="sdr-btn-2" onclick="setSdrFilter('2º Reunião')">🔄 2ª Reunião</button>
-          <button class="sdr-type-btn" id="sdr-btn-all" onclick="setSdrFilter('Todas')">📊 Todas</button>
-        </div>
         <div class="date-nav" style="margin:0">
           <button class="nav-btn" onclick="sdrPrevDay()">◀</button>
           <div class="date-display" id="sdr-date-label" style="min-width:150px;text-align:center"></div>
@@ -3102,7 +3083,6 @@ let forcedCloser    = null;  // closer fora da fila selecionado manualmente
 let closerPasswords = {};
 let dashDate        = new Date();
 let sdrDate         = new Date();
-let sdrFilter       = '1º Reunião'; // '1º Reunião' | '2º Reunião' | 'Todas'
 
 function showScreen(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -3465,17 +3445,6 @@ let vendas     = [];  // [{data, closer, lead, valor}]
 let metaVendas = {};  // { 'YYYY-MM': valor } mês -> meta
 
 // Conta dias úteis (seg-sex) de um mês/ano
-function setSdrFilter(f) {
-  sdrFilter = f;
-  ['1', '2', 'all'].forEach(k => {
-    const el = document.getElementById('sdr-btn-' + k);
-    if (el) el.classList.remove('active');
-  });
-  const map = {'1º Reunião':'1','2º Reunião':'2','Todas':'all'};
-  const btn = document.getElementById('sdr-btn-' + map[f]);
-  if (btn) btn.classList.add('active');
-  renderSDRCards(sdrDate);
-}
 function sdrPrevDay() { sdrDate.setDate(sdrDate.getDate()-1); renderSDRCards(sdrDate); }
 function sdrNextDay() { sdrDate.setDate(sdrDate.getDate()+1); renderSDRCards(sdrDate); }
 
@@ -3616,11 +3585,7 @@ function renderSDRCards(refDate) {
   const workdaysTotal   = countWorkdays(year, month);
   const workdaysElapsed = countWorkdaysElapsed(year, month, now);
 
-  // Filtro de tipo para os totais
-  const tipoOkGlobal = r => sdrFilter === 'Todas' || r.tipoReun === sdrFilter;
-  const filterLabel  = sdrFilter === 'Todas' ? 'Todas' : sdrFilter;
-
-  // ── Total geral do mês (SEMPRE todos os tipos, sem filtro) ──
+  // ── Total geral do mês (todos os tipos) ──
   const totalGeralMes = agendamentos.filter(r => {
     const dp = extractCarimboDate(r.carimbo);
     if (!dp) return false;
@@ -3628,11 +3593,11 @@ function renderSDRCards(refDate) {
     return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
   }).length;
 
-  // ── Total do mês agendado pelos SDRs dos cards (col B = carimbo, filtrado por nome) ──
+  // ── Total 1ª reunião agendada pelos SDRs dos cards ──
   const sdrNames = sdrList.map(s => s.name);
   const totalSDRMes = agendamentos.filter(r => {
     if (!sdrNames.includes(r.sdr)) return false;
-    if (!tipoOkGlobal(r)) return false;
+    if (r.tipoReun === '2º Reunião') return false;
     const dp = extractCarimboDate(r.carimbo);
     if (!dp) return false;
     const dt = parseBRDate(dp);
@@ -3656,18 +3621,18 @@ function renderSDRCards(refDate) {
     const metaDia = metaMap[sdr.cargo] || 0;
     const metaMes = metaDia * workdaysTotal;
 
-    // Filtra por tipo de reunião conforme seletor
-    const tipoOk = r => sdrFilter === 'Todas' || r.tipoReun === sdrFilter;
+    // Conta só 1ª reunião (2ª não entra na meta do SDR)
+    const is1a = r => r.tipoReun !== '2º Reunião';
 
     // Conta agendamentos do dia selecionado (col B = carimbo)
     const countHoje = agendamentos.filter(r =>
-      r.sdr === sdr.name && extractCarimboDate(r.carimbo) === todayBR && tipoOk(r)
+      r.sdr === sdr.name && extractCarimboDate(r.carimbo) === todayBR && is1a(r)
     ).length;
 
     // Conta agendamentos no mês (col B = carimbo)
     const countMes = agendamentos.filter(r => {
       if (r.sdr !== sdr.name) return false;
-      if (!tipoOk(r)) return false;
+      if (!is1a(r)) return false;
       const dp = extractCarimboDate(r.carimbo);
       if (!dp) return false;
       const dt = parseBRDate(dp);
