@@ -2433,22 +2433,19 @@ document.getElementById('meeting-date').value = isoDate(new Date());
 
 // Radio change: mostra/esconde campos conforme tipo
 // Para 2ª reunião: abre popup direto ao clicar
-document.getElementById('radio-opt-2').querySelector('input').addEventListener('change', function() {
+document.querySelector('input[name="tipo_reuniao"][value="2º Reunião"]').addEventListener('change', function() {
   if (this.checked) {
-    // Esconde campos desnecessários para 2ª reunião
     ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.add('hidden');
     });
     document.getElementById('lead-name').value = '';
-    // Abre direto o popup de selecionar closer
     openPopup2();
   }
 });
 
-document.getElementById('radio-opt-1').querySelector('input').addEventListener('change', function() {
+document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEventListener('change', function() {
   if (this.checked) {
-    // Mostra todos os campos para 1ª reunião
     ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('hidden');
