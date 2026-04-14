@@ -4009,7 +4009,10 @@ function openMonthList(tipo) {
                  r.status === 'No-show'   ? 'background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.25)' :
                                             'background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)';
       const st = r.status === 'Efetivada' ? '✅ Efetivada' : r.status === 'No-show' ? '❌ No-show' : '⏳ Pendente';
-      return '<div class="month-lead-item"><div><div class="month-lead-name">' + (r.lead||'—') + '</div><div class="month-lead-date">📅 ' + d + '</div></div><span class="month-lead-badge" style="' + sc + '">' + st + '</span></div>';
+      const tipoBadge = r.tipoReun === '2º Reunião'
+        ? '<span style="font-size:.62rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 7px;border-radius:99px;border:1px solid rgba(126,184,255,0.25);margin-left:6px;vertical-align:middle">🔄 2ª</span>'
+        : '<span style="font-size:.62rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 7px;border-radius:99px;border:1px solid rgba(110,177,80,0.25);margin-left:6px;vertical-align:middle">🥇 1ª</span>';
+      return '<div class="month-lead-item"><div><div class="month-lead-name">' + (r.lead||'—') + tipoBadge + '</div><div class="month-lead-date">📅 ' + d + '</div></div><span class="month-lead-badge" style="' + sc + '">' + st + '</span></div>';
     }).join('');
   }
   document.getElementById('modal-month-list').style.display = 'flex';
