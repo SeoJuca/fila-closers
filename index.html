@@ -2603,6 +2603,11 @@ function selectLead2a(leadName, closerName) {
   document.getElementById('popup4-date-input').value = isoDate(new Date());
 
   document.getElementById('popup-confirma-data').style.display = 'flex';
+  // Abre o seletor de data automaticamente
+  setTimeout(() => {
+    const input = document.getElementById('popup4-date-input');
+    if (input) input.showPicker();
+  }, 150);
 }
 
 // Popup 4 — Corrigir: mostra input de data
