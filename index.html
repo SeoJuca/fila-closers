@@ -2509,11 +2509,12 @@ function popup4SalvarData() {
 
 // Popup 4 — Confirmar e disparar webhook
 async function popup4Confirmar() {
-  const sdr  = document.getElementById('sdr-select').value;
-  if (!sdr) { toast('Selecione seu nome (SDR)!', false); return; }
+  // Na 2ª reunião, o closer se agenda para si mesmo
+  const sdr = r2SelectedCloser;
+  if (!sdr) { toast('Nenhum closer selecionado!', false); return; }
 
-  const dataInput = document.getElementById('meeting-date').value;
-  if (!dataInput) { toast('Data inválida!', false); return; }
+  const dataInput = document.getElementById('popup4-date-input').value;
+  if (!dataInput) { toast('Defina a data da reunião!', false); return; }
   const [y,m,d] = dataInput.split('-');
   const dataFmt  = `${d}/${m}/${y}`;
 
