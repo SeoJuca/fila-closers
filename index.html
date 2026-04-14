@@ -95,7 +95,7 @@
 
     label { font-size: .85rem; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; display: block; }
 
-    select, input[type="date"], input[type="text"] {
+    select, input[type="date"], input[type="text"], input[type="number"] {
       width: 100%;
       padding: 13px 16px;
       background: rgba(255,255,255,0.05);
@@ -108,11 +108,15 @@
       transition: border-color .2s, box-shadow .2s;
       outline: none;
     }
-    select:focus, input[type="date"]:focus, input[type="text"]:focus {
+    select:focus, input[type="date"]:focus, input[type="text"]:focus, input[type="number"]:focus {
       border-color: var(--yellow);
       box-shadow: 0 0 0 3px rgba(110,177,80,0.15);
     }
     select option { background: var(--mid); }
+    /* Remove setas do input number */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
     /* próximo closer destaque */
     .next-closer-box {
@@ -1414,6 +1418,12 @@
     </div>
 
     <div>
+      <label>Score Lead</label>
+      <input type="number" id="lead-score" placeholder="Ex: 85" min="0" step="1"
+             oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
+    </div>
+
+    <div>
       <label>Tipo de Reunião</label>
       <div class="radio-group">
         <label class="radio-option" id="radio-opt-1">
@@ -2091,10 +2101,12 @@ function renderTable() {
 document.getElementById('btn-schedule').addEventListener('click', async () => {
   const sdr  = document.getElementById('sdr-select').value;
   const data = document.getElementById('meeting-date').value;
-  const lead = document.getElementById('lead-name').value.trim();
+  const lead  = document.getElementById('lead-name').value.trim();
+  const score = document.getElementById('lead-score').value.trim();
 
-  if (!sdr)  { toast('Selecione seu nome!', false); return; }
-  if (!lead) { toast('Informe o nome do lead!', false); return; }
+  if (!sdr)   { toast('Selecione seu nome!', false); return; }
+  if (!lead)  { toast('Informe o nome do lead!', false); return; }
+  if (!score || isNaN(score) || parseInt(score) < 0) { toast('Informe o Score Lead!', false); return; }
   if (!data) { toast('Escolha a data da reunião!', false); return; }
   if (!closers.length) { toast('Closers não carregados!', false); return; }
 
@@ -2109,6 +2121,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   fd.append('closer',       closer);
   fd.append('data_reuniao', `${d}/${m}/${y}`);
   fd.append('nome_lead',    lead);
+  fd.append('score_lead',   score);
   fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
   fd.append('caminho',      'SDR');
   fd.append('tipo_reuniao', tipoReuniao);
@@ -2116,7 +2129,8 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   try {
     await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
     toast(`✅ Agendado! ${closer} recebeu a reunião de ${lead}.`);
-    document.getElementById('lead-name').value = '';
+    document.getElementById('lead-name').value  = '';
+    document.getElementById('lead-score').value = '';
 
     // Reseta pulos da sessão após agendar — o closer pulado volta à fila
     skippedThisSession.clear();
