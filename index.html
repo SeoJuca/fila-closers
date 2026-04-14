@@ -2384,12 +2384,16 @@ function renderDashboard() {
     }
 
     const carimboExib = (row.carimbo||'').replace(/^(\d{2}\/\d{2}\/\d{4})[, ]+(\d{2}:\d{2}).*$/, '$1 $2') || '—';
+    const tipoBadge = row.tipoReun === '2º Reunião'
+      ? '<span style="font-size:.68rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 8px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
+      : '<span style="font-size:.68rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 8px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>';
     const tr = document.createElement('tr');
     tr.id = 'row-' + row.id;
     if (isFuture && !hasStatus) tr.classList.add('tr-future');
     tr.innerHTML = `
       <td>${i+1}</td>
       <td><strong>${row.lead||'—'}</strong></td>
+      <td>${tipoBadge}</td>
       <td style="font-size:.8rem;color:#888">${carimboExib}</td>
       ${statusCell}`;
     tbody.appendChild(tr);
