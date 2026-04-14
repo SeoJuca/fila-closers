@@ -3011,13 +3011,12 @@ function popup4Voltar() {
 }
 
 function popup4FecharTudo() {
-  // Fecha tudo e reseta para 1ª reunião
   document.getElementById('popup-confirma-data').style.display = 'none';
   document.getElementById('popup4-date-input').value = '';
   document.getElementById('popup4-confirm-btn').disabled = true;
   r2SelectedCloser = null;
   r2SelectedLead   = null;
-  resetTo1aReuniao();
+  resetFormulario();
 }
 
 // Popup 4 — Confirmar e disparar webhook
@@ -3061,7 +3060,7 @@ async function popup4Confirmar() {
     document.getElementById('lead-name').value  = '';
     r2SelectedCloser = null;
     r2SelectedLead   = null;
-    resetTo1aReuniao();
+    resetFormulario();
 
     updateNextCloserDisplay();
     renderScoreboard();
@@ -3081,7 +3080,7 @@ async function popup4Confirmar() {
 // Fechar popups clicando fora
 ['popup-seleciona-closer','popup-seleciona-lead'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) {
-    if (e.target === this) { this.style.display = 'none'; resetTo1aReuniao(); }
+    if (e.target === this) { this.style.display = 'none'; resetFormulario(); }
   });
 });
 document.getElementById('popup-confirma-data').addEventListener('click', function(e) {
