@@ -2550,17 +2550,13 @@ function selectLead2a(leadName, closerName) {
   r2SelectedLead   = leadName;
   document.getElementById('popup-seleciona-lead').style.display = 'none';
 
-  // Pega a data atual do campo
-  const dataInput  = document.getElementById('meeting-date').value;
-  const [y, m, d]  = (dataInput || '').split('-');
-  const dataBR     = dataInput ? `${d}/${m}/${y}` : fmtDate(new Date());
-
+  // Preenche dados do popup4
   document.getElementById('popup4-lead-name').textContent   = leadName;
   document.getElementById('popup4-closer-name').textContent = closerName;
-  document.getElementById('popup4-date-label').textContent  = dataBR;
-  document.getElementById('popup4-date-input').value        = dataInput || isoDate(new Date());
+  // Usa data de hoje como padrão (campo meeting-date está oculto)
+  document.getElementById('popup4-date-input').value = isoDate(new Date());
 
-  document.getElementById('popup-confirma-data').style.display  = 'flex';
+  document.getElementById('popup-confirma-data').style.display = 'flex';
 }
 
 // Popup 4 — Corrigir: mostra input de data
