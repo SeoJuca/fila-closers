@@ -3231,7 +3231,7 @@ async function loadMeta() {
 
       // Meta de vendas: col D = data do mês, col E = valor meta
       const mesRaw  = (cols[3]||'').trim();
-      const metaVal = parseFloat((cols[4]||'0').replace(/[^\d.,]/g,'').replace(',','.'));
+      const metaVal = parseNumero(cols[4]||'0');
       if (mesRaw && !isNaN(metaVal) && metaVal > 0) {
         // Normaliza para YYYY-MM (aceita DD/MM/YYYY ou MM/YYYY ou YYYY-MM-DD)
         const mesKey = parseMesKey(mesRaw);
@@ -3248,7 +3248,7 @@ async function loadVendas() {
       data:   (cols[0]||'').trim(), // col A
       closer: (cols[1]||'').trim(), // col B
       lead:   (cols[2]||'').trim(), // col C
-      valor:  parseFloat((cols[3]||'0').replace(/[^\d.,]/g,'').replace(',','.')) || 0, // col D
+      valor:  parseNumero(cols[3]||'0'), // col D
     })).filter(r => r.closer && r.valor > 0);
   } catch(e) { console.error('Vendas:', e); }
 }
@@ -3279,6 +3279,22 @@ function parseDateToMesKey(str) {
 
 function fmtCurrency(val) {
   return val.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+}
+
+// Converte número vindo do CSV (pode vir como "15000", "15,000", "15.000" ou "1.500,00")
+function parseNumero(str) {
+  const s = String(str).trim();
+  if (!s) return 0;
+  // Remove símbolo R$, espaços
+  let clean = s.replace(/[R$\s]/g, '');
+  // Formato BR: 1.500,00 — tem vírgula como decimal
+  if (/\d,\d{1,2}$/.test(clean)) {
+    clean = clean.replace(/\./g, '').replace(',', '.');
+  } else {
+    // Formato US ou puro: 15,000 ou 15000 — vírgula é separador de milhar
+    clean = clean.replace(/,/g, '');
+  }
+  return parseFloat(clean) || 0;
 }
 
 // Extrai DD/MM/YYYY do carimbo no formato do Google Forms
