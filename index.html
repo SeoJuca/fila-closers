@@ -2127,6 +2127,7 @@ function renderScoreboard() {
 
   agendamentos.forEach(row => {
     if (!row.closer) return;
+    if (row.tipoReun === '2º Reunião') return; // placar conta só 1ª reunião (vazio = legado = 1ª)
     const dp = extractDatePart(row.carimbo);
     if (!dp) return;
     const dt = parseBRDate(dp);
@@ -3334,7 +3335,7 @@ function renderSDRCampeao(month, year) {
     const byDay = {};
     agendamentos.forEach(r => {
       if (r.sdr !== sdr.name) return;
-      if (r.tipoReun && r.tipoReun !== '1º Reunião') return; // só 1ª reunião
+      if (r.tipoReun === '2º Reunião') return; // só 1ª reunião (vazio = legado = 1ª)
       const dp = extractDatePart(r.carimbo);
       if (!dp) return;
       const dt = parseBRDate(dp);
@@ -3392,7 +3393,7 @@ function renderRankingSDR(month, year) {
     const metaMes = metaDia * workdaysTotal;
     const count = agendamentos.filter(r => {
       if (r.sdr !== sdr.name) return false;
-      if (r.tipoReun && r.tipoReun !== '1º Reunião') return false; // só 1ª reunião
+      if (r.tipoReun === '2º Reunião') return false; // só 1ª reunião (vazio = legado = 1ª)
       const dp = extractDatePart(r.carimbo);
       if (!dp) return false;
       const dt = parseBRDate(dp);
@@ -3450,7 +3451,7 @@ function renderChart(month, year) {
     byDay[fmtDate(date)] = 0;
   }
   agendamentos.forEach(r => {
-    if (r.tipoReun && r.tipoReun !== '1º Reunião') return; // só 1ª reunião
+    if (r.tipoReun === '2º Reunião') return; // só 1ª reunião (vazio = legado = 1ª)
     const dp = extractDatePart(r.carimbo);
     if (byDay.hasOwnProperty(dp)) byDay[dp]++;
   });
