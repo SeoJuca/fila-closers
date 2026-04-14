@@ -758,7 +758,48 @@
       letter-spacing: 1px; text-transform: uppercase;
       margin-top: 4px; display: block;
     }
-    .dash-table-wrap { margin: 0 40px 40px; overflow-x: auto; }
+    .dash-stats-month {
+      margin-top: 12px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .dash-stat-month {
+      cursor: pointer;
+      transition: background .2s;
+      position: relative;
+    }
+    .dash-stat-month:hover { background: rgba(255,255,255,0.06); }
+    .dash-stat-hint {
+      display: block;
+      font-size: .58rem; color: #444;
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-top: 2px;
+      transition: color .2s;
+    }
+    .dash-stat-month:hover .dash-stat-hint { color: var(--yellow); }
+
+    /* Cores distintas para stats do mês */
+    .month-total { color: #a78bfa; }   /* roxo */
+    .month-ef    { color: #34d399; }   /* turquesa */
+    .month-ns    { color: #fb923c; }   /* laranja */
+    .month-pend  { color: #60a5fa; }   /* azul claro */
+
+    /* Lead item na lista do mês */
+    .month-lead-item {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; margin-bottom: 8px;
+    }
+    .month-lead-item:last-child { margin-bottom: 0; }
+    .month-lead-name { font-size: .9rem; font-weight: 800; }
+    .month-lead-date { font-size: .75rem; color: #666; margin-top: 2px; }
+    .month-lead-badge {
+      font-size: .68rem; font-weight: 800;
+      padding: 3px 10px; border-radius: 99px;
+    }
     .dash-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
     .dash-table thead tr { background: rgba(110,177,80,0.08); }
     .dash-table th {
@@ -1683,6 +1724,30 @@
       <div class="dash-stat"><span class="dash-stat-num red" id="dash-noshow">0</span><span class="dash-stat-label">No-show</span></div>
       <div class="dash-stat"><span class="dash-stat-num yellow" id="dash-pending">0</span><span class="dash-stat-label">Pendentes</span></div>
     </div>
+
+    <!-- Stats do mês — clicáveis -->
+    <div class="dash-stats dash-stats-month">
+      <div class="dash-stat dash-stat-month" onclick="openMonthList('total')">
+        <span class="dash-stat-num month-total" id="dash-mes-total">0</span>
+        <span class="dash-stat-label">Reuniões mês</span>
+        <span class="dash-stat-hint">clique para ver</span>
+      </div>
+      <div class="dash-stat dash-stat-month" onclick="openMonthList('efetivadas')">
+        <span class="dash-stat-num month-ef" id="dash-mes-efetivadas">0</span>
+        <span class="dash-stat-label">Efetivadas mês</span>
+        <span class="dash-stat-hint">clique para ver</span>
+      </div>
+      <div class="dash-stat dash-stat-month" onclick="openMonthList('noshow')">
+        <span class="dash-stat-num month-ns" id="dash-mes-noshow">0</span>
+        <span class="dash-stat-label">No-show mês</span>
+        <span class="dash-stat-hint">clique para ver</span>
+      </div>
+      <div class="dash-stat dash-stat-month" onclick="openMonthList('pendentes')">
+        <span class="dash-stat-num month-pend" id="dash-mes-pending">0</span>
+        <span class="dash-stat-label">Pendentes mês</span>
+        <span class="dash-stat-hint">clique para ver</span>
+      </div>
+    </div>
     <div class="dash-table-wrap">
       <table class="dash-table">
         <thead><tr><th>#</th><th>Lead</th><th>Tipo</th><th>Horário Agend.</th><th>Efetivada</th><th>No-show</th></tr></thead>
@@ -1883,6 +1948,20 @@
         <button class="btn btn-primary" onclick="popup4SalvarData()">✅ Salvar e agendar</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL LISTA MÊS CLOSER -->
+<div id="modal-month-list" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box" style="max-width:520px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div class="reuniao2-title" id="month-list-title"></div>
+        <div class="reuniao2-sub" style="margin:0" id="month-list-sub"></div>
+      </div>
+      <button class="pizza-close-btn" onclick="document.getElementById('modal-month-list').style.display='none'">✕</button>
+    </div>
+    <div class="lead-list" id="month-list-leads" style="max-height:400px"></div>
   </div>
 </div>
 
@@ -2825,6 +2904,45 @@ function renderDashboard() {
   document.getElementById('dash-efetivadas').textContent = efetivadas;
   document.getElementById('dash-noshow').textContent     = noshow;
   document.getElementById('dash-pending').textContent    = pending;
+
+  // ── Stats do mês ──
+  const month = dashDate.getMonth();
+  const year  = dashDate.getFullYear();
+  const reunioesMes = agendamentos.filter(row => {
+    if (row.closer !== loggedCloser.name) return false;
+    const dp = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
+  const mesTot  = reunioesMes.length;
+  const mesEf   = reunioesMes.filter(r => r.status === 'Efetivada').length;
+  const mesNs   = reunioesMes.filter(r => r.status === 'No-show').length;
+  const mesPend = mesTot - mesEf - mesNs;
+  document.getElementById('dash-mes-total').textContent      = mesTot;
+  document.getElementById('dash-mes-efetivadas').textContent = mesEf;
+  document.getElementById('dash-mes-noshow').textContent     = mesNs;
+  document.getElementById('dash-mes-pending').textContent    = mesPend;
+
+  // ── Stats do mês ──
+  const month = dashDate.getMonth();
+  const year  = dashDate.getFullYear();
+  const reunioesMes = agendamentos.filter(row => {
+    if (row.closer !== loggedCloser.name) return false;
+    const dp = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
+  const mesTot  = reunioesMes.length;
+  const mesEf   = reunioesMes.filter(r => r.status === 'Efetivada').length;
+  const mesNs   = reunioesMes.filter(r => r.status === 'No-show').length;
+  const mesPend = mesTot - mesEf - mesNs;
+
+  document.getElementById('dash-mes-total').textContent      = mesTot;
+  document.getElementById('dash-mes-efetivadas').textContent = mesEf;
+  document.getElementById('dash-mes-noshow').textContent     = mesNs;
+  document.getElementById('dash-mes-pending').textContent    = mesPend;
 
   const tbody = document.getElementById('dash-tbody');
   if (!reunioes.length) {
@@ -3860,6 +3978,80 @@ function updateTVBadge(msg) {
 if (new URLSearchParams(window.location.search).get('tv') === '1') {
   window.addEventListener('load', () => setTimeout(toggleTVMode, 500));
 }
+
+
+// ── LISTA DO MÊS DO CLOSER ──
+function openMonthList(tipo) {
+  if (!loggedCloser) return;
+
+  const month = dashDate.getMonth();
+  const year  = dashDate.getFullYear();
+  const monthName = dashDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  const reunioesMes = agendamentos.filter(row => {
+    if (row.closer !== loggedCloser.name) return false;
+    const dp = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  });
+
+  let filtradas, titulo, emoji;
+  switch(tipo) {
+    case 'efetivadas':
+      filtradas = reunioesMes.filter(r => r.status === 'Efetivada');
+      titulo = 'Efetivadas'; emoji = '✅'; break;
+    case 'noshow':
+      filtradas = reunioesMes.filter(r => r.status === 'No-show');
+      titulo = 'No-show'; emoji = '❌'; break;
+    case 'pendentes':
+      filtradas = reunioesMes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show');
+      titulo = 'Pendentes'; emoji = '⏳'; break;
+    default:
+      filtradas = reunioesMes;
+      titulo = 'Todas as Reuniões'; emoji = '📅';
+  }
+
+  // Ordena por dataReun
+  filtradas.sort((a,b) => {
+    const da = parseBRDate(extractDatePart(a.dataReun) || isoToBR(a.dataReun));
+    const db = parseBRDate(extractDatePart(b.dataReun) || isoToBR(b.dataReun));
+    return da - db;
+  });
+
+  document.getElementById('month-list-title').textContent = `${emoji} ${titulo}`;
+  document.getElementById('month-list-sub').textContent   = `${loggedCloser.name} — ${monthName}`;
+
+  const list = document.getElementById('month-list-leads');
+
+  if (!filtradas.length) {
+    list.innerHTML = '<div class="lead-empty">Nenhuma reunião nesta categoria</div>';
+  } else {
+    const statusColors = {
+      'Efetivada': 'background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25)',
+      'No-show':   'background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.25)',
+    };
+    list.innerHTML = filtradas.map(r => {
+      const dataExib = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+      const statusStyle = statusColors[r.status] || 'background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)';
+      const statusText  = r.status === 'Efetivada' ? '✅ Efetivada' :
+                          r.status === 'No-show'   ? '❌ No-show' : '⏳ Pendente';
+      return `<div class="month-lead-item">
+        <div>
+          <div class="month-lead-name">${r.lead || '—'}</div>
+          <div class="month-lead-date">📅 ${dataExib}</div>
+        </div>
+        <span class="month-lead-badge" style="${statusStyle}">${statusText}</span>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('modal-month-list').style.display = 'flex';
+}
+
+document.getElementById('modal-month-list').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
 
 setInterval(loadAgendamentos, 30000);
 </script>
