@@ -1663,7 +1663,7 @@
       <label>Tipo de Reunião</label>
       <div class="radio-group">
         <label class="radio-option" id="radio-opt-1">
-          <input type="radio" name="tipo_reuniao" value="1º Reunião" checked />
+          <input type="radio" name="tipo_reuniao" value="1º Reunião" />
           <span class="radio-visual"></span>
           <span class="radio-content">
             <span class="radio-emoji">🥇</span>
@@ -2684,14 +2684,12 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 document.getElementById('meeting-date').value = isoDate(new Date());
 
 // Radio: 1ª abre popup de tipo, 2ª esconde campos e abre popup de closer
-document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEventListener('change', function() {
-  if (!this.checked) return;
+document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEventListener('click', function() {
   esconderCampos();
   document.getElementById('popup1a-tipo').style.display = 'flex';
 });
 
-document.querySelector('input[name="tipo_reuniao"][value="2º Reunião"]').addEventListener('change', function() {
-  if (!this.checked) return;
+document.querySelector('input[name="tipo_reuniao"][value="2º Reunião"]').addEventListener('click', function() {
   esconderCampos();
   document.getElementById('lead-name').value = '';
   openPopup2();
