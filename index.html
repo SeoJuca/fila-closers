@@ -1683,30 +1683,30 @@
       </div>
     </div>
 
-    <div class="score-lead-wrap" id="sdr-name-wrap">
+    <div class="score-lead-wrap hidden" id="sdr-name-wrap">
       <label>Seu nome (SDR)</label>
       <select id="sdr-select">
         <option value="">Selecione seu nome</option>
       </select>
     </div>
 
-    <div class="score-lead-wrap" id="lead-name-wrap">
+    <div class="score-lead-wrap hidden" id="lead-name-wrap">
       <label>Nome do Lead</label>
       <input type="text" id="lead-name" placeholder="Digite o nome do lead..." />
     </div>
 
-    <div class="score-lead-wrap" id="score-lead-wrap">
+    <div class="score-lead-wrap hidden" id="score-lead-wrap">
       <label>Lead Score</label>
       <input type="number" id="lead-score" placeholder="Ex: 85" min="0" step="1"
              oninput="this.value = this.value.replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'')" />
     </div>
 
-    <div class="score-lead-wrap" id="meeting-date-wrap">
+    <div class="score-lead-wrap hidden" id="meeting-date-wrap">
       <label id="meeting-date-label">Data da 1ª Reunião</label>
       <input type="date" id="meeting-date" />
     </div>
 
-    <div class="next-closer-box score-lead-wrap" id="next-closer-wrap">
+    <div class="next-closer-box score-lead-wrap hidden" id="next-closer-wrap">
       <span class="nc-label">Próximo Closer</span>
       <span class="nc-name" id="next-closer-name">—</span>
     </div>
@@ -2115,6 +2115,83 @@
   </div>
 </div>
 
+<!-- POPUP 1A-1: SDR ou Closer/Vendedor -->
+<div id="popup1a-tipo" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="reuniao2-title">📋 1ª Reunião</div>
+        <div class="reuniao2-sub" style="margin:0">Quem está realizando o agendamento?</div>
+      </div>
+      <button class="pizza-close-btn" onclick="popup1aFecharTudo()">✕</button>
+    </div>
+    <div class="radio-group">
+      <label class="radio-option" onclick="popup1aEscolha('sdr')">
+        <span class="radio-content" style="cursor:pointer">
+          <span class="radio-emoji">🎯</span>
+          <span class="radio-label">SDR</span>
+          <span class="radio-desc">Agendador de reuniões</span>
+        </span>
+      </label>
+      <label class="radio-option" onclick="popup1aEscolha('closer')">
+        <span class="radio-content" style="cursor:pointer">
+          <span class="radio-emoji">💼</span>
+          <span class="radio-label">Closer / Vendedor</span>
+          <span class="radio-desc">Agenda para si mesmo</span>
+        </span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP 1A-2: Seleciona a pessoa -->
+<div id="popup1a-pessoa" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div class="reuniao2-title" id="popup1a-pessoa-title">Selecione</div>
+        <div class="reuniao2-sub" style="margin:0" id="popup1a-pessoa-sub"></div>
+      </div>
+      <button class="pizza-close-btn" onclick="popup1aFecharTudo()">✕</button>
+    </div>
+    <div class="popup-closer-grid" id="popup1a-pessoa-grid"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-secondary" style="width:100%" onclick="popup1aVoltarPessoa()">← Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP 1A-3: Lead, Score, Data -->
+<div id="popup1a-dados" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="reuniao2-title" id="popup1a-dados-title">Dados da Reunião</div>
+        <div class="reuniao2-sub" style="margin:0" id="popup1a-dados-sub"></div>
+      </div>
+      <button class="pizza-close-btn" onclick="popup1aFecharTudo()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:.72rem;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Nome do Lead</label>
+        <input type="text" id="popup1a-lead" placeholder="Digite o nome do lead..." style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:.95rem;outline:none;box-sizing:border-box" />
+      </div>
+      <div>
+        <label style="font-size:.72rem;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Lead Score</label>
+        <input type="number" id="popup1a-score" placeholder="Ex: 85" min="0" step="1" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:.95rem;outline:none;box-sizing:border-box;-moz-appearance:textfield" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+      </div>
+      <div>
+        <label style="font-size:.72rem;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Data da 1ª Reunião</label>
+        <input type="date" id="popup1a-data" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:.95rem;outline:none;box-sizing:border-box" />
+      </div>
+    </div>
+    <div class="reuniao2-btns" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="popup1aVoltarDados()">← Voltar</button>
+      <button class="btn btn-primary" id="popup1a-confirmar-btn" onclick="popup1aConfirmar()">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -2502,6 +2579,8 @@ function renderTable() {
 
 // ── AGENDAR ──
 document.getElementById('btn-schedule').addEventListener('click', async () => {
+  const tipo = document.querySelector('input[name="tipo_reuniao"]:checked')?.value;
+  if (!tipo) { toast('Defina o tipo de reunião primeiro!', false); return; }
   const sdr  = document.getElementById('sdr-select').value;
   const data = document.getElementById('meeting-date').value;
   const lead  = document.getElementById('lead-name').value.trim();
@@ -2576,6 +2655,8 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
 
 // ── PULAR CLOSER — apenas local, sem webhook ──
 document.getElementById('btn-skip').addEventListener('click', () => {
+  const tipo = document.querySelector('input[name="tipo_reuniao"]:checked')?.value;
+  if (!tipo) { toast('Defina o tipo de reunião primeiro!', false); return; }
   if (!closers.length) return;
   if (closers.length === 1) { toast('Apenas 1 closer cadastrado — impossível pular.', false); return; }
 
@@ -2602,34 +2683,206 @@ document.getElementById('btn-refresh').addEventListener('click', async () => {
 
 document.getElementById('meeting-date').value = isoDate(new Date());
 
-// Radio: 1ª mostra campos, 2ª esconde campos e abre popup de closer
+// Radio: 1ª abre popup de tipo, 2ª esconde campos e abre popup de closer
+document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEventListener('change', function() {
+  if (!this.checked) return;
+  esconderCampos();
+  document.getElementById('popup1a-tipo').style.display = 'flex';
+});
+
 document.querySelector('input[name="tipo_reuniao"][value="2º Reunião"]').addEventListener('change', function() {
   if (!this.checked) return;
-  // Esconde campos do formulário
-  ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.classList.add('hidden');
-  });
+  esconderCampos();
   document.getElementById('lead-name').value = '';
-  // Abre direto o popup de selecionar closer
   openPopup2();
 });
 
-document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]').addEventListener('change', function() {
-  if (!this.checked) return;
+function esconderCampos() {
+  ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.classList.add('hidden');
+  });
+}
+
+function mostrarCampos() {
   ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
     const el = document.getElementById(id); if (el) el.classList.remove('hidden');
   });
-});
+}
 
-// Reseta para 1ª reunião e reexibe campos
+// Reseta tudo — radio sem seleção, campos ocultos
+function resetFormulario() {
+  // Desmarca ambos radios
+  document.querySelectorAll('input[name="tipo_reuniao"]').forEach(r => r.checked = false);
+  esconderCampos();
+  document.getElementById('lead-name').value  = '';
+  document.getElementById('lead-score').value = '';
+}
+
 function resetTo1aReuniao() {
   const r1 = document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]');
   if (r1) r1.checked = true;
-  ['sdr-name-wrap','lead-name-wrap','score-lead-wrap','meeting-date-wrap','next-closer-wrap'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.classList.remove('hidden');
-  });
+  mostrarCampos();
   document.getElementById('lead-name').value = '';
 }
+
+// ══════════════════════════════════════════════════════════
+//  FLUXO 1ª REUNIÃO — POPUPS
+// ══════════════════════════════════════════════════════════
+let p1aTipo   = null; // 'sdr' ou 'closer'
+let p1aNome   = null; // nome da pessoa selecionada
+
+function popup1aEscolha(tipo) {
+  p1aTipo = tipo;
+  document.getElementById('popup1a-tipo').style.display = 'none';
+
+  // Filtra lista conforme tipo
+  const titulo  = tipo === 'sdr' ? '🎯 Selecione o SDR' : '💼 Selecione o Closer';
+  const sub     = tipo === 'sdr' ? 'Quem está agendando?' : 'Quem está agendando para si?';
+  document.getElementById('popup1a-pessoa-title').textContent = titulo;
+  document.getElementById('popup1a-pessoa-sub').textContent   = sub;
+
+  const grid = document.getElementById('popup1a-pessoa-grid');
+  grid.innerHTML = '';
+
+  // Filtra sdrList por cargo
+  const lista = tipo === 'sdr'
+    ? sdrList.filter(s => (s.cargo||'').toUpperCase().includes('SDR'))
+    : sdrList.filter(s => !(s.cargo||'').toUpperCase().includes('SDR'));
+
+  if (!lista.length) {
+    grid.innerHTML = '<div class="lead-empty">Nenhuma pessoa encontrada</div>';
+  } else {
+    lista.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'popup-closer-card';
+      const ini = s.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+      card.innerHTML = `<div class="pc-avatar">${ini}</div><div class="pc-name">${s.name}</div><div style="font-size:.6rem;color:#666;margin-top:3px">${s.cargo||''}</div>`;
+      card.addEventListener('click', () => popup1aSelecionaPessoa(s.name));
+      grid.appendChild(card);
+    });
+  }
+
+  document.getElementById('popup1a-pessoa').style.display = 'flex';
+}
+
+function popup1aSelecionaPessoa(nome) {
+  p1aNome = nome;
+  document.getElementById('popup1a-pessoa').style.display = 'none';
+
+  const sub = p1aTipo === 'sdr'
+    ? `SDR: ${nome}`
+    : `Closer/Vendedor: ${nome}`;
+  document.getElementById('popup1a-dados-title').textContent = '📋 Dados da Reunião';
+  document.getElementById('popup1a-dados-sub').textContent   = sub;
+
+  // Limpa campos e define data de hoje
+  document.getElementById('popup1a-lead').value  = '';
+  document.getElementById('popup1a-score').value = '';
+  document.getElementById('popup1a-data').value  = isoDate(new Date());
+
+  document.getElementById('popup1a-dados').style.display = 'flex';
+  // Foca no campo lead
+  setTimeout(() => document.getElementById('popup1a-lead').focus(), 150);
+}
+
+function popup1aVoltarPessoa() {
+  document.getElementById('popup1a-pessoa').style.display = 'none';
+  document.getElementById('popup1a-tipo').style.display = 'flex';
+}
+
+function popup1aVoltarDados() {
+  document.getElementById('popup1a-dados').style.display = 'none';
+  document.getElementById('popup1a-pessoa').style.display = 'flex';
+}
+
+function popup1aFecharTudo() {
+  ['popup1a-tipo','popup1a-pessoa','popup1a-dados'].forEach(id =>
+    document.getElementById(id).style.display = 'none'
+  );
+  resetFormulario();
+}
+
+async function popup1aConfirmar() {
+  const lead  = document.getElementById('popup1a-lead').value.trim();
+  const score = document.getElementById('popup1a-score').value.trim();
+  const data  = document.getElementById('popup1a-data').value;
+
+  if (!lead)  { toast('Informe o nome do lead!', false); return; }
+  if (!score) { toast('Informe o Lead Score!', false); return; }
+  if (!data)  { toast('Selecione a data!', false); return; }
+
+  if (p1aTipo === 'sdr') {
+    // ── Fluxo SDR: preenche formulário principal e mostra campos ──
+    ['popup1a-tipo','popup1a-pessoa','popup1a-dados'].forEach(id =>
+      document.getElementById(id).style.display = 'none'
+    );
+    // Seleciona SDR no select
+    const sel = document.getElementById('sdr-select');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].text === p1aNome) { sel.selectedIndex = i; break; }
+    }
+    document.getElementById('lead-name').value  = lead;
+    document.getElementById('lead-score').value = score;
+    document.getElementById('meeting-date').value = data;
+    // Marca radio 1ª reunião e mostra campos
+    const r1 = document.querySelector('input[name="tipo_reuniao"][value="1º Reunião"]');
+    if (r1) r1.checked = true;
+    mostrarCampos();
+    updateNextCloserDisplay();
+    renderScoreboard();
+    toast(`✅ Dados preenchidos! Confirme o closer e agende.`);
+
+  } else {
+    // ── Fluxo Closer/Vendedor: dispara webhook direto ──
+    const [y,m,d] = data.split('-');
+    const dataFmt = `${d}/${m}/${y}`;
+    const btn = document.getElementById('popup1a-confirmar-btn');
+    btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+    const fd = new FormData();
+    fd.append('sdr',          p1aNome);
+    fd.append('closer',       p1aNome);  // agenda para si mesmo
+    fd.append('data_reuniao', dataFmt);
+    fd.append('nome_lead',    lead);
+    fd.append('score_lead',   score);
+    fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
+    fd.append('caminho',      'SDR');
+    fd.append('tipo_reuniao', '1º Reunião');
+
+    try {
+      await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
+
+      ['popup1a-tipo','popup1a-pessoa','popup1a-dados'].forEach(id =>
+        document.getElementById(id).style.display = 'none'
+      );
+      toast(`✅ Reunião agendada! ${p1aNome} → ${lead} em ${dataFmt}.`);
+
+      // Optimistic update
+      agendamentos.push({
+        carimbo: new Date().toLocaleString('pt-BR'),
+        sdr: p1aNome, closer: p1aNome, lead, dataReun: dataFmt,
+        tipoReun: '1º Reunião',
+      });
+
+      resetFormulario();
+      updateNextCloserDisplay();
+      renderScoreboard();
+      setTimeout(loadAgendamentos, 2000);
+
+    } catch(e) {
+      console.error('popup1a:', e);
+    } finally {
+      btn.disabled = false; btn.textContent = '✅ Confirmar';
+    }
+  }
+}
+
+// Fechar clicando fora
+['popup1a-tipo','popup1a-pessoa','popup1a-dados'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) popup1aFecharTudo();
+  });
+});
 
 // ══════════════════════════════════════════════════════════
 //  FLUXO 2ª REUNIÃO — 3 POPUPS
