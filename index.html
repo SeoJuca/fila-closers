@@ -385,6 +385,16 @@
       letter-spacing: .5px;
     }
 
+
+    .agend-sum-badge {
+      font-size: .75rem; font-weight: 800;
+      padding: 4px 12px; border-radius: 99px;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .sum-ef   { background: rgba(110,177,80,0.15);  color: #6EB150; border: 1px solid rgba(110,177,80,0.3); }
+    .sum-ns   { background: rgba(255,107,107,0.15); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
+    .sum-pend { background: rgba(255,209,102,0.12); color: #FFD166; border: 1px solid rgba(255,209,102,0.3); }
+    #agend-closer-filter option { background: #1a1a1a; }
     /* ── AGENDAMENTOS TABLE ── */
     .date-nav {
       display: flex;
@@ -1759,10 +1769,13 @@
     <!-- Tabela de agendamentos -->
     <div class="card">
       <div class="card-title">📅 Agendamentos</div>
-      <div class="date-nav">
+      <div class="date-nav" style="flex-wrap:wrap;gap:8px">
         <button class="nav-btn" id="btn-prev">◀</button>
         <div class="date-display" id="filter-date-label"></div>
         <button class="nav-btn" id="btn-next">▶</button>
+        <select id="agend-closer-filter" style="flex:1;min-width:140px;max-width:220px;padding:7px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;outline:none;cursor:pointer">
+          <option value="">Todos os closers</option>
+        </select>
         <button class="refresh-btn" id="btn-refresh">⟳ Atualizar</button>
       </div>
       <div class="table-wrap">
@@ -1775,12 +1788,21 @@
               <th>Data Reunião</th>
               <th>Closer</th>
               <th>Lead</th>
+              <th>Situação</th>
             </tr>
           </thead>
           <tbody id="table-body">
-            <tr><td colspan="6" class="empty-state"><span class="spin">⏳</span> Carregando...</td></tr>
+            <tr><td colspan="7" class="empty-state"><span class="spin">⏳</span> Carregando...</td></tr>
           </tbody>
         </table>
+      </div>
+      <div id="agend-summary" style="display:none;margin-top:16px;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:.65rem;color:#555;letter-spacing:1px;text-transform:uppercase;margin-right:4px">Acumulado:</span>
+          <span id="sum-ef"  class="agend-sum-badge sum-ef"></span>
+          <span id="sum-ns"  class="agend-sum-badge sum-ns"></span>
+          <span id="sum-pend" class="agend-sum-badge sum-pend"></span>
+        </div>
       </div>
     </div>
 
@@ -2545,27 +2567,68 @@ function renderTable() {
   const filterBR = fmtDate(filterDate);
   document.getElementById('filter-date-label').textContent = filterBR;
 
-  const filtered = agendamentos.filter(row => {
+  // Filtra por dataReun do dia
+  const doDia = agendamentos.filter(row => {
     const dr = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
     return dr === filterBR;
   });
 
+  // Atualiza filtro de closers dinamicamente
+  const sel = document.getElementById('agend-closer-filter');
+  const currentFilter = sel.value;
+  const closersDoDia = [...new Set(doDia.map(r => r.closer).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todos os closers</option>';
+  closersDoDia.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    if (c === currentFilter) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  // Aplica filtro de closer
+  const closerFiltro = sel.value;
+  const filtered = closerFiltro ? doDia.filter(r => r.closer === closerFiltro) : doDia;
+
+  // Summary
+  const sumEl = document.getElementById('agend-summary');
+  const ef    = filtered.filter(r => r.status === 'Efetivada').length;
+  const ns    = filtered.filter(r => r.status === 'No-show').length;
+  const pend  = filtered.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show').length;
+  const total = filtered.length;
+
+  if (total > 0) {
+    const pct = v => total > 0 ? Math.round(v/total*100) : 0;
+    document.getElementById('sum-ef').textContent   = '✅ Efetivadas ' + ef + ' (' + pct(ef) + '%)';
+    document.getElementById('sum-ns').textContent   = '❌ No-show ' + ns + ' (' + pct(ns) + '%)';
+    document.getElementById('sum-pend').textContent = '⏳ Pendentes ' + pend + ' (' + pct(pend) + '%)';
+    sumEl.style.display = 'block';
+  } else {
+    sumEl.style.display = 'none';
+  }
+
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhum agendamento em ${filterBR}</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhum agendamento em ' + filterBR + (closerFiltro ? ' para ' + closerFiltro : '') + '</td></tr>';
     return;
   }
+
   tbody.innerHTML = '';
   filtered.forEach((row, i) => {
-    const dataExib = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
-    const carimboExib = row.carimbo.replace(/^(\d{2}\/\d{2}\/\d{4})[, ]+(\d{2}:\d{2}).*$/, '$1 $2') || row.carimbo || '—';
+    const dataExib    = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
+    const carimboExib = (row.carimbo||'').replace(/^(\d{2}\/\d{2}\/\d{4})[, ]+(\d{2}:\d{2}).*$/, '$1 $2') || '—';
+    const statusBadge = row.status === 'Efetivada'
+      ? '<span style="font-size:.7rem;font-weight:800;background:rgba(110,177,80,0.15);color:#6EB150;padding:2px 9px;border-radius:99px;border:1px solid rgba(110,177,80,0.3)">✅ Efetivada</span>'
+      : row.status === 'No-show'
+      ? '<span style="font-size:.7rem;font-weight:800;background:rgba(255,107,107,0.15);color:#ff6b6b;padding:2px 9px;border-radius:99px;border:1px solid rgba(255,107,107,0.3)">❌ No-show</span>'
+      : '<span style="font-size:.7rem;font-weight:800;background:rgba(255,209,102,0.1);color:#FFD166;padding:2px 9px;border-radius:99px;border:1px solid rgba(255,209,102,0.25)">⏳ Pendente</span>';
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td>${carimboExib}</td>
-      <td><span class="badge-sdr">${row.sdr||'—'}</span></td>
-      <td>${dataExib}</td>
-      <td><span class="badge-closer">${row.closer||'—'}</span></td>
-      <td>${row.lead||'—'}</td>`;
+    tr.innerHTML =
+      '<td>' + (i+1) + '</td>' +
+      '<td>' + carimboExib + '</td>' +
+      '<td><span class="badge-sdr">' + (row.sdr||'—') + '</span></td>' +
+      '<td>' + dataExib + '</td>' +
+      '<td><span class="badge-closer">' + (row.closer||'—') + '</span></td>' +
+      '<td>' + (row.lead||'—') + '</td>' +
+      '<td>' + statusBadge + '</td>';
     tbody.appendChild(tr);
   });
 }
@@ -2664,6 +2727,7 @@ document.getElementById('btn-skip').addEventListener('click', () => {
 
 // ── NAVEGAÇÃO ──
 document.getElementById('btn-prev').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()-1); renderTable(); });
+document.getElementById('agend-closer-filter').addEventListener('change', () => renderTable());
 document.getElementById('btn-next').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()+1); renderTable(); });
 document.getElementById('score-prev').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()-1);  renderScoreboard(); });
 document.getElementById('score-next').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()+1);  renderScoreboard(); });
