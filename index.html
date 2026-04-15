@@ -287,46 +287,21 @@
       color: var(--yellow);
     }
 
-
-    /* ── TOOLTIP AVATAR CLOSER ── */
     .closer-avatar-wrap { position: relative; display: inline-block; }
     .closer-tooltip {
-      display: none;
-      position: absolute;
-      bottom: calc(100% + 10px);
-      left: 50%; transform: translateX(-50%);
-      background: rgba(20,20,20,0.97);
-      border: 1px solid rgba(110,177,80,0.35);
-      border-radius: 12px;
-      padding: 10px 14px;
-      min-width: 180px; max-width: 240px;
-      z-index: 999;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-      pointer-events: none;
-      text-align: left;
+      display: none; position: absolute;
+      bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+      background: rgba(15,15,15,0.97); border: 1px solid rgba(110,177,80,0.3);
+      border-radius: 12px; padding: 10px 14px; min-width: 180px; max-width: 230px;
+      z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.7); pointer-events: none;
     }
-    .closer-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%; left: 50%; transform: translateX(-50%);
-      border: 6px solid transparent;
-      border-top-color: rgba(110,177,80,0.35);
-    }
-    .closer-tooltip.visible { display: block; animation: fadeIn .15s ease; }
-    .ct-title {
-      font-size: .62rem; color: #6EB150;
-      letter-spacing: 1px; text-transform: uppercase;
-      margin-bottom: 6px; font-weight: 800;
-    }
-    .ct-item {
-      font-size: .78rem; padding: 4px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      color: #ccc;
-    }
+    .closer-tooltip.visible { display: block; }
+    .ct-title { font-size: .6rem; color: #6EB150; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; font-weight: 800; }
+    .ct-item { font-size: .77rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
     .ct-item:last-child { border-bottom: none; }
     .ct-lead { font-weight: 800; color: #fff; }
-    .ct-sdr  { font-size: .65rem; color: #666; margin-top: 1px; }
-    .ct-empty { font-size: .75rem; color: #555; font-style: italic; }
+    .ct-sdr { font-size: .63rem; color: #666; }
+    .ct-empty { font-size: .73rem; color: #555; font-style: italic; }
     .closer-breakdown {
       display: flex; align-items: center; gap: 5px;
       font-size: .62rem; margin-top: 2px; margin-bottom: 6px;
@@ -2333,21 +2308,19 @@ async function fetchRaw(gid) {
 //  Não afeta o histórico real — ao recarregar a página o pulo
 //  some, mas o histórico da planilha já avançou corretamente.
 // ══════════════════════════════════════════════════════════
-// Remove acentos para ordenação alfabética
 function semAcento(s) {
-  return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 }
 
 function calcNextCloser() {
   if (!closers.length) return { index: 0, name: '—' };
 
-  // Closer forçado manualmente tem prioridade
   if (forcedCloser) {
     const idx = closers.findIndex(c => c.name === forcedCloser.name);
     return { index: idx >= 0 ? idx : 0, name: forcedCloser.name };
   }
 
-  // Fila: closers na fila ordenados alfabeticamente (sem acentos)
+  // Fila ordenada alfabeticamente sem acentos
   const naFila = closers
     .filter(c => c.emFila !== false)
     .slice()
@@ -2355,23 +2328,19 @@ function calcNextCloser() {
 
   if (!naFila.length) return { index: 0, name: closers[0].name };
 
-  // Último closer da fila que recebeu um agendamento SDR (1ª reunião, sdr≠closer)
-  // pelo carimbo mais recente
+  // Último que recebeu (carimbo mais recente, 1ª reunião, sdr≠closer)
   const filaNomes = new Set(naFila.map(c => c.name));
   const ultimos = agendamentos
-    .filter(r => r.closer && filaNomes.has(r.closer)
-               && r.tipoReun !== '2º Reunião'
-               && r.sdr !== r.closer)
-    .sort((a,b) => (b.carimbo > a.carimbo ? 1 : -1));
+    .filter(r => r.closer && filaNomes.has(r.closer) && r.tipoReun !== '2º Reunião' && r.sdr !== r.closer)
+    .sort((a,b) => b.carimbo > a.carimbo ? 1 : -1);
 
-  let startIdx = 0; // padrão: começa do primeiro alfabeticamente
+  let startIdx = 0;
   if (ultimos.length > 0) {
-    const lastName = ultimos[0].closer;
-    const pos = naFila.findIndex(c => c.name === lastName);
+    const pos = naFila.findIndex(c => c.name === ultimos[0].closer);
     if (pos >= 0) startIdx = (pos + 1) % naFila.length;
   }
 
-  // Percorre circularmente a partir do próximo após o último, pulando skipped
+  // Circular ignorando pulados
   const n = naFila.length;
   for (let offset = 0; offset < n; offset++) {
     const c = naFila[(startIdx + offset) % n];
@@ -2381,7 +2350,6 @@ function calcNextCloser() {
     }
   }
 
-  // Fallback: todos pulados — reseta e pega o próximo
   skippedThisSession.clear();
   const c = naFila[startIdx % n];
   const idx = closers.findIndex(x => x.name === c.name);
@@ -2526,24 +2494,12 @@ function renderScoreboard() {
       + (isOffQueue  ? ' off-queue-card' : '')
       + (isForced    ? ' forced-card'    : '');
 
-    // Agendamentos do dia para tooltip
-    const scoreBR2 = fmtDate(scoreDate);
-    const agendDia = agendamentos.filter(r =>
-      r.closer === c.name &&
-      (extractDatePart(r.carimbo) === scoreBR2)
-    );
-    const tooltipItems = agendDia.length > 0
-      ? agendDia.map(r =>
-          '<div class="ct-item"><div class="ct-lead">' + (r.lead||'—') + '</div><div class="ct-sdr">por ' + (r.sdr||'—') + '</div></div>'
-        ).join('')
-      : '<div class="ct-empty">Sem agendamentos hoje</div>';
-
     div.innerHTML = `
       <div class="closer-avatar-wrap">
-        <div class="closer-avatar" data-closer="${c.name}">${c.initials}</div>
+        <div class="closer-avatar" id="av-${c.name.replace(/\s/g,'_')}">${c.initials}</div>
         <div class="closer-tooltip" id="tt-${c.name.replace(/\s/g,'_')}">
           <div class="ct-title">Agendamentos do dia</div>
-          ${tooltipItems}
+          <div id="tt-body-${c.name.replace(/\s/g,'_')}"></div>
         </div>
       </div>
       <div class="closer-name">${c.name}${isPulado ? ' <span style="font-size:.6rem;opacity:.6">(pulado)</span>' : ''}${isOffQueue ? ' <span style="font-size:.6rem;opacity:.5">(fora da fila)</span>' : ''}</div>
@@ -2565,33 +2521,25 @@ function renderScoreboard() {
       </div>
       <div class="click-hint">${isOffQueue ? 'clique para forçar seleção' : 'clique para selecionar'}</div>`;
 
-    // Tooltip no avatar — aparece após 1s de hover
-    const avatarEl  = div.querySelector('.closer-avatar');
-    const tooltipEl = div.querySelector('.closer-tooltip');
-    let hoverTimer  = null;
-    if (avatarEl && tooltipEl) {
-      avatarEl.addEventListener('mouseenter', () => {
-        hoverTimer = setTimeout(() => tooltipEl.classList.add('visible'), 1000);
+    // Tooltip hover — 1 segundo
+    (function() {
+      const av = div.querySelector('.closer-avatar');
+      const tt = div.querySelector('.closer-tooltip');
+      const tb = div.querySelector('[id^="tt-body-"]');
+      if (!av || !tt || !tb) return;
+      let timer = null;
+      av.addEventListener('mouseenter', () => {
+        timer = setTimeout(() => {
+          const br = fmtDate(scoreDate);
+          const items = agendamentos.filter(r => r.closer === c.name && extractDatePart(r.carimbo) === br);
+          tb.innerHTML = items.length
+            ? items.map(r => '<div class="ct-item"><div class="ct-lead">' + (r.lead||'—') + '</div><div class="ct-sdr">por ' + (r.sdr||'—') + '</div></div>').join('')
+            : '<div class="ct-empty">Sem agendamentos hoje</div>';
+          tt.classList.add('visible');
+        }, 1000);
       });
-      avatarEl.addEventListener('mouseleave', () => {
-        clearTimeout(hoverTimer);
-        tooltipEl.classList.remove('visible');
-      });
-    }
-
-    // Tooltip no avatar — aparece após 1s de hover
-    const avatarEl  = div.querySelector('.closer-avatar');
-    const tooltipEl = div.querySelector('.closer-tooltip');
-    let hoverTimer  = null;
-    if (avatarEl && tooltipEl) {
-      avatarEl.addEventListener('mouseenter', () => {
-        hoverTimer = setTimeout(() => tooltipEl.classList.add('visible'), 1000);
-      });
-      avatarEl.addEventListener('mouseleave', () => {
-        clearTimeout(hoverTimer);
-        tooltipEl.classList.remove('visible');
-      });
-    }
+      av.addEventListener('mouseleave', () => { clearTimeout(timer); tt.classList.remove('visible'); });
+    })();
 
     // Ripple effect
     div.addEventListener('click', function(e) {
