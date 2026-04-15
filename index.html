@@ -2222,6 +2222,10 @@
   </div>
 </div>
 
+<div id="global-closer-tooltip" class="closer-tooltip">
+  <div class="ct-title">Agendamentos do dia</div>
+  <div id="global-tt-body"></div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -2501,13 +2505,7 @@ function renderScoreboard() {
       + (isForced    ? ' forced-card'    : '');
 
     div.innerHTML = `
-      <div class="closer-avatar-wrap">
-        <div class="closer-avatar" id="av-${c.name.replace(/\s/g,'_')}">${c.initials}</div>
-        <div class="closer-tooltip" id="tt-${c.name.replace(/\s/g,'_')}">
-          <div class="ct-title">Agendamentos do dia</div>
-          <div id="tt-body-${c.name.replace(/\s/g,'_')}"></div>
-        </div>
-      </div>
+      <div class="closer-avatar">${c.initials}</div>
       <div class="closer-name">${c.name}${isPulado ? ' <span style="font-size:.6rem;opacity:.6">(pulado)</span>' : ''}${isOffQueue ? ' <span style="font-size:.6rem;opacity:.5">(fora da fila)</span>' : ''}</div>
       <div class="closer-count">${(daySDR[c.name]||0)+(dayProp[c.name]||0)}</div>
       <div class="closer-count-label">reuniões hoje</div>
@@ -2527,29 +2525,34 @@ function renderScoreboard() {
       </div>
       <div class="click-hint">${isOffQueue ? 'clique para forçar seleção' : 'clique para selecionar'}</div>`;
 
-    // Tooltip hover — 1 segundo
-    (function() {
+    // Tooltip hover — 1 segundo (global tooltip no body)
+    (function(closerName) {
       const av = div.querySelector('.closer-avatar');
-      const tt = div.querySelector('.closer-tooltip');
-      const tb = div.querySelector('[id^="tt-body-"]');
-      if (!av || !tt || !tb) return;
+      if (!av) return;
       let timer = null;
-      av.addEventListener('mouseenter', (e) => {
+      av.addEventListener('mouseenter', () => {
         timer = setTimeout(() => {
+          const tt = document.getElementById('global-closer-tooltip');
+          const tb = document.getElementById('global-tt-body');
+          if (!tt || !tb) return;
           const br = fmtDate(scoreDate);
-          const items = agendamentos.filter(r => r.closer === c.name && extractDatePart(r.carimbo) === br);
+          const items = agendamentos.filter(r => r.closer === closerName && extractDatePart(r.carimbo) === br);
           tb.innerHTML = items.length
             ? items.map(r => '<div class="ct-item"><div class="ct-lead">' + (r.lead||'—') + '</div><div class="ct-sdr">por ' + (r.sdr||'—') + '</div></div>').join('')
             : '<div class="ct-empty">Sem agendamentos hoje</div>';
           const rect = av.getBoundingClientRect();
           tt.style.left = (rect.left + rect.width / 2) + 'px';
-          tt.style.top  = (rect.top - 10) + 'px';
+          tt.style.top  = (rect.top - 12) + 'px';
           tt.style.transform = 'translate(-50%, -100%)';
           tt.classList.add('visible');
         }, 1000);
       });
-      av.addEventListener('mouseleave', () => { clearTimeout(timer); tt.classList.remove('visible'); });
-    })();
+      av.addEventListener('mouseleave', () => {
+        clearTimeout(timer);
+        const tt = document.getElementById('global-closer-tooltip');
+        if (tt) tt.classList.remove('visible');
+      });
+    })(c.name);
 
     // Ripple effect
     div.addEventListener('click', function(e) {
