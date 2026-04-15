@@ -289,11 +289,11 @@
 
     .closer-avatar-wrap { position: relative; display: inline-block; }
     .closer-tooltip {
-      display: none; position: absolute;
-      bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+      display: none; position: fixed;
       background: rgba(15,15,15,0.97); border: 1px solid rgba(110,177,80,0.3);
       border-radius: 12px; padding: 10px 14px; min-width: 180px; max-width: 230px;
-      z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,0.7); pointer-events: none;
+      z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,0.7); pointer-events: none;
+      transform: translateX(-50%);
     }
     .closer-tooltip.visible { display: block; }
     .ct-title { font-size: .6rem; color: #6EB150; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; font-weight: 800; }
@@ -2332,7 +2332,13 @@ function calcNextCloser() {
   const filaNomes = new Set(naFila.map(c => c.name));
   const ultimos = agendamentos
     .filter(r => r.closer && filaNomes.has(r.closer) && r.tipoReun !== '2º Reunião' && r.sdr !== r.closer)
-    .sort((a,b) => b.carimbo > a.carimbo ? 1 : -1);
+    .sort((a,b) => {
+      // Ordena pelo carimbo — tenta parsear como data BR, fallback string
+      const pa = parseBRDate(extractDatePart(a.carimbo) || a.carimbo);
+      const pb = parseBRDate(extractDatePart(b.carimbo) || b.carimbo);
+      if (!isNaN(pa) && !isNaN(pb)) return pb - pa;
+      return b.carimbo > a.carimbo ? 1 : -1;
+    });
 
   let startIdx = 0;
   if (ultimos.length > 0) {
@@ -2528,13 +2534,17 @@ function renderScoreboard() {
       const tb = div.querySelector('[id^="tt-body-"]');
       if (!av || !tt || !tb) return;
       let timer = null;
-      av.addEventListener('mouseenter', () => {
+      av.addEventListener('mouseenter', (e) => {
         timer = setTimeout(() => {
           const br = fmtDate(scoreDate);
           const items = agendamentos.filter(r => r.closer === c.name && extractDatePart(r.carimbo) === br);
           tb.innerHTML = items.length
             ? items.map(r => '<div class="ct-item"><div class="ct-lead">' + (r.lead||'—') + '</div><div class="ct-sdr">por ' + (r.sdr||'—') + '</div></div>').join('')
             : '<div class="ct-empty">Sem agendamentos hoje</div>';
+          const rect = av.getBoundingClientRect();
+          tt.style.left = (rect.left + rect.width / 2) + 'px';
+          tt.style.top  = (rect.top - 10) + 'px';
+          tt.style.transform = 'translate(-50%, -100%)';
           tt.classList.add('visible');
         }, 1000);
       });
