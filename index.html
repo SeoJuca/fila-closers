@@ -287,6 +287,46 @@
       color: var(--yellow);
     }
 
+
+    /* ── TOOLTIP AVATAR CLOSER ── */
+    .closer-avatar-wrap { position: relative; display: inline-block; }
+    .closer-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%; transform: translateX(-50%);
+      background: rgba(20,20,20,0.97);
+      border: 1px solid rgba(110,177,80,0.35);
+      border-radius: 12px;
+      padding: 10px 14px;
+      min-width: 180px; max-width: 240px;
+      z-index: 999;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      pointer-events: none;
+      text-align: left;
+    }
+    .closer-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%; left: 50%; transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: rgba(110,177,80,0.35);
+    }
+    .closer-tooltip.visible { display: block; animation: fadeIn .15s ease; }
+    .ct-title {
+      font-size: .62rem; color: #6EB150;
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 6px; font-weight: 800;
+    }
+    .ct-item {
+      font-size: .78rem; padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: #ccc;
+    }
+    .ct-item:last-child { border-bottom: none; }
+    .ct-lead { font-weight: 800; color: #fff; }
+    .ct-sdr  { font-size: .65rem; color: #666; margin-top: 1px; }
+    .ct-empty { font-size: .75rem; color: #555; font-style: italic; }
     .closer-breakdown {
       display: flex; align-items: center; gap: 5px;
       font-size: .62rem; margin-top: 2px; margin-bottom: 6px;
@@ -2293,6 +2333,11 @@ async function fetchRaw(gid) {
 //  Não afeta o histórico real — ao recarregar a página o pulo
 //  some, mas o histórico da planilha já avançou corretamente.
 // ══════════════════════════════════════════════════════════
+// Remove acentos para ordenação alfabética
+function semAcento(s) {
+  return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
+
 function calcNextCloser() {
   if (!closers.length) return { index: 0, name: '—' };
 
@@ -2302,51 +2347,45 @@ function calcNextCloser() {
     return { index: idx >= 0 ? idx : 0, name: forcedCloser.name };
   }
 
-  // Apenas closers na fila (col C != "Não")
-  const naFila = closers.filter(c => c.emFila !== false);
+  // Fila: closers na fila ordenados alfabeticamente (sem acentos)
+  const naFila = closers
+    .filter(c => c.emFila !== false)
+    .slice()
+    .sort((a,b) => semAcento(a.name).localeCompare(semAcento(b.name)));
+
   if (!naFila.length) return { index: 0, name: closers[0].name };
 
-  // Conta só 1ª reunião agendada por SDR diferente do closer, no mês atual
-  const now = new Date();
-  const curM = now.getMonth(), curY = now.getFullYear();
-  const counts = {};
-  naFila.forEach(c => counts[c.name] = 0);
+  // Último closer da fila que recebeu um agendamento SDR (1ª reunião, sdr≠closer)
+  // pelo carimbo mais recente
+  const filaNomes = new Set(naFila.map(c => c.name));
+  const ultimos = agendamentos
+    .filter(r => r.closer && filaNomes.has(r.closer)
+               && r.tipoReun !== '2º Reunião'
+               && r.sdr !== r.closer)
+    .sort((a,b) => (b.carimbo > a.carimbo ? 1 : -1));
 
-  agendamentos.forEach(row => {
-    if (!row.closer || !counts.hasOwnProperty(row.closer)) return;
-    if (row.tipoReun === '2º Reunião') return;   // 2ª não conta
-    if (row.sdr === row.closer) return;           // próprio não conta
-    const dp = extractDatePart(row.carimbo);
-    if (!dp) return;
-    const dt = parseBRDate(dp);
-    if (!isNaN(dt) && dt.getMonth() === curM && dt.getFullYear() === curY)
-      counts[row.closer]++;
-  });
-
-  // Remove pulados desta sessão
-  const available = naFila.filter(c => !skippedThisSession.has(c.name));
-  if (!available.length) skippedThisSession.clear();
-
-  const eligible = naFila.filter(c => !skippedThisSession.has(c.name));
-  const minCount = Math.min(...eligible.map(c => counts[c.name]));
-
-  // Circular pela ordem da planilha — quem tem menos recebe, desempate pela ordem
-  for (let i = 0; i < closers.length; i++) {
-    const c = closers[i];
-    if (c.emFila === false) continue;
-    if (skippedThisSession.has(c.name)) continue;
-    if (counts[c.name] === minCount) return { index: i, name: c.name };
+  let startIdx = 0; // padrão: começa do primeiro alfabeticamente
+  if (ultimos.length > 0) {
+    const lastName = ultimos[0].closer;
+    const pos = naFila.findIndex(c => c.name === lastName);
+    if (pos >= 0) startIdx = (pos + 1) % naFila.length;
   }
 
-  // Fallback: reseta pulados e tenta de novo
+  // Percorre circularmente a partir do próximo após o último, pulando skipped
+  const n = naFila.length;
+  for (let offset = 0; offset < n; offset++) {
+    const c = naFila[(startIdx + offset) % n];
+    if (!skippedThisSession.has(c.name)) {
+      const idx = closers.findIndex(x => x.name === c.name);
+      return { index: idx >= 0 ? idx : 0, name: c.name };
+    }
+  }
+
+  // Fallback: todos pulados — reseta e pega o próximo
   skippedThisSession.clear();
-  for (let i = 0; i < closers.length; i++) {
-    const c = closers[i];
-    if (c.emFila === false) continue;
-    if (counts[c.name] === minCount) return { index: i, name: c.name };
-  }
-
-  return { index: closers.findIndex(c => c.emFila !== false), name: naFila[0].name };
+  const c = naFila[startIdx % n];
+  const idx = closers.findIndex(x => x.name === c.name);
+  return { index: idx >= 0 ? idx : 0, name: c.name };
 }
 
 // ── LOAD SDRs ──
@@ -2487,8 +2526,26 @@ function renderScoreboard() {
       + (isOffQueue  ? ' off-queue-card' : '')
       + (isForced    ? ' forced-card'    : '');
 
+    // Agendamentos do dia para tooltip
+    const scoreBR2 = fmtDate(scoreDate);
+    const agendDia = agendamentos.filter(r =>
+      r.closer === c.name &&
+      (extractDatePart(r.carimbo) === scoreBR2)
+    );
+    const tooltipItems = agendDia.length > 0
+      ? agendDia.map(r =>
+          '<div class="ct-item"><div class="ct-lead">' + (r.lead||'—') + '</div><div class="ct-sdr">por ' + (r.sdr||'—') + '</div></div>'
+        ).join('')
+      : '<div class="ct-empty">Sem agendamentos hoje</div>';
+
     div.innerHTML = `
-      <div class="closer-avatar">${c.initials}</div>
+      <div class="closer-avatar-wrap">
+        <div class="closer-avatar" data-closer="${c.name}">${c.initials}</div>
+        <div class="closer-tooltip" id="tt-${c.name.replace(/\s/g,'_')}">
+          <div class="ct-title">Agendamentos do dia</div>
+          ${tooltipItems}
+        </div>
+      </div>
       <div class="closer-name">${c.name}${isPulado ? ' <span style="font-size:.6rem;opacity:.6">(pulado)</span>' : ''}${isOffQueue ? ' <span style="font-size:.6rem;opacity:.5">(fora da fila)</span>' : ''}</div>
       <div class="closer-count">${(daySDR[c.name]||0)+(dayProp[c.name]||0)}</div>
       <div class="closer-count-label">reuniões hoje</div>
@@ -2507,6 +2564,34 @@ function renderScoreboard() {
         <span class="breakdown-own">${monProp[c.name]||0} próprio</span>
       </div>
       <div class="click-hint">${isOffQueue ? 'clique para forçar seleção' : 'clique para selecionar'}</div>`;
+
+    // Tooltip no avatar — aparece após 1s de hover
+    const avatarEl  = div.querySelector('.closer-avatar');
+    const tooltipEl = div.querySelector('.closer-tooltip');
+    let hoverTimer  = null;
+    if (avatarEl && tooltipEl) {
+      avatarEl.addEventListener('mouseenter', () => {
+        hoverTimer = setTimeout(() => tooltipEl.classList.add('visible'), 1000);
+      });
+      avatarEl.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimer);
+        tooltipEl.classList.remove('visible');
+      });
+    }
+
+    // Tooltip no avatar — aparece após 1s de hover
+    const avatarEl  = div.querySelector('.closer-avatar');
+    const tooltipEl = div.querySelector('.closer-tooltip');
+    let hoverTimer  = null;
+    if (avatarEl && tooltipEl) {
+      avatarEl.addEventListener('mouseenter', () => {
+        hoverTimer = setTimeout(() => tooltipEl.classList.add('visible'), 1000);
+      });
+      avatarEl.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimer);
+        tooltipEl.classList.remove('visible');
+      });
+    }
 
     // Ripple effect
     div.addEventListener('click', function(e) {
