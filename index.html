@@ -2337,11 +2337,14 @@ function calcNextCloser() {
   const ultimos = agendamentos
     .filter(r => r.closer && filaNomes.has(r.closer) && r.tipoReun !== '2º Reunião' && r.sdr !== r.closer)
     .sort((a,b) => {
-      // Ordena pelo carimbo — tenta parsear como data BR, fallback string
-      const pa = parseBRDate(extractDatePart(a.carimbo) || a.carimbo);
-      const pb = parseBRDate(extractDatePart(b.carimbo) || b.carimbo);
-      if (!isNaN(pa) && !isNaN(pb)) return pb - pa;
-      return b.carimbo > a.carimbo ? 1 : -1;
+      // Usa carimbo completo DD/MM/YYYY HH:MM:SS para ordenar corretamente
+      const toTs = s => {
+        if (!s) return 0;
+        const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})[,\s]+(\d{2}):(\d{2})/);
+        if (m) return new Date(m[3], m[2]-1, m[1], m[4], m[5]).getTime();
+        return new Date(s).getTime() || 0;
+      };
+      return toTs(b.carimbo) - toTs(a.carimbo);
     });
 
   let startIdx = 0;
