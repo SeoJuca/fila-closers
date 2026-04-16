@@ -2332,28 +2332,38 @@ function calcNextCloser() {
 
   if (!naFila.length) return { index: 0, name: closers[0].name };
 
-  // Último que recebeu (carimbo mais recente, 1ª reunião, sdr≠closer)
   const filaNomes = new Set(naFila.map(c => c.name));
+
+  // Converte carimbo completo DD/MM/YYYY[, ]HH:MM:SS para timestamp
+  const toTs = s => {
+    if (!s) return 0;
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})[,\s]+(\d{2}):(\d{2}):(\d{2})/);
+    if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]).getTime();
+    // Fallback: só data sem horário → timestamp do início do dia
+    const m2 = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m2) return new Date(+m2[3], +m2[2]-1, +m2[1]).getTime();
+    return 0;
+  };
+
+  // Filtra só agendamentos válidos para a fila:
+  // - 1ª reunião (tipoReun vazio = legado = 1ª)
+  // - sdr ≠ closer
+  // - closer está na fila
+  // - tem carimbo com horário (ts > 0)
   const ultimos = agendamentos
-    .filter(r => r.closer && filaNomes.has(r.closer) && r.tipoReun !== '2º Reunião' && r.sdr !== r.closer)
-    .sort((a,b) => {
-      // Usa carimbo completo DD/MM/YYYY HH:MM:SS para ordenar corretamente
-      const toTs = s => {
-        if (!s) return 0;
-        const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})[,\s]+(\d{2}):(\d{2})/);
-        if (m) return new Date(m[3], m[2]-1, m[1], m[4], m[5]).getTime();
-        return new Date(s).getTime() || 0;
-      };
-      return toTs(b.carimbo) - toTs(a.carimbo);
-    });
+    .filter(r =>
+      r.closer &&
+      filaNomes.has(r.closer) &&
+      r.tipoReun !== '2º Reunião' &&
+      r.sdr !== r.closer &&
+      toTs(r.carimbo) > 0
+    )
+    .sort((a,b) => toTs(b.carimbo) - toTs(a.carimbo));
 
   let startIdx = 0;
   if (ultimos.length > 0) {
     const pos = naFila.findIndex(c => c.name === ultimos[0].closer);
-    console.log('🔍 Último closer via SDR:', ultimos[0].closer, '| carimbo:', ultimos[0].carimbo, '| pos na fila:', pos);
-    console.log('🔍 naFila ordem:', naFila.map(c => c.name));
     if (pos >= 0) startIdx = (pos + 1) % naFila.length;
-    console.log('🔍 startIdx:', startIdx, '→ próximo:', naFila[startIdx % naFila.length]?.name);
   }
 
   // Circular ignorando pulados
