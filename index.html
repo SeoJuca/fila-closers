@@ -2350,7 +2350,10 @@ function calcNextCloser() {
   let startIdx = 0;
   if (ultimos.length > 0) {
     const pos = naFila.findIndex(c => c.name === ultimos[0].closer);
+    console.log('🔍 Último closer via SDR:', ultimos[0].closer, '| carimbo:', ultimos[0].carimbo, '| pos na fila:', pos);
+    console.log('🔍 naFila ordem:', naFila.map(c => c.name));
     if (pos >= 0) startIdx = (pos + 1) % naFila.length;
+    console.log('🔍 startIdx:', startIdx, '→ próximo:', naFila[startIdx % naFila.length]?.name);
   }
 
   // Circular ignorando pulados
