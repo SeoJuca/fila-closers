@@ -2354,8 +2354,7 @@ function calcNextCloser() {
     .filter(r =>
       r.closer &&
       filaNomes.has(r.closer) &&
-      r.tipoReun !== '2º Reunião' &&
-      r.sdr !== r.closer &&
+      r.viaFila === 'true' &&
       toTs(r.carimbo) > 0
     )
     .sort((a,b) => toTs(b.carimbo) - toTs(a.carimbo));
@@ -2431,6 +2430,7 @@ async function loadAgendamentos() {
       status:   (cols[6]||'').trim(),   // G - Status
       tsStatus: (cols[7]||'').trim(),   // H - Timestamp status
       tipoReun: (cols[8]||'').trim(),   // I - Tipo de Reunião
+      viaFila:  (cols[10]||'').trim(),  // K - Via Fila (true/false)
     })).filter(r => r.sdr || r.carimbo);
 
     updateNextCloserDisplay();
@@ -2741,6 +2741,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
   fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
   fd.append('caminho',      'SDR');
   fd.append('tipo_reuniao', tipoReuniao);
+  fd.append('via_fila',     'true');  // agendamento pela fila normal
 
   try {
     await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
@@ -2759,7 +2760,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
     agendamentos.push({
       carimbo:  new Date().toLocaleString('pt-BR'),
       sdr, dataReun: `${d}/${m}/${y}`, closer: closerFinal, lead,
-      tipoReun: tipoReuniao,
+      tipoReun: tipoReuniao, viaFila: 'true',
     });
     updateNextCloserDisplay();
     renderScoreboard();
@@ -2965,6 +2966,7 @@ async function popup1aConfirmar() {
     fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
     fd.append('caminho',      'SDR');
     fd.append('tipo_reuniao', '1º Reunião');
+    fd.append('via_fila',     'false'); // closer agendou para si
 
     try {
       await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
@@ -2978,7 +2980,7 @@ async function popup1aConfirmar() {
       agendamentos.push({
         carimbo: new Date().toLocaleString('pt-BR'),
         sdr: p1aNome, closer: p1aNome, lead, dataReun: dataFmt,
-        tipoReun: '1º Reunião',
+        tipoReun: '1º Reunião', viaFila: 'false',
       });
 
       resetFormulario();
@@ -3161,6 +3163,7 @@ async function popup4Confirmar() {
   fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
   fd.append('caminho',      'SDR');
   fd.append('tipo_reuniao', '2º Reunião');
+  fd.append('via_fila',     'false'); // 2ª reunião não conta na fila
 
   try {
     await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
@@ -3172,7 +3175,7 @@ async function popup4Confirmar() {
     agendamentos.push({
       carimbo:  new Date().toLocaleString('pt-BR'),
       sdr: closerNome, dataReun: dataFmt, closer: closerNome, lead: leadNome,
-      tipoReun: '2º Reunião',
+      tipoReun: '2º Reunião', viaFila: 'false',
     });
 
     // Limpa estado
