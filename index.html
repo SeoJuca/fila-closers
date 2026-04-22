@@ -880,6 +880,27 @@
       border-color: #ff6b6b; color: #ff6b6b;
       cursor: default;
     }
+    .status-btn.re {
+      background: rgba(167,139,250,0.12);
+      color: #a78bfa;
+      border: 1.5px solid rgba(167,139,250,0.3);
+    }
+    .status-btn.re:hover:not(:disabled) { background: rgba(167,139,250,0.25); }
+    .badge-status-re {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(167,139,250,0.12); color: #a78bfa;
+      border: 1px solid rgba(167,139,250,0.3);
+      border-radius: 99px; padding: 4px 12px;
+      font-size: .75rem; font-weight: 800;
+    }
+    .tipo-reagendado {
+      display: inline-block; margin-left: 4px;
+      font-size: .6rem; font-weight: 800;
+      background: rgba(167,139,250,0.12); color: #a78bfa;
+      padding: 1px 6px; border-radius: 99px;
+      border: 1px solid rgba(167,139,250,0.25);
+      vertical-align: middle;
+    }
     .badge-status-ef {
       background: rgba(110,177,80,0.2); color: #6EB150;
       font-size: .72rem; font-weight: 800;
@@ -2226,6 +2247,26 @@
   <div class="ct-title">Agendamentos do dia</div>
   <div id="global-tt-body"></div>
 </div>
+<!-- POPUP REAGENDAR -->
+<div id="popup-reagendar" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box" style="max-width:400px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="reuniao2-title">🔁 Reagendar</div>
+        <div class="reuniao2-sub" style="margin:0" id="reagendar-lead-sub"></div>
+      </div>
+      <button class="pizza-close-btn" onclick="fecharReagendar()">✕</button>
+    </div>
+    <label style="font-size:.72rem;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:8px">Nova data da reunião</label>
+    <input type="date" id="reagendar-data" style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;outline:none;box-sizing:border-box"
+      onchange="document.getElementById('reagendar-confirm-btn').disabled=!this.value" />
+    <div class="reuniao2-btns" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="fecharReagendar()">← Cancelar</button>
+      <button class="btn btn-primary" id="reagendar-confirm-btn" onclick="confirmarReagendar()" disabled style="background:rgba(167,139,250,0.2);color:#a78bfa;border:1.5px solid rgba(167,139,250,0.4)">🔁 Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -3488,9 +3529,12 @@ function renderDashboard() {
 
   tbody.innerHTML = '';
   reunioes.forEach((row, i) => {
-    const hasStatus = row.status === 'Efetivada' || row.status === 'No-show';
-    const safeId    = (row.id||'').replace(/'/g, "\'");
-    const safeLead  = (row.lead||'').replace(/'/g, "\'");
+    const isEfetivada   = row.status === 'Efetivada';
+    const isNoShow      = row.status === 'No-show';
+    const isReagendado  = row.status === 'Reagendado';
+    const hasStatus     = isEfetivada || isNoShow || isReagendado;
+    const safeId        = (row.id||'').replace(/'/g, "\'");
+    const safeLead      = (row.lead||'').replace(/'/g, "\'");
 
     // Verifica se a reunião é futura
     const drDP = extractDatePart(row.dataReun) || isoToBR(row.dataReun);
@@ -3498,21 +3542,32 @@ function renderDashboard() {
     const isFuture = !isNaN(drDt) && drDt > hoje;
 
     let statusCell;
-    if (hasStatus) {
-      statusCell = `<td colspan="2"><span class="${row.status === 'Efetivada' ? 'badge-status-ef' : 'badge-status-ns'}">${row.status === 'Efetivada' ? '✅ Efetivada' : '❌ No-show'}</span></td>`;
+    if (isEfetivada) {
+      statusCell = `<td colspan="2"><span class="badge-status-ef">✅ Efetivada</span></td>`;
+    } else if (isReagendado) {
+      statusCell = `<td colspan="2"><span class="badge-status-re">🔁 Reagendado</span></td>`;
     } else {
       const futureHint = isFuture ? `<div class="future-hint">📅 Reunião futura</div>` : '';
-      statusCell = `<td>
-        ${futureHint}
-        <button class="status-btn ef${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','Efetivada')">✅ Efetivada</button>
-      </td>
-      <td><button class="status-btn ns${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','No-show')">❌ No-show</button></td>`;
+      const reagBtn = `<button class="status-btn re${isFuture ? ' future-btn' : ''}" onclick="promptReagendar('${safeId}','${safeLead}')">🔁 Reagendar</button>`;
+      if (isNoShow) {
+        // No-show: mostra badge + botão reagendar
+        statusCell = `<td><span class="badge-status-ns">❌ No-show</span></td><td>${reagBtn}</td>`;
+      } else {
+        // Pendente: mostra os 3 botões
+        statusCell = `<td>
+          ${futureHint}
+          <button class="status-btn ef${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','Efetivada')">✅ Efetivada</button>
+          <button class="status-btn ns${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','No-show')" style="margin-top:4px">❌ No-show</button>
+        </td>
+        <td style="vertical-align:middle">${reagBtn}</td>`;
+      }
     }
 
     const carimboExib = (row.carimbo||'').replace(/^(\d{2}\/\d{2}\/\d{4})[, ]+(\d{2}:\d{2}).*$/, '$1 $2') || '—';
-    const tipoBadge = row.tipoReun === '2º Reunião'
+    const reagSuffix = isReagendado ? '<span class="tipo-reagendado">🔁</span>' : '';
+    const tipoBadge = (row.tipoReun === '2º Reunião'
       ? '<span style="font-size:.68rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 8px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
-      : '<span style="font-size:.68rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 8px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>';
+      : '<span style="font-size:.68rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 8px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>') + reagSuffix;
     const tr = document.createElement('tr');
     tr.id = 'row-' + row.id;
     if (isFuture && !hasStatus) tr.classList.add('tr-future');
@@ -4757,6 +4812,70 @@ function renderFaturamento(month, year) {
       </div>` : ''}
     </div>`;
 }
+
+// ── REAGENDAR ──
+let pendingReagendarId   = null;
+let pendingReagendarLead = null;
+
+function promptReagendar(id, lead) {
+  pendingReagendarId   = id;
+  pendingReagendarLead = lead;
+  document.getElementById('reagendar-lead-sub').textContent = lead;
+  document.getElementById('reagendar-data').value = '';
+  document.getElementById('reagendar-confirm-btn').disabled = true;
+  document.getElementById('popup-reagendar').style.display = 'flex';
+  setTimeout(() => {
+    const inp = document.getElementById('reagendar-data');
+    if (inp && inp.showPicker) inp.showPicker();
+  }, 150);
+}
+
+function fecharReagendar() {
+  document.getElementById('popup-reagendar').style.display = 'none';
+  pendingReagendarId = pendingReagendarLead = null;
+}
+
+async function confirmarReagendar() {
+  const novaData = document.getElementById('reagendar-data').value;
+  if (!novaData || !pendingReagendarId) return;
+
+  const [y,m,d] = novaData.split('-');
+  const dataFmt = `${d}/${m}/${y}`;
+
+  const btn = document.getElementById('reagendar-confirm-btn');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+  const fd = new FormData();
+  fd.append('id',        pendingReagendarId);
+  fd.append('nova_data', dataFmt);
+  fd.append('status',    'Reagendado');
+  fd.append('timestamp', new Date().toLocaleString('pt-BR'));
+  fd.append('caminho',   'Closer');
+
+  try {
+    await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
+
+    // Optimistic update: atualiza dataReun e status localmente
+    const agend = agendamentos.find(r => r.id === pendingReagendarId);
+    if (agend) {
+      agend.dataReun = dataFmt;
+      agend.status   = 'Reagendado';
+    }
+
+    fecharReagendar();
+    toast(`🔁 ${pendingReagendarLead || 'Lead'} reagendado para ${dataFmt}!`);
+    renderDashboard();
+
+  } catch(e) {
+    console.error('Reagendar:', e);
+  } finally {
+    btn.disabled = false; btn.textContent = '🔁 Confirmar';
+  }
+}
+
+document.getElementById('popup-reagendar').addEventListener('click', function(e) {
+  if (e.target === this) fecharReagendar();
+});
 setInterval(loadAgendamentos, 30000);
 </script>
 </body>
