@@ -2740,6 +2740,8 @@ function renderTable() {
       ? '<span style="font-size:.7rem;font-weight:800;background:rgba(110,177,80,0.15);color:#6EB150;padding:2px 9px;border-radius:99px;border:1px solid rgba(110,177,80,0.3)">✅ Efetivada</span>'
       : row.status === 'No-show'
       ? '<span style="font-size:.7rem;font-weight:800;background:rgba(255,107,107,0.15);color:#ff6b6b;padding:2px 9px;border-radius:99px;border:1px solid rgba(255,107,107,0.3)">❌ No-show</span>'
+      : row.status === 'Reagendado'
+      ? '<span style="font-size:.7rem;font-weight:800;background:rgba(167,139,250,0.15);color:#a78bfa;padding:2px 9px;border-radius:99px;border:1px solid rgba(167,139,250,0.3)">🔁 Reagendado</span>'
       : '<span style="font-size:.7rem;font-weight:800;background:rgba(255,209,102,0.1);color:#FFD166;padding:2px 9px;border-radius:99px;border:1px solid rgba(255,209,102,0.25)">⏳ Pendente</span>';
     const tr = document.createElement('tr');
     tr.innerHTML =
