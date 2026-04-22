@@ -3546,7 +3546,9 @@ function renderDashboard() {
       statusCell = `<td colspan="2"><span class="badge-status-ef">✅ Efetivada</span></td>`;
     } else {
       const futureHint = isFuture ? `<div class="future-hint">📅 Reunião futura</div>` : '';
-      const reagBtn = `<button class="status-btn re${isFuture ? ' future-btn' : ''}" onclick="promptReagendar('${safeId}','${safeLead}')">🔁 Reagendar</button>`;
+      const reagBtn = row.tipoReun === '2º Reunião'
+        ? `<button class="status-btn re${isFuture ? ' future-btn' : ''}" onclick="promptReagendar('${safeId}','${safeLead}')">🔁 Reagendar</button>`
+        : '';
       if (isNoShow) {
         // No-show: mostra badge + botão reagendar
         statusCell = `<td><span class="badge-status-ns">❌ No-show</span></td><td>${reagBtn}</td>`;
