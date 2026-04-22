@@ -3544,8 +3544,6 @@ function renderDashboard() {
     let statusCell;
     if (isEfetivada) {
       statusCell = `<td colspan="2"><span class="badge-status-ef">✅ Efetivada</span></td>`;
-    } else if (isReagendado) {
-      statusCell = `<td colspan="2"><span class="badge-status-re">🔁 Reagendado</span></td>`;
     } else {
       const futureHint = isFuture ? `<div class="future-hint">📅 Reunião futura</div>` : '';
       const reagBtn = `<button class="status-btn re${isFuture ? ' future-btn' : ''}" onclick="promptReagendar('${safeId}','${safeLead}')">🔁 Reagendar</button>`;
@@ -3553,9 +3551,11 @@ function renderDashboard() {
         // No-show: mostra badge + botão reagendar
         statusCell = `<td><span class="badge-status-ns">❌ No-show</span></td><td>${reagBtn}</td>`;
       } else {
-        // Pendente: mostra os 3 botões
+        // Pendente ou Reagendado: mostra os 3 botões
+        const reagLabel = isReagendado ? '<div style="font-size:.6rem;color:#a78bfa;margin-bottom:4px">🔁 Reagendado</div>' : '';
         statusCell = `<td>
           ${futureHint}
+          ${reagLabel}
           <button class="status-btn ef${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','Efetivada')">✅ Efetivada</button>
           <button class="status-btn ns${isFuture ? ' future-btn' : ''}" onclick="promptStatus('${safeId}','${safeLead}','No-show')" style="margin-top:4px">❌ No-show</button>
         </td>
