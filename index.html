@@ -66,10 +66,25 @@
     .main-grid {
       display: grid;
       grid-template-columns: 380px 1fr;
+      grid-template-rows: auto auto;
       gap: 28px;
       padding: 32px 40px;
       max-width: 1400px;
       margin: 0 auto;
+      align-items: start;
+    }
+    .main-grid .form-col {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: stretch;
+    }
+    .main-grid .right-col-top {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .main-grid .agend-full {
+      grid-column: 1 / -1;
+      grid-row: 2;
     }
 
     /* ── CARD BASE ── */
@@ -1762,7 +1777,7 @@
   </div>
 
   <!-- ══ RIGHT ══ -->
-  <div class="right-col">
+  <div class="right-col-top">
 
     <!-- Scoreboard closers -->
     <div class="card">
@@ -1802,7 +1817,10 @@
       </div>
     </div>
 
-    <!-- Tabela de agendamentos -->
+  </div><!-- /right-col-top -->
+
+  <!-- ══ AGENDAMENTOS FULL WIDTH ══ -->
+  <div class="agend-full">
     <div class="card">
       <div class="card-title">📅 Agendamentos</div>
       <div class="date-nav" style="flex-wrap:wrap;gap:8px">
@@ -1842,7 +1860,7 @@
       </div>
     </div>
 
-  </div>
+  </div><!-- /agend-full -->
 </div>
 </div><!-- /screen-agendamento -->
 
