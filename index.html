@@ -1821,7 +1821,7 @@
               <th>#</th>
               <th>Data do Agendamento</th>
               <th>SDR</th>
-              <th>Data Reunião</th>
+              <th>Tipo</th>
               <th>Closer</th>
               <th>Lead</th>
               <th>Situação</th>
@@ -2728,7 +2728,9 @@ function renderTable() {
       '<td>' + (i+1) + '</td>' +
       '<td>' + carimboExib + '</td>' +
       '<td><span class="badge-sdr">' + (row.sdr||'—') + '</span></td>' +
-      '<td>' + dataExib + '</td>' +
+      '<td>' + (row.tipoReun === '2º Reunião'
+        ? '<span style="font-size:.68rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 8px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
+        : '<span style="font-size:.68rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 8px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>') + '</td>' +
       '<td><span class="badge-closer">' + (row.closer||'—') + '</span></td>' +
       '<td>' + (row.lead||'—') + '</td>' +
       '<td>' + statusBadge + '</td>';
