@@ -3943,6 +3943,43 @@ function renderSDRCards(refDate) {
     // Clique abre modal de pizza
     card.style.cursor = 'pointer';
     card.addEventListener('click', () => openSDRPizza(sdr, month, year));
+
+    // Tooltip hover 1s no avatar do SDR
+    (function(sdrName) {
+      const av = card.querySelector('.smc-avatar');
+      if (!av) return;
+      let timer = null;
+      av.addEventListener('mouseenter', () => {
+        timer = setTimeout(() => {
+          const tt = document.getElementById('global-closer-tooltip');
+          const tb = document.getElementById('global-tt-body');
+          if (!tt || !tb) return;
+          const br = fmtDate(sdrDate);
+          const items = agendamentos.filter(r =>
+            r.sdr === sdrName &&
+            extractCarimboDate(r.carimbo) === br &&
+            r.tipoReun !== '2º Reunião'
+          );
+          tb.innerHTML = items.length
+            ? items.map(r =>
+                '<div class="ct-item"><div class="ct-lead">' + (r.lead||'—') + '</div>' +
+                '<div class="ct-sdr">→ ' + (r.closer||'—') + '</div></div>'
+              ).join('')
+            : '<div class="ct-empty">Sem agendamentos neste dia</div>';
+          const rect = av.getBoundingClientRect();
+          tt.style.left = (rect.left + rect.width / 2) + 'px';
+          tt.style.top  = (rect.top - 12) + 'px';
+          tt.style.transform = 'translate(-50%, -100%)';
+          tt.classList.add('visible');
+        }, 1000);
+      });
+      av.addEventListener('mouseleave', () => {
+        clearTimeout(timer);
+        const tt = document.getElementById('global-closer-tooltip');
+        if (tt) tt.classList.remove('visible');
+      });
+    })(sdr.name);
+
     grid.appendChild(card);
   });
 }
