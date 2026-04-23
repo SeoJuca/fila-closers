@@ -1784,7 +1784,7 @@
       <div class="card-title">🏆 Placar de Closers</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         <button class="nav-btn" id="score-prev">◀</button>
-        <div class="date-display" id="score-date-label" style="min-width:130px;text-align:center;"></div>
+        <div style="text-align:center"><div class="date-display" id="score-date-label" style="min-width:130px"></div><span id="score-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
         <button class="nav-btn" id="score-next">▶</button>
       </div>
       <div class="stats-row" style="margin-bottom:20px">
@@ -1825,7 +1825,7 @@
       <div class="card-title">📅 Agendamentos</div>
       <div class="date-nav" style="flex-wrap:wrap;gap:8px">
         <button class="nav-btn" id="btn-prev">◀</button>
-        <div class="date-display" id="filter-date-label"></div>
+        <div><div class="date-display" id="filter-date-label"></div><span id="filter-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
         <button class="nav-btn" id="btn-next">▶</button>
         <select id="agend-closer-filter" style="flex:1;min-width:140px;max-width:220px;padding:7px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;outline:none;cursor:pointer">
           <option value="">Todos os closers</option>
@@ -1918,7 +1918,7 @@
       </div>
       <div class="date-nav" style="margin:0">
         <button class="nav-btn" onclick="dashPrevDay()">◀</button>
-        <div class="date-display" id="dash-date-label" style="min-width:130px;text-align:center"></div>
+        <div style="text-align:center"><div class="date-display" id="dash-date-label" style="min-width:130px"></div><span id="dash-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
         <button class="nav-btn" onclick="dashNextDay()">▶</button>
       </div>
     </div>
@@ -2518,6 +2518,9 @@ function renderScoreboard() {
   const scoreM   = scoreDate.getMonth();
   const scoreY   = scoreDate.getFullYear();
   document.getElementById('score-date-label').textContent = scoreBR;
+  const _sdow = document.getElementById('score-dow-label'); if(_sdow) _sdow.textContent = getDOW(scoreDate);
+  const _scoreDow = document.getElementById('score-dow-label');
+  if (_scoreDow) _scoreDow.textContent = getDOW(scoreDate);
 
   if (!closers.length) {
     board.innerHTML = '<div class="empty-state">Nenhum closer encontrado na aba "closers"</div>';
@@ -2687,6 +2690,9 @@ function renderTable() {
   const tbody    = document.getElementById('table-body');
   const filterBR = fmtDate(filterDate);
   document.getElementById('filter-date-label').textContent = filterBR;
+  const _fdow = document.getElementById('filter-dow-label'); if(_fdow) _fdow.textContent = getDOW(filterDate);
+  const _filtDow = document.getElementById('filter-dow-label');
+  if (_filtDow) _filtDow.textContent = getDOW(filterDate);
 
   // Filtra por dataReun do dia
   const doDia = agendamentos.filter(row => {
@@ -3511,6 +3517,9 @@ function dashNextDay() { dashDate.setDate(dashDate.getDate()+1); renderDashboard
 function renderDashboard() {
   const dataBR = fmtDate(dashDate);
   document.getElementById('dash-date-label').textContent = dataBR;
+  const _ddow = document.getElementById('dash-dow-label'); if(_ddow) _ddow.textContent = getDOW(dashDate);
+  const _dashDow = document.getElementById('dash-dow-label');
+  if (_dashDow) _dashDow.textContent = getDOW(dashDate);
 
   const reunioes = agendamentos.filter(row =>
     row.closer === loggedCloser.name &&
@@ -3909,7 +3918,7 @@ function renderSDRCards(refDate) {
       </div>
 
       <div class="smc-block ${diaOk ? 'ok' : 'nok'}">
-        <div class="smc-block-label">${fmtDate(now)}</div>
+        <div class="smc-block-label">${fmtDate(now)}<span style="font-size:.6rem;color:#555;letter-spacing:.5px;margin-left:6px">${getDOW(now)}</span></div>
         <div class="smc-progress-row">
           <div class="smc-nums">
             <span class="smc-count">${countHoje}</span>
@@ -4939,6 +4948,20 @@ async function confirmarReagendar() {
 document.getElementById('popup-reagendar').addEventListener('click', function(e) {
   if (e.target === this) fecharReagendar();
 });
+
+// Retorna o dia da semana em português para uma data BR DD/MM/YYYY ou objeto Date
+function getDOW(dateOrStr) {
+  const DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  if (dateOrStr instanceof Date) return DIAS[dateOrStr.getDay()];
+  const dt = parseBRDate(typeof dateOrStr === 'string' ? dateOrStr : fmtDate(dateOrStr));
+  return isNaN(dt) ? '' : DIAS[dt.getDay()];
+}
+function setDateWithDOW(labelId, dowId, dateObj) {
+  const el  = document.getElementById(labelId);
+  const dow = document.getElementById(dowId);
+  if (el)  el.textContent  = fmtDate(dateObj);
+  if (dow) dow.textContent = getDOW(dateObj);
+}
 setInterval(loadAgendamentos, 30000);
 </script>
 </body>
