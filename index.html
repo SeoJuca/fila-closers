@@ -1872,7 +1872,7 @@
       <div style="display:flex;align-items:center;gap:16px">
         <div class="date-nav" style="margin:0">
           <button class="nav-btn" onclick="sdrPrevDay()">◀</button>
-          <div class="date-display" id="sdr-date-label" style="min-width:150px;text-align:center"></div>
+          <div style="text-align:center"><div class="date-display" id="sdr-date-label" style="min-width:150px"></div><div id="sdr-dow-label" style="font-size:.7rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px"></div></div>
           <button class="nav-btn" onclick="sdrNextDay()">▶</button>
         </div>
       </div>
@@ -3801,6 +3801,8 @@ function renderSDRCards(refDate) {
   const year    = now.getFullYear();
   const monthName = now.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
   document.getElementById('sdr-date-label').textContent = fmtDate(now);
+  const _dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  document.getElementById('sdr-dow-label').textContent = _dias[now.getDay()];
 
   const workdaysTotal   = countWorkdays(year, month);
   const workdaysElapsed = countWorkdaysElapsed(year, month, now);
