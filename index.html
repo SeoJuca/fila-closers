@@ -1873,7 +1873,11 @@
       <div style="display:flex;align-items:center;gap:16px">
         <div class="date-nav" style="margin:0">
           <button class="nav-btn" onclick="sdrPrevDay()">◀</button>
-          <div style="text-align:center"><div class="date-display" id="sdr-date-label" style="min-width:150px"></div><div id="sdr-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></div></div>
+          <div style="text-align:center;cursor:pointer;position:relative" onclick="document.getElementById('sdr-date-picker').showPicker()">
+            <div class="date-display" id="sdr-date-label" style="min-width:150px;text-decoration:underline dotted rgba(110,177,80,0.4)" title="Clique para selecionar a data"></div>
+            <div id="sdr-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></div>
+            <input type="date" id="sdr-date-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;top:0;left:50%" onchange="sdrPickDate(this.value)" />
+          </div>
           <button class="nav-btn" onclick="sdrNextDay()">▶</button>
         </div>
       </div>
@@ -3680,6 +3684,18 @@ let vendas     = [];  // [{data, closer, lead, valor}]
 let metaVendas = {};  // { 'YYYY-MM': valor } mês -> meta
 
 // Conta dias úteis (seg-sex) de um mês/ano
+function sdrPickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  sdrDate = new Date(+y, +m-1, +d);
+  renderSDRCards(sdrDate);
+}
+function sdrPickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  sdrDate = new Date(+y, +m-1, +d);
+  renderSDRCards(sdrDate);
+}
 function sdrPrevDay() { sdrDate.setDate(sdrDate.getDate()-1); renderSDRCards(sdrDate); }
 function sdrNextDay() { sdrDate.setDate(sdrDate.getDate()+1); renderSDRCards(sdrDate); }
 
@@ -3816,6 +3832,8 @@ function renderSDRCards(refDate) {
   const year    = now.getFullYear();
   const monthName = now.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
   document.getElementById('sdr-date-label').textContent = fmtDate(now);
+  const _picker = document.getElementById('sdr-date-picker');
+  if (_picker) _picker.value = isoDate(now);
   const _dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
   document.getElementById('sdr-dow-label').textContent = _dias[now.getDay()];
 
