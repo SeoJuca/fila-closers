@@ -834,6 +834,7 @@
     .month-ef    { color: #34d399; }
     .month-ns    { color: #fb923c; }
     .month-pend  { color: #60a5fa; }
+    .month-fut   { color: #38bdf8; }
     .month-lead-item {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px;
@@ -1949,6 +1950,11 @@
       <div class="dash-stat dash-stat-month" onclick="openMonthList('pendentes')">
         <span class="dash-stat-num month-pend" id="dash-mes-pending">0</span>
         <span class="dash-stat-label">Pendentes mês</span>
+        <span class="dash-stat-hint">clique para ver</span>
+      </div>
+      <div class="dash-stat dash-stat-month" onclick="openMonthList('futuras')">
+        <span class="dash-stat-num month-fut" id="dash-mes-futuras">0</span>
+        <span class="dash-stat-label">Futuras mês</span>
         <span class="dash-stat-hint">clique para ver</span>
       </div>
     </div>
@@ -3526,10 +3532,15 @@ function renderDashboard() {
     (extractDatePart(row.dataReun) === dataBR || isoToBR(row.dataReun) === dataBR)
   );
 
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const getReunDate = r => { const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun); if (!dp) return null; const dt = parseBRDate(dp); dt.setHours(0,0,0,0); return isNaN(dt) ? null : dt; };
+
   const total      = reunioes.length;
   const efetivadas = reunioes.filter(r => r.status === 'Efetivada').length;
   const noshow     = reunioes.filter(r => r.status === 'No-show').length;
-  const pending    = total - efetivadas - noshow;
+  // Pendente = sem status + dataReun <= hoje; Futuro = sem status + dataReun > hoje
+  const semStatus  = reunioes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
+  const pending    = semStatus.filter(r => { const dt = getReunDate(r); return !dt || dt <= hoje; }).length;
 
   document.getElementById('dash-total').textContent      = total;
   document.getElementById('dash-efetivadas').textContent = efetivadas;
@@ -3545,10 +3556,12 @@ function renderDashboard() {
     const dt = parseBRDate(dp);
     return !isNaN(dt) && dt.getMonth() === _m && dt.getFullYear() === _y;
   });
+  const _mesSemStatus = _mes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
   document.getElementById('dash-mes-total').textContent      = _mes.length;
   document.getElementById('dash-mes-efetivadas').textContent = _mes.filter(r => r.status === 'Efetivada').length;
   document.getElementById('dash-mes-noshow').textContent     = _mes.filter(r => r.status === 'No-show').length;
-  document.getElementById('dash-mes-pending').textContent    = _mes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show').length;
+  document.getElementById('dash-mes-pending').textContent    = _mesSemStatus.filter(r => { const dt = getReunDate(r); return !dt || dt <= hoje; }).length;
+  document.getElementById('dash-mes-futuras').textContent    = _mesSemStatus.filter(r => { const dt = getReunDate(r); return dt && dt > hoje; }).length;
 
   const tbody = document.getElementById('dash-tbody');
   if (!reunioes.length) {
@@ -4737,10 +4750,15 @@ function openMonthList(tipo) {
     const dt = parseBRDate(dp);
     return !isNaN(dt) && dt.getMonth() === _m && dt.getFullYear() === _y;
   });
+  const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
+  const getdt = r => { const dp = extractDatePart(r.dataReun)||isoToBR(r.dataReun); if (!dp) return null; const d = parseBRDate(dp); d.setHours(0,0,0,0); return isNaN(d)?null:d; };
+  const semSt = all.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
+
   let filtradas, titulo, emoji;
   if (tipo === 'efetivadas') { filtradas = all.filter(r => r.status === 'Efetivada'); titulo = 'Efetivadas'; emoji = '✅'; }
   else if (tipo === 'noshow') { filtradas = all.filter(r => r.status === 'No-show'); titulo = 'No-show'; emoji = '❌'; }
-  else if (tipo === 'pendentes') { filtradas = all.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show'); titulo = 'Pendentes'; emoji = '⏳'; }
+  else if (tipo === 'pendentes') { filtradas = semSt.filter(r => { const dt = getdt(r); return !dt || dt <= hoje2; }); titulo = 'Pendentes'; emoji = '⏳'; }
+  else if (tipo === 'futuras') { filtradas = semSt.filter(r => { const dt = getdt(r); return dt && dt > hoje2; }); titulo = 'Futuras'; emoji = '🔵'; }
   else { filtradas = all; titulo = 'Todas as Reuniões'; emoji = '📅'; }
 
   filtradas.sort((a,b) => parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun)) - parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun)));
