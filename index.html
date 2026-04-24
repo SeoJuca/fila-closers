@@ -1785,7 +1785,7 @@
       <div class="card-title">🏆 Placar de Closers</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         <button class="nav-btn" id="score-prev">◀</button>
-        <div style="text-align:center"><div class="date-display" id="score-date-label" style="min-width:130px"></div><span id="score-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
+        <div class="date-display" id="score-date-label" style="min-width:130px;text-align:center;"></div>
         <button class="nav-btn" id="score-next">▶</button>
       </div>
       <div class="stats-row" style="margin-bottom:20px">
@@ -1826,7 +1826,7 @@
       <div class="card-title">📅 Agendamentos</div>
       <div class="date-nav" style="flex-wrap:wrap;gap:8px">
         <button class="nav-btn" id="btn-prev">◀</button>
-        <div><div class="date-display" id="filter-date-label"></div><span id="filter-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
+        <div class="date-display" id="filter-date-label"></div>
         <button class="nav-btn" id="btn-next">▶</button>
         <select id="agend-closer-filter" style="flex:1;min-width:140px;max-width:220px;padding:7px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;outline:none;cursor:pointer">
           <option value="">Todos os closers</option>
@@ -1873,7 +1873,7 @@
       <div style="display:flex;align-items:center;gap:16px">
         <div class="date-nav" style="margin:0">
           <button class="nav-btn" onclick="sdrPrevDay()">◀</button>
-          <div style="text-align:center"><div class="date-display" id="sdr-date-label" style="min-width:150px"></div><div id="sdr-dow-label" style="font-size:.7rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px"></div></div>
+          <div class="date-display" id="sdr-date-label" style="min-width:150px;text-align:center"></div>
           <button class="nav-btn" onclick="sdrNextDay()">▶</button>
         </div>
       </div>
@@ -1919,7 +1919,7 @@
       </div>
       <div class="date-nav" style="margin:0">
         <button class="nav-btn" onclick="dashPrevDay()">◀</button>
-        <div style="text-align:center"><div class="date-display" id="dash-date-label" style="min-width:130px"></div><span id="dash-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
+        <div class="date-display" id="dash-date-label" style="min-width:130px;text-align:center"></div>
         <button class="nav-btn" onclick="dashNextDay()">▶</button>
       </div>
     </div>
@@ -2524,9 +2524,6 @@ function renderScoreboard() {
   const scoreM   = scoreDate.getMonth();
   const scoreY   = scoreDate.getFullYear();
   document.getElementById('score-date-label').textContent = scoreBR;
-  const _sdow = document.getElementById('score-dow-label'); if(_sdow) _sdow.textContent = getDOW(scoreDate);
-  const _scoreDow = document.getElementById('score-dow-label');
-  if (_scoreDow) _scoreDow.textContent = getDOW(scoreDate);
 
   if (!closers.length) {
     board.innerHTML = '<div class="empty-state">Nenhum closer encontrado na aba "closers"</div>';
@@ -2696,9 +2693,6 @@ function renderTable() {
   const tbody    = document.getElementById('table-body');
   const filterBR = fmtDate(filterDate);
   document.getElementById('filter-date-label').textContent = filterBR;
-  const _fdow = document.getElementById('filter-dow-label'); if(_fdow) _fdow.textContent = getDOW(filterDate);
-  const _filtDow = document.getElementById('filter-dow-label');
-  if (_filtDow) _filtDow.textContent = getDOW(filterDate);
 
   // Filtra por dataReun do dia
   const doDia = agendamentos.filter(row => {
@@ -3523,24 +3517,18 @@ function dashNextDay() { dashDate.setDate(dashDate.getDate()+1); renderDashboard
 function renderDashboard() {
   const dataBR = fmtDate(dashDate);
   document.getElementById('dash-date-label').textContent = dataBR;
-  const _ddow = document.getElementById('dash-dow-label'); if(_ddow) _ddow.textContent = getDOW(dashDate);
-  const _dashDow = document.getElementById('dash-dow-label');
-  if (_dashDow) _dashDow.textContent = getDOW(dashDate);
 
   const reunioes = agendamentos.filter(row =>
     row.closer === loggedCloser.name &&
     (extractDatePart(row.dataReun) === dataBR || isoToBR(row.dataReun) === dataBR)
   );
 
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  const getReunDate = r => { const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun); if (!dp) return null; const dt = parseBRDate(dp); dt.setHours(0,0,0,0); return isNaN(dt) ? null : dt; };
-
   const total      = reunioes.length;
   const efetivadas = reunioes.filter(r => r.status === 'Efetivada').length;
   const noshow     = reunioes.filter(r => r.status === 'No-show').length;
-  // Pendente = sem status + dataReun <= hoje; Futuro = sem status + dataReun > hoje
-  const semStatus  = reunioes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
-  const pending    = semStatus.filter(r => { const dt = getReunDate(r); return !dt || dt <= hoje; }).length;
+  const _hojeP = new Date(); _hojeP.setHours(0,0,0,0);
+  const _getDtP = r => { const dp = extractDatePart(r.dataReun)||isoToBR(r.dataReun); if(!dp) return null; const dt = parseBRDate(dp); dt.setHours(0,0,0,0); return isNaN(dt)?null:dt; };
+  const pending    = reunioes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado').filter(r => { const _dt = _getDtP(r); return !_dt || _dt <= _hojeP; }).length;
 
   document.getElementById('dash-total').textContent      = total;
   document.getElementById('dash-efetivadas').textContent = efetivadas;
@@ -3556,12 +3544,14 @@ function renderDashboard() {
     const dt = parseBRDate(dp);
     return !isNaN(dt) && dt.getMonth() === _m && dt.getFullYear() === _y;
   });
-  const _mesSemStatus = _mes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
+  const _hojeD = new Date(); _hojeD.setHours(0,0,0,0);
+  const _getDt = r => { const dp = extractDatePart(r.dataReun)||isoToBR(r.dataReun); if (!dp) return null; const dt = parseBRDate(dp); dt.setHours(0,0,0,0); return isNaN(dt)?null:dt; };
+  const _mesSemSt = _mes.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
   document.getElementById('dash-mes-total').textContent      = _mes.length;
   document.getElementById('dash-mes-efetivadas').textContent = _mes.filter(r => r.status === 'Efetivada').length;
   document.getElementById('dash-mes-noshow').textContent     = _mes.filter(r => r.status === 'No-show').length;
-  document.getElementById('dash-mes-pending').textContent    = _mesSemStatus.filter(r => { const dt = getReunDate(r); return !dt || dt <= hoje; }).length;
-  document.getElementById('dash-mes-futuras').textContent    = _mesSemStatus.filter(r => { const dt = getReunDate(r); return dt && dt > hoje; }).length;
+  document.getElementById('dash-mes-pending').textContent    = _mesSemSt.filter(r => { const _dt = _getDt(r); return !_dt || _dt <= _hojeD; }).length;
+  document.getElementById('dash-mes-futuras').textContent    = _mesSemSt.filter(r => { const _dt = _getDt(r); return _dt && _dt > _hojeD; }).length;
 
   const tbody = document.getElementById('dash-tbody');
   if (!reunioes.length) {
@@ -3823,8 +3813,6 @@ function renderSDRCards(refDate) {
   const year    = now.getFullYear();
   const monthName = now.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
   document.getElementById('sdr-date-label').textContent = fmtDate(now);
-  const _dias = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-  document.getElementById('sdr-dow-label').textContent = _dias[now.getDay()];
 
   const workdaysTotal   = countWorkdays(year, month);
   const workdaysElapsed = countWorkdaysElapsed(year, month, now);
@@ -3931,7 +3919,7 @@ function renderSDRCards(refDate) {
       </div>
 
       <div class="smc-block ${diaOk ? 'ok' : 'nok'}">
-        <div class="smc-block-label">${fmtDate(now)}<span style="font-size:.6rem;color:#555;letter-spacing:.5px;margin-left:6px">${getDOW(now)}</span></div>
+        <div class="smc-block-label">${fmtDate(now)}</div>
         <div class="smc-progress-row">
           <div class="smc-nums">
             <span class="smc-count">${countHoje}</span>
@@ -3965,43 +3953,6 @@ function renderSDRCards(refDate) {
     // Clique abre modal de pizza
     card.style.cursor = 'pointer';
     card.addEventListener('click', () => openSDRPizza(sdr, month, year));
-
-    // Tooltip hover 1s no avatar do SDR
-    (function(sdrName) {
-      const av = card.querySelector('.smc-avatar');
-      if (!av) return;
-      let timer = null;
-      av.addEventListener('mouseenter', () => {
-        timer = setTimeout(() => {
-          const tt = document.getElementById('global-closer-tooltip');
-          const tb = document.getElementById('global-tt-body');
-          if (!tt || !tb) return;
-          const br = fmtDate(sdrDate);
-          const items = agendamentos.filter(r =>
-            r.sdr === sdrName &&
-            extractCarimboDate(r.carimbo) === br &&
-            r.tipoReun !== '2º Reunião'
-          );
-          tb.innerHTML = items.length
-            ? items.map(r =>
-                '<div class="ct-item"><div class="ct-lead">' + (r.lead||'—') + '</div>' +
-                '<div class="ct-sdr">→ ' + (r.closer||'—') + '</div></div>'
-              ).join('')
-            : '<div class="ct-empty">Sem agendamentos neste dia</div>';
-          const rect = av.getBoundingClientRect();
-          tt.style.left = (rect.left + rect.width / 2) + 'px';
-          tt.style.top  = (rect.top - 12) + 'px';
-          tt.style.transform = 'translate(-50%, -100%)';
-          tt.classList.add('visible');
-        }, 1000);
-      });
-      av.addEventListener('mouseleave', () => {
-        clearTimeout(timer);
-        const tt = document.getElementById('global-closer-tooltip');
-        if (tt) tt.classList.remove('visible');
-      });
-    })(sdr.name);
-
     grid.appendChild(card);
   });
 }
@@ -4750,15 +4701,14 @@ function openMonthList(tipo) {
     const dt = parseBRDate(dp);
     return !isNaN(dt) && dt.getMonth() === _m && dt.getFullYear() === _y;
   });
-  const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
-  const getdt = r => { const dp = extractDatePart(r.dataReun)||isoToBR(r.dataReun); if (!dp) return null; const d = parseBRDate(dp); d.setHours(0,0,0,0); return isNaN(d)?null:d; };
-  const semSt = all.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
-
+  const _hojeL = new Date(); _hojeL.setHours(0,0,0,0);
+  const _getDtL = r => { const dp = extractDatePart(r.dataReun)||isoToBR(r.dataReun); if(!dp) return null; const dt = parseBRDate(dp); dt.setHours(0,0,0,0); return isNaN(dt)?null:dt; };
+  const _semStL = all.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
   let filtradas, titulo, emoji;
   if (tipo === 'efetivadas') { filtradas = all.filter(r => r.status === 'Efetivada'); titulo = 'Efetivadas'; emoji = '✅'; }
   else if (tipo === 'noshow') { filtradas = all.filter(r => r.status === 'No-show'); titulo = 'No-show'; emoji = '❌'; }
-  else if (tipo === 'pendentes') { filtradas = semSt.filter(r => { const dt = getdt(r); return !dt || dt <= hoje2; }); titulo = 'Pendentes'; emoji = '⏳'; }
-  else if (tipo === 'futuras') { filtradas = semSt.filter(r => { const dt = getdt(r); return dt && dt > hoje2; }); titulo = 'Futuras'; emoji = '🔵'; }
+  else if (tipo === 'pendentes') { filtradas = _semStL.filter(r => { const _dt = _getDtL(r); return !_dt || _dt <= _hojeL; }); titulo = 'Pendentes'; emoji = '⏳'; }
+  else if (tipo === 'futuras') { filtradas = _semStL.filter(r => { const _dt = _getDtL(r); return _dt && _dt > _hojeL; }); titulo = 'Futuras'; emoji = '🔵'; }
   else { filtradas = all; titulo = 'Todas as Reuniões'; emoji = '📅'; }
 
   filtradas.sort((a,b) => parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun)) - parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun)));
@@ -4966,20 +4916,6 @@ async function confirmarReagendar() {
 document.getElementById('popup-reagendar').addEventListener('click', function(e) {
   if (e.target === this) fecharReagendar();
 });
-
-// Retorna o dia da semana em português para uma data BR DD/MM/YYYY ou objeto Date
-function getDOW(dateOrStr) {
-  const DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-  if (dateOrStr instanceof Date) return DIAS[dateOrStr.getDay()];
-  const dt = parseBRDate(typeof dateOrStr === 'string' ? dateOrStr : fmtDate(dateOrStr));
-  return isNaN(dt) ? '' : DIAS[dt.getDay()];
-}
-function setDateWithDOW(labelId, dowId, dateObj) {
-  const el  = document.getElementById(labelId);
-  const dow = document.getElementById(dowId);
-  if (el)  el.textContent  = fmtDate(dateObj);
-  if (dow) dow.textContent = getDOW(dateObj);
-}
 setInterval(loadAgendamentos, 30000);
 </script>
 </body>
