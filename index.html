@@ -1923,7 +1923,11 @@
       </div>
       <div class="date-nav" style="margin:0">
         <button class="nav-btn" onclick="dashPrevDay()">◀</button>
-        <div style="text-align:center"><div class="date-display" id="dash-date-label" style="min-width:130px"></div><span id="dash-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
+        <div style="text-align:center;cursor:pointer;position:relative" onclick="document.getElementById('dash-date-picker').showPicker()" title="Clique para selecionar a data">
+          <div class="date-display" id="dash-date-label" style="min-width:130px;text-decoration:underline dotted rgba(110,177,80,0.4)"></div>
+          <span id="dash-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span>
+          <input type="date" id="dash-date-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;top:0;left:50%" onchange="dashPickDate(this.value)" />
+        </div>
         <button class="nav-btn" onclick="dashNextDay()">▶</button>
       </div>
     </div>
@@ -3517,6 +3521,18 @@ function enterDashboard() {
   renderDashboard();
 }
 
+function dashPickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  dashDate = new Date(+y, +m-1, +d);
+  renderDashboard();
+}
+function dashPickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  dashDate = new Date(+y, +m-1, +d);
+  renderDashboard();
+}
 function dashPrevDay() { dashDate.setDate(dashDate.getDate()-1); renderDashboard(); }
 function dashNextDay() { dashDate.setDate(dashDate.getDate()+1); renderDashboard(); }
 
@@ -3524,6 +3540,7 @@ function renderDashboard() {
   const dataBR = fmtDate(dashDate);
   document.getElementById('dash-date-label').textContent = dataBR;
   const _ddow = document.getElementById('dash-dow-label'); if(_ddow) _ddow.textContent = getDOW(dashDate);
+  const _dpicker = document.getElementById('dash-date-picker'); if(_dpicker) _dpicker.value = isoDate(dashDate);
 
   const reunioes = agendamentos.filter(row =>
     row.closer === loggedCloser.name &&
@@ -4780,8 +4797,10 @@ function openMonthList(tipo) {
   if (!filtradas.length) {
     list.innerHTML = '<div class="lead-empty">Nenhuma reunião nesta categoria</div>';
   } else {
-    list.innerHTML = filtradas.map(r => {
+    list.innerHTML = '';
+    filtradas.forEach(r => {
       const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+      const isPend = tipo === 'pendentes';
       const sc = r.status === 'Efetivada' ? 'background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25)' :
                  r.status === 'No-show'   ? 'background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.25)' :
                                             'background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2)';
@@ -4789,12 +4808,73 @@ function openMonthList(tipo) {
       const tipoBadge = r.tipoReun === '2º Reunião'
         ? '<span style="font-size:.62rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 7px;border-radius:99px;border:1px solid rgba(126,184,255,0.25);margin-left:6px;vertical-align:middle">🔄 2ª</span>'
         : '<span style="font-size:.62rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 7px;border-radius:99px;border:1px solid rgba(110,177,80,0.25);margin-left:6px;vertical-align:middle">🥇 1ª</span>';
-      return '<div class="month-lead-item"><div><div class="month-lead-name">' + (r.lead||'—') + tipoBadge + '</div><div class="month-lead-date">📅 ' + d + '</div></div><span class="month-lead-badge" style="' + sc + '">' + st + '</span></div>';
-    }).join('');
+
+      const item = document.createElement('div');
+      item.className = 'month-lead-item';
+      item.id = 'ml-item-' + (r.id||'');
+      item.style.flexDirection = isPend ? 'column' : 'row';
+      item.style.alignItems = isPend ? 'flex-start' : 'center';
+      item.style.gap = isPend ? '8px' : '';
+
+      const topRow = '<div style="display:flex;align-items:center;justify-content:space-between;width:100%">' +
+        '<div><div class="month-lead-name">' + (r.lead||'—') + tipoBadge + '</div><div class="month-lead-date">📅 ' + d + '</div></div>' +
+        '<span class="month-lead-badge" id="ml-badge-' + (r.id||'') + '" style="' + sc + '">' + st + '</span>' +
+        '</div>';
+
+      const actionRow = isPend
+        ? '<div style="display:flex;gap:8px;width:100%">' +
+          '<button onclick="monthListStatus(\'' + (r.id||'') + '\',\'' + (r.lead||'') + '\',\'Efetivada\')" style="flex:1;padding:6px;background:rgba(110,177,80,0.15);color:#6EB150;border:1px solid rgba(110,177,80,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">✅ Efetivada</button>' +
+          '<button onclick="monthListStatus(\'' + (r.id||'') + '\',\'' + (r.lead||'') + '\',\'No-show\')" style="flex:1;padding:6px;background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">❌ No-show</button>' +
+          '</div>'
+        : '';
+
+      item.innerHTML = topRow + actionRow;
+      list.appendChild(item);
+    });
   }
   document.getElementById('modal-month-list').style.display = 'flex';
 }
 document.getElementById('modal-month-list').addEventListener('click', function(e) { if (e.target === this) this.style.display = 'none'; });
+
+async function monthListStatus(id, lead, status) {
+  if (!id) return;
+  const fd = new FormData();
+  fd.append('id',        id);
+  fd.append('status',    status);
+  fd.append('timestamp', new Date().toLocaleString('pt-BR'));
+  fd.append('caminho',   'Closer');
+
+  try {
+    await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
+
+    // Update locally
+    const agend = agendamentos.find(r => r.id === id);
+    if (agend) agend.status = status;
+
+    // Update badge in popup
+    const badge = document.getElementById('ml-badge-' + id);
+    const item  = document.getElementById('ml-item-' + id);
+    if (badge) {
+      const isEf = status === 'Efetivada';
+      badge.style.cssText = isEf
+        ? 'background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25)'
+        : 'background:rgba(251,146,60,0.12);color:#fb923c;border:1px solid rgba(251,146,60,0.25)';
+      badge.textContent = isEf ? '✅ Efetivada' : '❌ No-show';
+    }
+    // Remove action buttons
+    if (item) {
+      const btns = item.querySelectorAll('button');
+      btns.forEach(b => b.remove());
+      item.style.flexDirection = 'row';
+      item.style.alignItems = 'center';
+    }
+
+    renderDashboard();
+    toast((status === 'Efetivada' ? '✅' : '❌') + ' ' + lead + ' marcado como ' + status + '!');
+  } catch(e) {
+    toast('Erro ao atualizar status.', false);
+  }
+}
 
 
 // ══════════════════════════════════════════════════════════
