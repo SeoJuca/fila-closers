@@ -4511,24 +4511,84 @@ function renderChart(month, year) {
   const el = document.getElementById('ind-chart');
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Conta apenas 1ª reunião
-  const byDay = {};
+  // Calcula meta diária total (soma de todos os SDRs)
+  const metaTotal = sdrList.reduce((s, sdr) => s + (metaMap[sdr.cargo] || 0), 0);
+
+  // Separa SDR (sdr≠closer) e próprio (sdr===closer) por dia
+  const bySdr  = {};
+  const byProp = {};
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(year, month, d);
-    const dow  = date.getDay();
-    if (dow === 0 || dow === 6) continue;
-    byDay[fmtDate(date)] = 0;
+    if (date.getDay() === 0 || date.getDay() === 6) continue;
+    const key = fmtDate(date);
+    bySdr[key]  = 0;
+    byProp[key] = 0;
   }
   agendamentos.forEach(r => {
-    if (r.tipoReun === '2º Reunião') return; // só 1ª reunião (vazio = legado = 1ª)
+    if (r.tipoReun === '2º Reunião' || r.tipoReun === 'Demais Reuniões') return;
     const dp = extractDatePart(r.carimbo);
-    if (byDay.hasOwnProperty(dp)) byDay[dp]++;
+    if (!bySdr.hasOwnProperty(dp)) return;
+    if (r.sdr === r.closer) byProp[dp]++;
+    else bySdr[dp]++;
   });
 
-  drawBarChart(el, byDay, '1º Reunião');
+  drawStackedChart(el, bySdr, byProp, metaTotal);
 }
 
-// Shared bar chart drawing function
+function drawStackedChart(el, bySdr, byProp, metaTotal) {
+  const days = Object.keys(bySdr);
+  const maxVal = Math.max(...days.map(d => (bySdr[d]||0) + (byProp[d]||0)), metaTotal, 1);
+
+  const W = Math.max(days.length * 36 + 60, 400);
+  const H = 180;
+  const barW = 24, barGap = 12, padL = 36, padB = 36, padT = 16;
+  const chartH = H - padB - padT;
+
+  // Linha de meta
+  const metaY = padT + chartH - (metaTotal / maxVal * chartH);
+  const metaLine = metaTotal > 0
+    ? '<line x1="' + padL + '" y1="' + metaY + '" x2="' + W + '" y2="' + metaY + '" stroke="rgba(255,209,102,0.4)" stroke-width="1" stroke-dasharray="4,3"/>' +
+      '<text x="' + (padL - 4) + '" y="' + (metaY + 3) + '" fill="#FFD166" font-size="8" text-anchor="end" font-family="Nunito">' + metaTotal + '</text>'
+    : '';
+
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p => {
+    const y   = padT + chartH - (p * chartH);
+    const val = Math.round(p * maxVal);
+    return '<line x1="' + padL + '" y1="' + y + '" x2="' + W + '" y2="' + y + '" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>' +
+           '<text x="' + (padL - 6) + '" y="' + (y + 4) + '" fill="#555" font-size="9" text-anchor="end" font-family="Nunito">' + val + '</text>';
+  }).join('');
+
+  const bars = days.map((day, i) => {
+    const x      = padL + i * (barW + barGap);
+    const vSdr   = bySdr[day]  || 0;
+    const vProp  = byProp[day] || 0;
+    const total  = vSdr + vProp;
+    const dd     = day.substring(0, 5);
+
+    // Cor SDR baseada no % da meta
+    const pct    = metaTotal > 0 ? vSdr / metaTotal : 0;
+    const colSdr = pct >= 1 ? '#6EB150' : pct >= 0.81 ? '#FFD166' : '#ff6b6b';
+    const colProp = 'rgba(255,255,255,0.18)';
+
+    // Alturas empilhadas
+    const bhProp = Math.max(vProp / maxVal * chartH, vProp > 0 ? 2 : 0);
+    const bhSdr  = Math.max(vSdr  / maxVal * chartH, vSdr  > 0 ? 2 : 0);
+    const yProp  = padT + chartH - bhProp;
+    const ySdr   = yProp - bhSdr;
+
+    return (vProp > 0 ? '<rect x="' + x + '" y="' + yProp + '" width="' + barW + '" height="' + bhProp + '" rx="2" fill="' + colProp + '" opacity="0.9"/>' : '') +
+           (vSdr  > 0 ? '<rect x="' + x + '" y="' + ySdr  + '" width="' + barW + '" height="' + bhSdr  + '" rx="2" fill="' + colSdr  + '" opacity="0.9"/>' : '') +
+           (total > 0 ? '<text x="' + (x+barW/2) + '" y="' + (ySdr > 0 ? ySdr - 3 : yProp - 3) + '" fill="' + colSdr + '" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">' + total + '</text>' : '') +
+           '<text x="' + (x+barW/2) + '" y="' + (H-8) + '" fill="#555" font-size="8" text-anchor="middle" font-family="Nunito" transform="rotate(-35,' + (x+barW/2) + ',' + (H-8) + ')">' + dd + '</text>';
+  }).join('');
+
+  el.innerHTML = '<svg class="chart-svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' +
+    gridLines + metaLine +
+    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT+chartH) + '" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
+    bars + '</svg>';
+}
+
+// Shared bar chart drawing function (for 2ª reunião and others)
 function drawBarChart(el, byDay, tipo) {
   const days   = Object.keys(byDay);
   const values = Object.values(byDay);
@@ -4538,14 +4598,13 @@ function drawBarChart(el, byDay, tipo) {
   const H = 180;
   const barW = 24, barGap = 12, padL = 36, padB = 36, padT = 16;
   const chartH = H - padB - padT;
-  // 2ª reunião usa cor azul; 1ª usa verde/amarelo/vermelho baseado na meta
   const is2nd = tipo === '2º Reunião';
 
   const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p => {
     const y   = padT + chartH - (p * chartH);
     const val = Math.round(p * maxVal);
-    return `<line x1="${padL}" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
-            <text x="${padL - 6}" y="${y + 4}" fill="#555" font-size="9" text-anchor="end" font-family="Nunito">${val}</text>`;
+    return '<line x1="' + padL + '" y1="' + y + '" x2="' + W + '" y2="' + y + '" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>' +
+           '<text x="' + (padL - 6) + '" y="' + (y + 4) + '" fill="#555" font-size="9" text-anchor="end" font-family="Nunito">' + val + '</text>';
   }).join('');
 
   const bars = days.map((day, i) => {
@@ -4553,20 +4612,17 @@ function drawBarChart(el, byDay, tipo) {
     const val = values[i];
     const bh  = Math.max(val / maxVal * chartH, val > 0 ? 3 : 0);
     const y   = padT + chartH - bh;
-    const col = is2nd ? '#7eb8ff' :
-                val >= (metaMap['SDR Pleno'] || 8) ? '#6EB150' :
-                val >= (metaMap['SDR Junior'] || 6) ? '#FFD166' : '#ff6b6b';
+    const col = is2nd ? '#7eb8ff' : val >= (metaMap['SDR Pleno'] || 8) ? '#6EB150' : val >= (metaMap['SDR Junior'] || 6) ? '#FFD166' : '#ff6b6b';
     const dd  = day.substring(0, 5);
-    return `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="4" fill="${col}" opacity="0.85"/>
-            ${val > 0 ? `<text x="${x+barW/2}" y="${y-4}" fill="${col}" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">${val}</text>` : ''}
-            <text x="${x+barW/2}" y="${H-8}" fill="#555" font-size="8" text-anchor="middle" font-family="Nunito" transform="rotate(-35,${x+barW/2},${H-8})">${dd}</text>`;
+    return '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + bh + '" rx="4" fill="' + col + '" opacity="0.85"/>' +
+           (val > 0 ? '<text x="' + (x+barW/2) + '" y="' + (y-4) + '" fill="' + col + '" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">' + val + '</text>' : '') +
+           '<text x="' + (x+barW/2) + '" y="' + (H-8) + '" fill="#555" font-size="8" text-anchor="middle" font-family="Nunito" transform="rotate(-35,' + (x+barW/2) + ',' + (H-8) + ')">' + dd + '</text>';
   }).join('');
 
-  el.innerHTML = `<svg class="chart-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-    ${gridLines}
-    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+chartH}" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    ${bars}
-  </svg>`;
+  el.innerHTML = '<svg class="chart-svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' +
+    gridLines +
+    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT+chartH) + '" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
+    bars + '</svg>';
 }
 
 // Update showScreen to render indicadores
