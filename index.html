@@ -1852,6 +1852,12 @@
         <select id="agend-closer-filter" style="flex:1;min-width:140px;max-width:220px;padding:7px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;outline:none;cursor:pointer">
           <option value="">Todos os closers</option>
         </select>
+        <div id="agend-nav-summary" style="display:none;flex:1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;min-width:200px">
+          <span id="ans-total"  style="font-size:.75rem;font-weight:800;color:#aaa"></span>
+          <span id="ans-ef"     style="font-size:.72rem;font-weight:800;color:#6EB150"></span>
+          <span id="ans-ns"     style="font-size:.72rem;font-weight:800;color:#ff6b6b"></span>
+          <span id="ans-pend"   style="font-size:.72rem;font-weight:800;color:#FFD166"></span>
+        </div>
         <button class="refresh-btn" id="btn-refresh">⟳ Atualizar</button>
       </div>
       <div class="table-wrap">
@@ -2825,7 +2831,28 @@ function renderTable() {
   const closerFiltro = sel.value;
   const filtered = closerFiltro ? doDia.filter(r => r.closer === closerFiltro) : doDia;
 
-  // Summary
+  // Somatório do dia (dataReun = filterBR, respeitando filtro de closer)
+  const doDiaReun = agendamentos.filter(r => {
+    const dr = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (dr !== filterBR) return false;
+    if (closerFiltro && r.closer !== closerFiltro) return false;
+    return true;
+  });
+  const navSum = document.getElementById('agend-nav-summary');
+  if (doDiaReun.length > 0) {
+    const _ef   = doDiaReun.filter(r => r.status === 'Efetivada').length;
+    const _ns   = doDiaReun.filter(r => r.status === 'No-show').length;
+    const _pend = doDiaReun.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show').length;
+    document.getElementById('ans-total').textContent = '📅 ' + doDiaReun.length + ' reuniões';
+    document.getElementById('ans-ef').textContent    = '✅ ' + _ef;
+    document.getElementById('ans-ns').textContent    = '❌ ' + _ns;
+    document.getElementById('ans-pend').textContent  = '⏳ ' + _pend;
+    if (navSum) navSum.style.display = 'flex';
+  } else {
+    if (navSum) navSum.style.display = 'none';
+  }
+
+  // Summary abaixo da tabela
   const sumEl = document.getElementById('agend-summary');
   const ef    = filtered.filter(r => r.status === 'Efetivada').length;
   const ns    = filtered.filter(r => r.status === 'No-show').length;
