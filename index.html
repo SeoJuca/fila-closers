@@ -1766,14 +1766,14 @@
       <input type="date" id="meeting-date" />
     </div>
 
-    <div class="next-closer-box score-lead-wrap hidden" id="next-closer-wrap">
+    <div class="next-closer-box score-lead-wrap hidden" id="next-closer-wrap" style="opacity:0.4;pointer-events:none">
       <span class="nc-label">Próximo Closer</span>
       <span class="nc-name" id="next-closer-name">—</span>
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-secondary" id="btn-skip">⏭ Pular Closer</button>
-      <button class="btn btn-primary" id="btn-schedule">✅ Agendar Reunião</button>
+      <button class="btn btn-secondary" id="btn-skip" disabled style="opacity:0.4;cursor:not-allowed">⏭ Pular Closer</button>
+      <button class="btn btn-primary" id="btn-schedule" disabled style="opacity:0.4;cursor:not-allowed">✅ Agendar Reunião</button>
     </div>
   </div>
 
@@ -2427,7 +2427,7 @@ function calcNextCloser() {
     .filter(r =>
       r.closer &&
       filaNomes.has(r.closer) &&
-      r.viaFila === 'true' &&
+      (r.viaFila||'').toLowerCase() === 'true' &&
       toTs(r.carimbo) > 0
     )
     .sort((a,b) => toTs(b.carimbo) - toTs(a.carimbo));
@@ -2831,7 +2831,8 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
 
     // Reseta pulos da sessão após agendar — o closer pulado volta à fila
     skippedThisSession.clear();
-    forcedCloser = null; // limpa seleção forçada após agendar
+    forcedCloser = null;
+    resetFormulario(); // reseta e desabilita botões após agendar
 
     // Optimistic update: insere localmente para refletir imediatamente
     // NÃO recarrega da planilha logo após — o Make precisa de tempo para gravar.
@@ -2839,7 +2840,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
     agendamentos.push({
       carimbo:  new Date().toLocaleString('pt-BR'),
       sdr, dataReun: `${d}/${m}/${y}`, closer: closerFinal, lead,
-      tipoReun: tipoReuniao, viaFila: 'true',
+      tipoReun: tipoReuniao, viaFila: 'TRUE',
     });
     updateNextCloserDisplay();
     renderScoreboard();
@@ -2908,11 +2909,17 @@ function mostrarCampos() {
 
 // Reseta tudo — radio sem seleção, campos ocultos
 function resetFormulario() {
-  // Desmarca ambos radios
   document.querySelectorAll('input[name="tipo_reuniao"]').forEach(r => r.checked = false);
   esconderCampos();
   document.getElementById('lead-name').value  = '';
   document.getElementById('lead-score').value = '';
+  // Re-desabilita botões
+  const _skip = document.getElementById('btn-skip');
+  const _sched = document.getElementById('btn-schedule');
+  const _nextWrap = document.getElementById('next-closer-wrap');
+  if (_skip)  { _skip.disabled = true; _skip.style.opacity = '0.4'; _skip.style.cursor = 'not-allowed'; }
+  if (_sched) { _sched.disabled = true; _sched.style.opacity = '0.4'; _sched.style.cursor = 'not-allowed'; }
+  if (_nextWrap) { _nextWrap.style.opacity = '0.4'; _nextWrap.style.pointerEvents = 'none'; }
 }
 
 function resetTo1aReuniao() {
@@ -3027,6 +3034,13 @@ async function popup1aConfirmar() {
     mostrarCampos();
     updateNextCloserDisplay();
     renderScoreboard();
+    // Habilita botões e próximo closer após confirmar dados
+    const _skip = document.getElementById('btn-skip');
+    const _sched = document.getElementById('btn-schedule');
+    const _nextWrap = document.getElementById('next-closer-wrap');
+    if (_skip)  { _skip.disabled = false; _skip.style.opacity = '1'; _skip.style.cursor = ''; }
+    if (_sched) { _sched.disabled = false; _sched.style.opacity = '1'; _sched.style.cursor = ''; }
+    if (_nextWrap) { _nextWrap.style.opacity = '1'; _nextWrap.style.pointerEvents = ''; }
     toast(`✅ Dados preenchidos! Confirme o closer e agende.`);
 
   } else {
