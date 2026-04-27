@@ -2056,6 +2056,18 @@
       </div>
     </div>
 
+    <!-- ROW 3B: Efetividade + No-show Demais Reuniões -->
+    <div class="ind-row">
+      <div class="ind-card">
+        <div class="ind-card-title">🚀 Efetividade por Closer — Demais Reuniões <span class="ind-formula">(efetivadas ÷ total)</span></div>
+        <div id="ind-efetividade-mais"></div>
+      </div>
+      <div class="ind-card">
+        <div class="ind-card-title">🚀 No-show por Closer — Demais Reuniões <span class="ind-formula">(no-show ÷ total)</span></div>
+        <div id="ind-noshow-mais"></div>
+      </div>
+    </div>
+
     <!-- ROW 4: SDR Campeão + Ranking SDR -->
     <div class="ind-row">
       <div class="ind-card">
@@ -2161,8 +2173,10 @@
   <div class="reuniao2-box">
     <div class="reuniao2-title">📋 Selecione o Lead</div>
     <div class="reuniao2-sub">
-      Leads efetivados por <span class="reuniao2-closer-name" id="popup3-closer-name"></span>
-      sem 2ª reunião agendada
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span>Leads efetivados por <span class="reuniao2-closer-name" id="popup3-closer-name"></span></span>
+        <button id="popup3-toggle-btn" onclick="toggleR2Inativos()" style="font-size:.7rem;font-weight:800;padding:4px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#888;cursor:pointer;font-family:Nunito,sans-serif;white-space:nowrap;flex-shrink:0">Ver inativos</button>
+      </div>
     </div>
     <div class="lead-list" id="popup3-lead-list"></div>
     <div style="margin-top:18px">
@@ -2997,6 +3011,7 @@ function mostrarCampos() {
 
 // Reseta tudo — radio sem seleção, campos ocultos
 function resetFormulario() {
+  r2ShowInativos = false;
   document.querySelectorAll('input[name="tipo_reuniao"]').forEach(r => r.checked = false);
   esconderCampos();
   document.getElementById('lead-name').value  = '';
@@ -3192,8 +3207,9 @@ async function popup1aConfirmar() {
 // ══════════════════════════════════════════════════════════
 //  FLUXO 2ª REUNIÃO — 3 POPUPS
 // ══════════════════════════════════════════════════════════
-let r2SelectedCloser = null; // closer escolhido no fluxo de 2ª reunião
-let r2SelectedLead   = null;   // lead escolhido no fluxo de 2ª reunião
+let r2SelectedCloser = null;
+let r2SelectedLead   = null;
+let r2ShowInativos   = false;
 
 // Abre o fluxo — chamado ao clicar em "Agendar Reunião" quando tipo = 2ª
 function openReuniao2Flow() {
@@ -3238,48 +3254,66 @@ function openPopup2() {
 // Popup 3 — Lista de leads efetivados sem 2ª reunião
 function openPopup3(closerName) {
   document.getElementById('popup3-closer-name').textContent = closerName;
+  renderPopup3List(closerName);
+  document.getElementById('popup-seleciona-lead').style.display = 'flex';
+}
 
-  // Leads efetivados pelo closer (col D = closer, status = Efetivada)
+function toggleR2Inativos() {
+  r2ShowInativos = !r2ShowInativos;
+  const btn = document.getElementById('popup3-toggle-btn');
+  if (btn) {
+    btn.textContent = r2ShowInativos ? 'Ver ativos' : 'Ver inativos';
+    btn.style.color = r2ShowInativos ? '#7eb8ff' : '#888';
+    btn.style.borderColor = r2ShowInativos ? 'rgba(126,184,255,0.4)' : 'rgba(255,255,255,0.15)';
+  }
+  const closerName = document.getElementById('popup3-closer-name').textContent;
+  renderPopup3List(closerName);
+}
+
+function renderPopup3List(closerName) {
+  const agora = new Date();
+  const limite = new Date(agora); limite.setDate(limite.getDate() - 60);
+  const toTs = s => { if (!s) return 0; const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/); return m ? new Date(+m[3],+m[2]-1,+m[1]).getTime() : 0; };
+
+  // Leads efetivados pelo closer na 1ª reunião
   const efetivados = agendamentos.filter(r =>
     r.closer === closerName && r.status === 'Efetivada' && r.tipoReun !== '2º Reunião'
   );
 
-  // Remove os que já têm uma 2ª reunião agendada (cruza pelo nome do lead)
+  // Remove os que já têm 2ª reunião pendente
   const com2a = new Set(
     agendamentos
-      .filter(r => r.tipoReun === '2º Reunião')
-      .map(r => r.lead.trim().toLowerCase())
+      .filter(r => r.tipoReun === '2º Reunião' && r.status !== 'Efetivada' && r.status !== 'No-show')
+      .map(r => (r.lead||'').trim().toLowerCase())
   );
-  const elegíveis = efetivados.filter(r =>
-    r.lead && !com2a.has(r.lead.trim().toLowerCase())
-  );
+  const elegiveis = efetivados.filter(r => r.lead && !com2a.has(r.lead.trim().toLowerCase()));
 
-  // Ordena por data da reunião (mais recente primeiro)
-  elegíveis.sort((a,b) => {
-    const da = parseBRDate(extractDatePart(a.dataReun) || isoToBR(a.dataReun));
-    const db = parseBRDate(extractDatePart(b.dataReun) || isoToBR(b.dataReun));
-    return db - da;
-  });
+  // Filtra por 60 dias
+  const ativos   = elegiveis.filter(r => toTs(r.carimbo) >= limite.getTime());
+  const inativos = elegiveis.filter(r => toTs(r.carimbo) < limite.getTime());
+  const lista    = r2ShowInativos ? inativos : ativos;
+
+  lista.sort((a,b) => toTs(b.carimbo) - toTs(a.carimbo));
 
   const list = document.getElementById('popup3-lead-list');
-  if (!elegíveis.length) {
-    list.innerHTML = '<div class="lead-empty">😕 Nenhum lead elegível encontrado.<br>Todos os efetivados já possuem 2ª reunião agendada.</div>';
+  if (!lista.length) {
+    list.innerHTML = '<div class="lead-empty">' +
+      (r2ShowInativos ? '😴 Nenhum lead inativo encontrado' : '✅ Nenhum lead ativo — tente "Ver inativos"') +
+      '</div>';
   } else {
     list.innerHTML = '';
-    elegíveis.forEach(r => {
+    lista.forEach(r => {
       const item = document.createElement('div');
       item.className = 'lead-item';
-      item.innerHTML = `
-        <div class="lead-item-info">
-          <div class="lead-item-name">${r.lead}</div>
-          <div class="lead-item-sdr">📋 Agendado por ${r.sdr || '—'}</div>
-        </div>
-        <div class="lead-item-arrow">→</div>`;
+      item.innerHTML =
+        '<div class="lead-item-info">' +
+          '<div class="lead-item-name">' + r.lead + '</div>' +
+          '<div class="lead-item-sdr">📋 Agendado por ' + (r.sdr||'—') + '</div>' +
+        '</div><div class="lead-item-arrow">→</div>';
       item.addEventListener('click', () => selectLead2a(r.lead, closerName));
       list.appendChild(item);
     });
   }
-  document.getElementById('popup-seleciona-lead').style.display = 'flex';
 }
 
 // Popup 3 — Voltar para popup 2
@@ -4183,6 +4217,8 @@ function renderIndicadores() {
   renderEfetividadeTipo(agendamentos, month, year, '2º Reunião', 'ind-efetividade-2');
   renderNoshowTipo(agendamentos, month, year, '1º Reunião', 'ind-noshow-1');
   renderNoshowTipo(agendamentos, month, year, '2º Reunião', 'ind-noshow-2');
+  renderEfetividadeTipo(agendamentos, month, year, 'Demais Reuniões', 'ind-efetividade-mais');
+  renderNoshowTipo(agendamentos, month, year, 'Demais Reuniões', 'ind-noshow-mais');
   renderSDRCampeao(month, year);
   renderRankingSDR(month, year);
   renderChart(month, year);
