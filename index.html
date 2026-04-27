@@ -902,6 +902,12 @@
       border: 1.5px solid rgba(167,139,250,0.3);
     }
     .status-btn.re:hover:not(:disabled) { background: rgba(167,139,250,0.25); }
+    .badge-mais {
+      font-size:.68rem; font-weight:800;
+      background:rgba(251,146,60,0.12); color:#fb923c;
+      padding:2px 8px; border-radius:99px;
+      border:1px solid rgba(251,146,60,0.25);
+    }
     .badge-status-re {
       display: inline-flex; align-items: center; gap: 6px;
       background: rgba(167,139,250,0.12); color: #a78bfa;
@@ -1737,6 +1743,15 @@
           <span class="radio-content">
             <span class="radio-emoji">🔄</span>
             <span class="radio-label">2º Reunião</span>
+            <span class="radio-desc">Em negociação</span>
+          </span>
+        </label>
+        <label class="radio-option" id="radio-opt-mais">
+          <input type="radio" name="tipo_reuniao" value="Demais Reuniões" />
+          <span class="radio-visual"></span>
+          <span class="radio-content">
+            <span class="radio-emoji">🚀</span>
+            <span class="radio-label">Mais Reuniões</span>
             <span class="radio-desc">Fechamento</span>
           </span>
         </label>
@@ -2299,6 +2314,66 @@
   </div>
 </div>
 
+<!-- POPUP MAIS-1: Seleciona closer -->
+<div id="popup-mais-closer" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div class="reuniao2-title">🚀 Mais Reuniões</div>
+        <div class="reuniao2-sub" style="margin:0">Selecione o closer responsável</div>
+      </div>
+      <button class="pizza-close-btn" onclick="fecharPopupMais()">✕</button>
+    </div>
+    <div class="popup-closer-grid" id="popup-mais-closer-grid"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-secondary" style="width:100%" onclick="fecharPopupMais()">← Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP MAIS-2: Seleciona lead -->
+<div id="popup-mais-lead" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <div class="reuniao2-title">🚀 Selecione o Lead</div>
+        <div class="reuniao2-sub" style="margin:0">Leads com 2ª reunião efetivada · <span class="reuniao2-closer-name" id="popup-mais-closer-name"></span></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="popup-mais-toggle" onclick="toggleMaisInativos()" style="font-size:.7rem;font-weight:800;padding:4px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#888;cursor:pointer;font-family:Nunito,sans-serif;white-space:nowrap">Ver inativos</button>
+        <button class="pizza-close-btn" onclick="fecharPopupMais()">✕</button>
+      </div>
+    </div>
+    <div class="lead-list" id="popup-mais-lead-list" style="max-height:320px"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('popup-mais-lead').style.display='none';document.getElementById('popup-mais-closer').style.display='flex'">← Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- POPUP MAIS-3: Data -->
+<div id="popup-mais-data" class="reuniao2-overlay" style="display:none">
+  <div class="reuniao2-box" style="max-width:400px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div class="reuniao2-title">📅 Data da Reunião</div>
+        <div class="reuniao2-sub" style="margin:0">
+          <span class="reuniao2-closer-name" id="popup-mais-lead-name"></span>
+          &nbsp;·&nbsp;<span id="popup-mais-closer-name2" style="color:#888"></span>
+        </div>
+      </div>
+      <button class="pizza-close-btn" onclick="fecharPopupMais()">✕</button>
+    </div>
+    <label style="font-size:.72rem;color:#888;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:8px">Data da reunião</label>
+    <input type="date" id="popup-mais-data-input" style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;outline:none;box-sizing:border-box"
+      onchange="document.getElementById('popup-mais-confirm-btn').disabled=!this.value" />
+    <div class="reuniao2-btns" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="document.getElementById('popup-mais-data').style.display='none';document.getElementById('popup-mais-lead').style.display='flex'">← Voltar</button>
+      <button class="btn btn-primary" id="popup-mais-confirm-btn" onclick="confirmarMais()" disabled style="background:rgba(251,146,60,0.2);color:#fb923c;border:1.5px solid rgba(251,146,60,0.4)">🚀 Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -2770,6 +2845,8 @@ function renderTable() {
       '<td><span class="badge-sdr">' + (row.sdr||'—') + '</span></td>' +
       '<td>' + (row.tipoReun === '2º Reunião'
         ? '<span style="font-size:.68rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 8px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
+        : row.tipoReun === 'Demais Reuniões'
+        ? '<span style="font-size:.68rem;font-weight:800;background:rgba(251,146,60,0.12);color:#fb923c;padding:2px 8px;border-radius:99px;border:1px solid rgba(251,146,60,0.25)">🚀 +</span>'
         : '<span style="font-size:.68rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 8px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>') + '</td>' +
       '<td><span class="badge-closer">' + (row.closer||'—') + '</span></td>' +
       '<td>' + (row.lead||'—') + '</td>' +
@@ -2897,6 +2974,12 @@ document.querySelector('input[name="tipo_reuniao"][value="2º Reunião"]').addEv
   esconderCampos();
   document.getElementById('lead-name').value = '';
   openPopup2();
+});
+
+document.querySelector('input[name="tipo_reuniao"][value="Demais Reuniões"]').addEventListener('click', function() {
+  esconderCampos();
+  document.getElementById('lead-name').value = '';
+  openPopupMais();
 });
 
 function esconderCampos() {
@@ -3550,12 +3633,6 @@ function dashPickDate(val) {
   dashDate = new Date(+y, +m-1, +d);
   renderDashboard();
 }
-function dashPickDate(val) {
-  if (!val) return;
-  const [y,m,d] = val.split('-');
-  dashDate = new Date(+y, +m-1, +d);
-  renderDashboard();
-}
 function dashPrevDay() { dashDate.setDate(dashDate.getDate()-1); renderDashboard(); }
 function dashNextDay() { dashDate.setDate(dashDate.getDate()+1); renderDashboard(); }
 
@@ -3650,6 +3727,8 @@ function renderDashboard() {
     const reagSuffix = isReagendado ? '<span class="tipo-reagendado">🔁</span>' : '';
     const tipoBadge = (row.tipoReun === '2º Reunião'
       ? '<span style="font-size:.68rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 8px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
+      : row.tipoReun === 'Demais Reuniões'
+      ? '<span style="font-size:.68rem;font-weight:800;background:rgba(251,146,60,0.12);color:#fb923c;padding:2px 8px;border-radius:99px;border:1px solid rgba(251,146,60,0.25)">🚀 +</span>'
       : '<span style="font-size:.68rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 8px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>') + reagSuffix;
     const tr = document.createElement('tr');
     tr.id = 'row-' + row.id;
@@ -3724,12 +3803,6 @@ let vendas     = [];  // [{data, closer, lead, valor}]
 let metaVendas = {};  // { 'YYYY-MM': valor } mês -> meta
 
 // Conta dias úteis (seg-sex) de um mês/ano
-function sdrPickDate(val) {
-  if (!val) return;
-  const [y,m,d] = val.split('-');
-  sdrDate = new Date(+y, +m-1, +d);
-  renderSDRCards(sdrDate);
-}
 function sdrPickDate(val) {
   if (!val) return;
   const [y,m,d] = val.split('-');
@@ -5085,6 +5158,173 @@ function getDOW(dateObj) {
   if (!(dateObj instanceof Date) || isNaN(dateObj)) return '';
   return DIAS[dateObj.getDay()];
 }
+
+// ══════════════════════════════════════════════════════════
+//  FLUXO MAIS REUNIÕES
+// ══════════════════════════════════════════════════════════
+let maisSelectedCloser = null;
+let maisSelectedLead   = null;
+let maisShowInativos   = false;
+const MAIS_DIAS = 60;
+
+function fecharPopupMais() {
+  ['popup-mais-closer','popup-mais-lead','popup-mais-data'].forEach(id =>
+    document.getElementById(id).style.display = 'none'
+  );
+  maisSelectedCloser = null;
+  maisSelectedLead   = null;
+  maisShowInativos   = false;
+  resetFormulario();
+}
+
+function openPopupMais() {
+  maisShowInativos = false;
+  const grid = document.getElementById('popup-mais-closer-grid');
+  grid.innerHTML = '';
+  closers.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'popup-closer-card';
+    card.innerHTML = '<div class="pc-avatar">' + c.initials + '</div><div class="pc-name">' + c.name + '</div>';
+    card.addEventListener('click', () => {
+      maisSelectedCloser = c.name;
+      document.getElementById('popup-mais-closer').style.display = 'none';
+      openPopupMaisLead();
+    });
+    grid.appendChild(card);
+  });
+  document.getElementById('popup-mais-closer').style.display = 'flex';
+}
+
+function toggleMaisInativos() {
+  maisShowInativos = !maisShowInativos;
+  const btn = document.getElementById('popup-mais-toggle');
+  btn.textContent = maisShowInativos ? 'Ver ativos' : 'Ver inativos';
+  btn.style.color = maisShowInativos ? '#fb923c' : '#888';
+  btn.style.borderColor = maisShowInativos ? 'rgba(251,146,60,0.4)' : 'rgba(255,255,255,0.15)';
+  openPopupMaisLead();
+}
+
+function openPopupMaisLead() {
+  document.getElementById('popup-mais-closer-name').textContent = maisSelectedCloser;
+  const agora = new Date();
+  const limite = new Date(agora); limite.setDate(limite.getDate() - MAIS_DIAS);
+
+  // Leads com 2ª reunião efetivada OU Demais Reuniões efetivada
+  const efetivados = agendamentos.filter(r =>
+    r.closer === maisSelectedCloser &&
+    r.status === 'Efetivada' &&
+    (r.tipoReun === '2º Reunião' || r.tipoReun === 'Demais Reuniões')
+  );
+
+  // Remove leads com Demais Reuniões pendente ou reagendada
+  const comPendente = new Set(
+    agendamentos
+      .filter(r => r.tipoReun === 'Demais Reuniões' && r.status !== 'Efetivada' && r.status !== 'No-show')
+      .map(r => (r.lead||'').trim().toLowerCase())
+  );
+
+  const unicos = {};
+  efetivados.forEach(r => {
+    const key = (r.lead||'').trim().toLowerCase();
+    if (!comPendente.has(key) && r.lead) unicos[key] = r;
+  });
+
+  // Filtra por 60 dias usando carimbo (col B)
+  const toTs = s => {
+    if (!s) return 0;
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    return m ? new Date(+m[3], +m[2]-1, +m[1]).getTime() : 0;
+  };
+
+  const todos = Object.values(unicos);
+  const ativos   = todos.filter(r => toTs(r.carimbo) >= limite.getTime());
+  const inativos = todos.filter(r => toTs(r.carimbo) < limite.getTime());
+  const lista    = maisShowInativos ? inativos : ativos;
+
+  const list = document.getElementById('popup-mais-lead-list');
+  if (!lista.length) {
+    list.innerHTML = '<div class="lead-empty">' +
+      (maisShowInativos ? '😴 Nenhum lead inativo encontrado' : '✅ Nenhum lead ativo — tente "Ver inativos"') +
+      '</div>';
+  } else {
+    list.innerHTML = '';
+    lista.sort((a,b) => toTs(b.carimbo) - toTs(a.carimbo));
+    lista.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'lead-item';
+      item.innerHTML =
+        '<div class="lead-item-info">' +
+          '<div class="lead-item-name">' + r.lead + '</div>' +
+          '<div class="lead-item-sdr">📋 Agendado por ' + (r.sdr||'—') + '</div>' +
+        '</div><div class="lead-item-arrow">→</div>';
+      item.addEventListener('click', () => {
+        maisSelectedLead = r.lead;
+        document.getElementById('popup-mais-lead').style.display = 'none';
+        document.getElementById('popup-mais-lead-name').textContent = r.lead;
+        document.getElementById('popup-mais-closer-name2').textContent = maisSelectedCloser;
+        document.getElementById('popup-mais-data-input').value = '';
+        document.getElementById('popup-mais-confirm-btn').disabled = true;
+        document.getElementById('popup-mais-data').style.display = 'flex';
+        setTimeout(() => {
+          const inp = document.getElementById('popup-mais-data-input');
+          if (inp && inp.showPicker) inp.showPicker();
+        }, 150);
+      });
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('popup-mais-lead').style.display = 'flex';
+}
+
+async function confirmarMais() {
+  const closerNome = maisSelectedCloser;
+  const leadNome   = maisSelectedLead;
+  if (!closerNome || !leadNome) return;
+
+  const dataVal = document.getElementById('popup-mais-data-input').value;
+  if (!dataVal) { toast('Selecione a data!', false); return; }
+  const [y,m,d] = dataVal.split('-');
+  const dataFmt = d + '/' + m + '/' + y;
+
+  const btn = document.getElementById('popup-mais-confirm-btn');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+  const fd = new FormData();
+  fd.append('sdr',          closerNome);
+  fd.append('closer',       closerNome);
+  fd.append('data_reuniao', dataFmt);
+  fd.append('nome_lead',    leadNome);
+  fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
+  fd.append('caminho',      'SDR');
+  fd.append('tipo_reuniao', 'Demais Reuniões');
+  fd.append('via_fila',     'FALSE');
+
+  try {
+    await fetch(WEBHOOK, { method: 'POST', mode: 'no-cors', body: fd });
+
+    agendamentos.push({
+      carimbo: new Date().toLocaleString('pt-BR'),
+      sdr: closerNome, closer: closerNome, lead: leadNome,
+      dataReun: dataFmt, tipoReun: 'Demais Reuniões', viaFila: 'FALSE',
+    });
+
+    fecharPopupMais();
+    toast('🚀 Reunião agendada! ' + closerNome + ' → ' + leadNome + ' em ' + dataFmt + '.');
+    renderScoreboard();
+    setTimeout(loadAgendamentos, 2000);
+  } catch(e) {
+    console.error('Mais:', e);
+  } finally {
+    btn.disabled = false; btn.textContent = '🚀 Confirmar';
+  }
+}
+
+// Fechar clicando fora
+['popup-mais-closer','popup-mais-lead','popup-mais-data'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) fecharPopupMais();
+  });
+});
 setInterval(loadAgendamentos, 30000);
 </script>
 </body>
