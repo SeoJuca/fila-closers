@@ -2589,7 +2589,7 @@ function renderScoreboard() {
 
     const div = document.createElement('div');
     div.className = 'closer-card'
-      + (i === nextIdx ? ' next-up' : '')
+      + (i === nextIdx && sdrConfirmado ? ' next-up' : '')
       + (isPulado    ? ' pulado'   : '')
       + (isOffQueue  ? ' off-queue-card' : '')
       + (isForced    ? ' forced-card'    : '');
@@ -2646,6 +2646,10 @@ function renderScoreboard() {
 
     // Ripple effect
     div.addEventListener('click', function(e) {
+      if (!sdrConfirmado) {
+        toast('Preencha os dados da reunião primeiro!', false);
+        return;
+      }
       const ripple = document.createElement('span');
       ripple.className = 'ripple';
       const rect = div.getBoundingClientRect();
@@ -2920,6 +2924,8 @@ function resetFormulario() {
   if (_skip)  { _skip.disabled = true; _skip.style.opacity = '0.4'; _skip.style.cursor = 'not-allowed'; }
   if (_sched) { _sched.disabled = true; _sched.style.opacity = '0.4'; _sched.style.cursor = 'not-allowed'; }
   if (_nextWrap) { _nextWrap.style.opacity = '0.4'; _nextWrap.style.pointerEvents = 'none'; }
+  sdrConfirmado = false;
+  renderScoreboard(); // remove badge PRÓXIMO
 }
 
 function resetTo1aReuniao() {
@@ -2934,6 +2940,7 @@ function resetTo1aReuniao() {
 // ══════════════════════════════════════════════════════════
 let p1aTipo   = null; // 'sdr' ou 'closer'
 let p1aNome   = null; // nome da pessoa selecionada
+let sdrConfirmado = false; // true após SDR confirmar dados no popup
 
 function popup1aEscolha(tipo) {
   p1aTipo = tipo;
@@ -3041,6 +3048,8 @@ async function popup1aConfirmar() {
     if (_skip)  { _skip.disabled = false; _skip.style.opacity = '1'; _skip.style.cursor = ''; }
     if (_sched) { _sched.disabled = false; _sched.style.opacity = '1'; _sched.style.cursor = ''; }
     if (_nextWrap) { _nextWrap.style.opacity = '1'; _nextWrap.style.pointerEvents = ''; }
+    sdrConfirmado = true;
+    renderScoreboard(); // atualiza badge PRÓXIMO
     toast(`✅ Dados preenchidos! Confirme o closer e agende.`);
 
   } else {
