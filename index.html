@@ -4568,17 +4568,18 @@ function drawStackedChart(el, bySdr, byProp, metaTotal) {
     // Cor SDR baseada no % da meta
     const pct    = metaTotal > 0 ? vSdr / metaTotal : 0;
     const colSdr = pct >= 1 ? '#6EB150' : pct >= 0.81 ? '#FFD166' : '#ff6b6b';
-    const colProp = 'rgba(255,255,255,0.18)';
+    const colProp = '#97B992';
 
-    // Alturas empilhadas
-    const bhProp = Math.max(vProp / maxVal * chartH, vProp > 0 ? 2 : 0);
+    // SDR em baixo, próprio em cima
     const bhSdr  = Math.max(vSdr  / maxVal * chartH, vSdr  > 0 ? 2 : 0);
-    const yProp  = padT + chartH - bhProp;
-    const ySdr   = yProp - bhSdr;
+    const bhProp = Math.max(vProp / maxVal * chartH, vProp > 0 ? 2 : 0);
+    const ySdr   = padT + chartH - bhSdr;
+    const yProp  = ySdr - bhProp;
+    const yTop   = vProp > 0 ? yProp : ySdr;
 
-    return (vProp > 0 ? '<rect x="' + x + '" y="' + yProp + '" width="' + barW + '" height="' + bhProp + '" rx="2" fill="' + colProp + '" opacity="0.9"/>' : '') +
-           (vSdr  > 0 ? '<rect x="' + x + '" y="' + ySdr  + '" width="' + barW + '" height="' + bhSdr  + '" rx="2" fill="' + colSdr  + '" opacity="0.9"/>' : '') +
-           (total > 0 ? '<text x="' + (x+barW/2) + '" y="' + (ySdr > 0 ? ySdr - 3 : yProp - 3) + '" fill="' + colSdr + '" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">' + total + '</text>' : '') +
+    return (vSdr  > 0 ? '<rect x="' + x + '" y="' + ySdr  + '" width="' + barW + '" height="' + bhSdr  + '" rx="2" fill="' + colSdr  + '" opacity="0.9"/>' : '') +
+           (vProp > 0 ? '<rect x="' + x + '" y="' + yProp + '" width="' + barW + '" height="' + bhProp + '" rx="2" fill="' + colProp + '" opacity="0.9"/>' : '') +
+           (total > 0 ? '<text x="' + (x+barW/2) + '" y="' + (yTop - 3) + '" fill="' + colSdr + '" font-size="9" text-anchor="middle" font-family="Nunito" font-weight="700">' + total + '</text>' : '') +
            '<text x="' + (x+barW/2) + '" y="' + (H-8) + '" fill="#555" font-size="8" text-anchor="middle" font-family="Nunito" transform="rotate(-35,' + (x+barW/2) + ',' + (H-8) + ')">' + dd + '</text>';
   }).join('');
 
