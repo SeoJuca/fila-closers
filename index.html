@@ -4568,7 +4568,7 @@ function drawStackedChart(el, bySdr, byProp, metaTotal) {
     // Cor SDR baseada no % da meta
     const pct    = metaTotal > 0 ? vSdr / metaTotal : 0;
     const colSdr = pct >= 1 ? '#6EB150' : pct >= 0.81 ? '#FFD166' : '#ff6b6b';
-    const colProp = '#97B992';
+    const colProp = '#a78bfa';
 
     // SDR em baixo, próprio em cima
     const bhSdr  = Math.max(vSdr  / maxVal * chartH, vSdr  > 0 ? 2 : 0);
