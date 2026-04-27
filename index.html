@@ -623,6 +623,11 @@
       position: relative; z-index: 1;
     }
     .login-card:hover .pend-badge { opacity: 1; }
+    .pend-badge-hoje {
+      background: rgba(255,209,102,0.15);
+      color: #FFD166;
+      border: 1px solid rgba(255,209,102,0.35);
+    }
     .pend-badge-real {
       background: rgba(255,80,80,0.12);
       border: 1px solid rgba(255,80,80,0.35);
@@ -3476,7 +3481,7 @@ function renderCloserCards() {
       r.lead && r.lead !== '__PULO__'
     );
 
-    // Separa: passado/hoje (pendentes reais) vs futuro (informativo)
+    // Separa: ontem para trás (pendentes), hoje (hoje), futuro
     const parseReunDate = r => {
       const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '';
       if (!dp) return null;
@@ -3485,25 +3490,25 @@ function renderCloserCards() {
       d.setHours(0,0,0,0);
       return d;
     };
-    const pendentes = semStatus.filter(r => {
-      const dt = parseReunDate(r);
-      if (!dt) return true; // sem data legível = trata como pendente
-      return dt <= hoje;
-    });
-    const futuras = semStatus.filter(r => {
-      const dt = parseReunDate(r);
-      if (!dt) return false;
-      return dt > hoje;
-    });
+    const ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
 
-    // Agrupa pendentes por data
+    const deHoje    = semStatus.filter(r => { const dt = parseReunDate(r); return dt && dt.getTime() === hoje.getTime(); });
+    const pendentes = semStatus.filter(r => { const dt = parseReunDate(r); return !dt || dt <= ontem; });
+    const futuras   = semStatus.filter(r => { const dt = parseReunDate(r); return dt && dt > hoje; });
+
+    // Agrupa por data para tooltips
+    const byDateHoje = {};
+    deHoje.forEach(r => {
+      const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+      if (!byDateHoje[d]) byDateHoje[d] = [];
+      byDateHoje[d].push(r.lead || '—');
+    });
     const byDatePend = {};
     pendentes.forEach(r => {
       const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
       if (!byDatePend[d]) byDatePend[d] = [];
       byDatePend[d].push(r.lead || '—');
     });
-    // Agrupa futuras por data
     const byDateFut = {};
     futuras.forEach(r => {
       const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
@@ -3512,13 +3517,16 @@ function renderCloserCards() {
     });
 
     const sortDates = obj => Object.keys(obj).sort((a,b) => parseBRDate(a) - parseBRDate(b));
+    const hojeDates = sortDates(byDateHoje);
     const pendDates = sortDates(byDatePend);
     const futDates  = sortDates(byDateFut);
 
+    const hasHoje = deHoje.length > 0;
     const hasPend = pendentes.length > 0;
     const hasFut  = futuras.length > 0;
 
     const badgeHTML = [
+      hasHoje ? `<div class="pend-badge pend-badge-hoje" data-type="hoje">🟡 ${deHoje.length} hoje</div>` : '',
       hasPend ? `<div class="pend-badge pend-badge-real" data-type="pend">🔴 ${pendentes.length} pendente${pendentes.length > 1 ? 's' : ''}</div>` : '',
       hasFut  ? `<div class="pend-badge pend-badge-fut"  data-type="fut" >🔵 ${futuras.length} futura${futuras.length > 1 ? 's' : ''}</div>` : '',
     ].join('');
@@ -3567,6 +3575,10 @@ function renderCloserCards() {
     };
 
     // Anexa tooltips em cada badge
+    if (hasHoje) {
+      const b = div.querySelector('.pend-badge-hoje');
+      if (b) attachTooltip(b, '🟡 Reuniões de hoje', byDateHoje, hojeDates);
+    }
     if (hasPend) {
       const b = div.querySelector('.pend-badge-real');
       if (b) attachTooltip(b, '🔴 Pendentes — aguardando status', byDatePend, pendDates);
