@@ -5311,7 +5311,7 @@ document.addEventListener('mouseover', function(e) {
     tb.innerHTML = doMesFat.length
       ? doMesFat.map(v =>
           '<div class="vendas-tt-item"><div class="vendas-tt-lead">' + (v.lead||'—') + '</div>' +
-          '<div class="vendas-tt-val">' + (v.closer||'') + ' · ' + fmtCurrency(v.valor) + '</div></div>'
+          '<div class="vendas-tt-val">' + (v.data||'—') + ' · ' + (v.closer||'') + ' · ' + fmtCurrency(v.valor) + '</div></div>'
         ).join('')
       : '<div style="font-size:.73rem;color:#555;font-style:italic">Sem vendas</div>';
     const rect = el.getBoundingClientRect();
