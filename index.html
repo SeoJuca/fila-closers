@@ -2134,7 +2134,7 @@
     <!-- ROW 7: Dia da semana (somente 1ª reunião) -->
     <div class="ind-row">
       <div class="ind-card">
-        <div class="ind-card-title">📆 Agendamentos por Dia da Semana <span class="ind-formula">(1ª reunião · volume)</span></div>
+        <div class="ind-card-title">📆 Agendamentos por Dia da Semana <span class="ind-formula">(1ª reunião · média/dia)</span></div>
         <div id="ind-dow-agend"></div>
       </div>
       <div class="ind-card">
@@ -4673,9 +4673,16 @@ function renderDowAgend(mesAgend, month, year) {
   const el = document.getElementById('ind-dow-agend');
   const DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const counts = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+  // Conta quantas vezes cada dia da semana aparece no mês
+  const occurrences = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = new Date(year, month, d).getDay();
+    if (dow >= 1 && dow <= 5) occurrences[dow]++;
+  }
 
   mesAgend.forEach(r => {
-    const dp = extractCarimboDate(r.carimbo); // col B — dia que foi agendado
+    const dp = extractCarimboDate(r.carimbo);
     if (!dp) return;
     const dt = parseBRDate(dp);
     if (isNaN(dt)) return;
@@ -4683,25 +4690,32 @@ function renderDowAgend(mesAgend, month, year) {
     if (dow >= 1 && dow <= 5) counts[dow] = (counts[dow] || 0) + 1;
   });
 
-  const maxVal = Math.max(...Object.values(counts), 1);
-  const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
-  const maxDow = sorted[0][1];
-  const minDow = sorted[sorted.length-1][1];
+  // Calcula médias
+  const medias = {};
+  Object.keys(counts).forEach(dow => {
+    medias[dow] = occurrences[dow] > 0 ? counts[dow] / occurrences[dow] : 0;
+  });
 
-  el.innerHTML = Object.entries(counts).map(([dow, val]) => {
-    const pct   = Math.round(val / maxVal * 100);
-    const isMax = val === maxDow && maxDow > 0;
-    const isMin = val === minDow;
+  const maxMedia = Math.max(...Object.values(medias), 0.1);
+  const sorted   = Object.entries(medias).sort((a,b) => b[1] - a[1]);
+  const maxVal   = sorted[0][1];
+  const minVal   = sorted[sorted.length-1][1];
+
+  el.innerHTML = Object.entries(medias).map(([dow, media]) => {
+    const pct   = Math.round(media / maxMedia * 100);
+    const isMax = media === maxVal && maxVal > 0;
+    const isMin = media === minVal;
     const color = isMax ? '#6EB150' : isMin ? '#ff6b6b' : 'rgba(255,255,255,0.2)';
     const badge = isMax && isMin ? '' :
                   isMax ? '<span class="dow-badge dow-best">🔥 Melhor</span>' :
                   isMin ? '<span class="dow-badge dow-worst">❄️ Menor</span>' : '';
-    return `<div class="dow-row">
-      <div class="dow-name">${DAYS[+dow]}</div>
-      <div class="dow-bar-wrap"><div class="dow-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      <div class="dow-val" style="color:${color}">${val}</div>
-      ${badge}
-    </div>`;
+    const label = media > 0 ? media.toFixed(1) : '0';
+    return '<div class="dow-row">' +
+      '<div class="dow-name">' + DAYS[+dow] + '</div>' +
+      '<div class="dow-bar-wrap"><div class="dow-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<div class="dow-val" style="color:' + color + '">' + label + '</div>' +
+      badge +
+      '</div>';
   }).join('');
 }
 
