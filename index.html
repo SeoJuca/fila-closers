@@ -1806,7 +1806,11 @@
       <div class="card-title">🏆 Placar de Closers</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         <button class="nav-btn" id="score-prev">◀</button>
-        <div style="text-align:center"><div class="date-display" id="score-date-label" style="min-width:130px"></div><span id="score-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
+        <div style="text-align:center;cursor:pointer;position:relative" onclick="document.getElementById('score-date-picker').showPicker()" title="Clique para selecionar a data">
+          <div class="date-display" id="score-date-label" style="min-width:130px;text-decoration:underline dotted rgba(110,177,80,0.4)"></div>
+          <span id="score-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span>
+          <input type="date" id="score-date-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;top:0;left:50%" onchange="scorePickDate(this.value)" />
+        </div>
         <button class="nav-btn" id="score-next">▶</button>
       </div>
       <div class="stats-row" style="margin-bottom:20px">
@@ -1847,7 +1851,11 @@
       <div class="card-title">📅 Agendamentos</div>
       <div class="date-nav" style="flex-wrap:wrap;gap:8px">
         <button class="nav-btn" id="btn-prev">◀</button>
-        <div><div class="date-display" id="filter-date-label"></div><span id="filter-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span></div>
+        <div style="cursor:pointer;position:relative" onclick="document.getElementById('filter-date-picker').showPicker()" title="Clique para selecionar a data">
+          <div class="date-display" id="filter-date-label" style="text-decoration:underline dotted rgba(110,177,80,0.4)"></div>
+          <span id="filter-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span>
+          <input type="date" id="filter-date-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;top:0;left:50%" onchange="filterPickDate(this.value)" />
+        </div>
         <button class="nav-btn" id="btn-next">▶</button>
         <select id="agend-closer-filter" style="flex:1;min-width:140px;max-width:220px;padding:7px 12px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;outline:none;cursor:pointer">
           <option value="">Todos os closers</option>
@@ -2634,6 +2642,7 @@ function renderScoreboard() {
   const scoreY   = scoreDate.getFullYear();
   document.getElementById('score-date-label').textContent = scoreBR;
   const _sdow = document.getElementById('score-dow-label'); if(_sdow) _sdow.textContent = getDOW(scoreDate);
+  const _spicker = document.getElementById('score-date-picker'); if(_spicker) _spicker.value = isoDate(scoreDate);
 
   if (!closers.length) {
     board.innerHTML = '<div class="empty-state">Nenhum closer encontrado na aba "closers"</div>';
@@ -2808,6 +2817,7 @@ function renderTable() {
   const filterBR = fmtDate(filterDate);
   document.getElementById('filter-date-label').textContent = filterBR;
   const _fdow = document.getElementById('filter-dow-label'); if(_fdow) _fdow.textContent = getDOW(filterDate);
+  const _fpicker = document.getElementById('filter-date-picker'); if(_fpicker) _fpicker.value = isoDate(filterDate);
 
   // Filtra por dataReun do dia
   const doDia = agendamentos.filter(row => {
@@ -3000,6 +3010,30 @@ document.getElementById('btn-skip').addEventListener('click', () => {
 document.getElementById('btn-prev').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()-1); renderTable(); });
 document.getElementById('agend-closer-filter').addEventListener('change', () => renderTable());
 document.getElementById('btn-next').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()+1); renderTable(); });
+function scorePickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  scoreDate = new Date(+y, +m-1, +d);
+  renderScoreboard();
+}
+function filterPickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  filterDate = new Date(+y, +m-1, +d);
+  renderTable();
+}
+function scorePickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  scoreDate = new Date(+y, +m-1, +d);
+  renderScoreboard();
+}
+function filterPickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  filterDate = new Date(+y, +m-1, +d);
+  renderTable();
+}
 document.getElementById('score-prev').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()-1);  renderScoreboard(); });
 document.getElementById('score-next').addEventListener('click', () => { scoreDate.setDate(scoreDate.getDate()+1);  renderScoreboard(); });
 document.getElementById('btn-refresh').addEventListener('click', async () => {
