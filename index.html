@@ -1146,6 +1146,22 @@
 
     /* Top 3 ranking de vendas */
     .vendas-podium { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 20px; }
+
+    .vendas-tt {
+      display: none; position: fixed;
+      background: rgba(15,15,15,0.97); border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 12px; padding: 10px 14px; min-width: 200px; max-width: 260px;
+      z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,0.7); pointer-events: none;
+      transform: translateX(-50%);
+    }
+    .vendas-tt.visible { display: block; }
+    .vendas-tt-title { font-size:.6rem; color:#FFD166; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; font-weight:800; }
+    .vendas-tt-item { font-size:.76rem; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05); color:#ccc; }
+    .vendas-tt-item:last-child { border-bottom:none; }
+    .vendas-tt-lead { font-weight:800; color:#fff; }
+    .vendas-tt-val  { font-size:.65rem; color:#6EB150; }
+    .fat-total-val  { cursor:pointer; }
+    .fat-total-val:hover { opacity:.85; }
     .vendas-podium-item {
       display: flex; align-items: center; gap: 14px;
       padding: 14px 16px;
@@ -2324,6 +2340,7 @@
   </div>
 </div>
 
+<div id="vendas-tooltip" class="vendas-tt"><div class="vendas-tt-title" id="vendas-tt-title"></div><div id="vendas-tt-body"></div></div>
 <div id="global-closer-tooltip" class="closer-tooltip">
   <div class="ct-title">Agendamentos do dia</div>
   <div id="global-tt-body"></div>
@@ -3010,18 +3027,6 @@ document.getElementById('btn-skip').addEventListener('click', () => {
 document.getElementById('btn-prev').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()-1); renderTable(); });
 document.getElementById('agend-closer-filter').addEventListener('change', () => renderTable());
 document.getElementById('btn-next').addEventListener('click',   () => { filterDate.setDate(filterDate.getDate()+1); renderTable(); });
-function scorePickDate(val) {
-  if (!val) return;
-  const [y,m,d] = val.split('-');
-  scoreDate = new Date(+y, +m-1, +d);
-  renderScoreboard();
-}
-function filterPickDate(val) {
-  if (!val) return;
-  const [y,m,d] = val.split('-');
-  filterDate = new Date(+y, +m-1, +d);
-  renderTable();
-}
 function scorePickDate(val) {
   if (!val) return;
   const [y,m,d] = val.split('-');
@@ -5177,21 +5182,53 @@ function renderVendasPodium(month, year) {
   }
 
   // Podium
-  elPodium.innerHTML = `<div class="vendas-podium">
-    ${top3.map((c, i) => {
-      const col = AVATAR_COLORS[i % AVATAR_COLORS.length];
-      const initials = c.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-      return `<div class="vendas-podium-item ${posClass[i]}">
-        <div class="vendas-pos-medal">${medals[i]}</div>
-        <div class="vendas-pos-avatar" style="background:${col}">${initials}</div>
-        <div class="vendas-pos-info">
-          <div class="vendas-pos-name">${c.name}</div>
-          <div class="vendas-pos-qtd">${c.qtd} venda${c.qtd !== 1 ? 's' : ''}</div>
-        </div>
-        <div class="vendas-pos-valor ${posClass[i]}">${fmtCurrency(c.total)}</div>
-      </div>`;
-    }).join('')}
-  </div>`;
+  elPodium.innerHTML = '';
+  const podiumWrap = document.createElement('div');
+  podiumWrap.className = 'vendas-podium';
+  top3.forEach((c, i) => {
+    const col = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const ini = c.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const item = document.createElement('div');
+    item.className = 'vendas-podium-item ' + posClass[i];
+    item.innerHTML =
+      '<div class="vendas-pos-medal">' + medals[i] + '</div>' +
+      '<div class="vendas-pos-avatar" style="background:' + col + '" data-closer="' + c.name + '">' + ini + '</div>' +
+      '<div class="vendas-pos-info"><div class="vendas-pos-name">' + c.name + '</div><div class="vendas-pos-qtd">' + c.qtd + ' venda' + (c.qtd !== 1 ? 's' : '') + '</div></div>' +
+      '<div class="vendas-pos-valor ' + posClass[i] + '">' + fmtCurrency(c.total) + '</div>';
+
+    // Tooltip no avatar
+    const av = item.querySelector('.vendas-pos-avatar');
+    let _timer = null;
+    av.style.cursor = 'pointer';
+    av.addEventListener('mouseenter', () => {
+      _timer = setTimeout(() => {
+        const tt = document.getElementById('vendas-tooltip');
+        const tb = document.getElementById('vendas-tt-body');
+        const ttitle = document.getElementById('vendas-tt-title');
+        if (!tt || !tb) return;
+        const leadsDoMes = doMes.filter(v => v.closer === c.name)
+          .sort((a,b) => (b.data > a.data ? 1 : -1));
+        ttitle.textContent = c.name;
+        tb.innerHTML = leadsDoMes.length
+          ? leadsDoMes.map(v =>
+              '<div class="vendas-tt-item"><div class="vendas-tt-lead">' + (v.lead||'—') + '</div><div class="vendas-tt-val">' + fmtCurrency(v.valor) + '</div></div>'
+            ).join('')
+          : '<div style="font-size:.73rem;color:#555;font-style:italic">Sem vendas</div>';
+        const rect = av.getBoundingClientRect();
+        tt.style.left = (rect.left + rect.width / 2) + 'px';
+        tt.style.top  = (rect.top - 12) + 'px';
+        tt.style.transform = 'translate(-50%, -100%)';
+        tt.classList.add('visible');
+      }, 1000);
+    });
+    av.addEventListener('mouseleave', () => {
+      clearTimeout(_timer);
+      const tt = document.getElementById('vendas-tooltip');
+      if (tt) tt.classList.remove('visible');
+    });
+    podiumWrap.appendChild(item);
+  });
+  elPodium.appendChild(podiumWrap);
 
   // Tabela todos (inclui top3 + resto)
   const todosParaTabela = [...sorted]; // todos, não só resto
@@ -5228,7 +5265,7 @@ function renderFaturamento(month, year) {
 
   el.innerHTML = `
     <div class="fat-total-wrap">
-      <div class="fat-total-val">${fmtCurrency(total)}</div>
+      <div class="fat-total-val" id="fat-total-val-el" title="Passe o mouse para ver as vendas">${fmtCurrency(total)}</div>
       <div class="fat-total-label">faturado em ${new Date(year, month, 1).toLocaleDateString('pt-BR',{month:'long'})}</div>
     </div>
     ${meta > 0 ? `
@@ -5255,6 +5292,79 @@ function renderFaturamento(month, year) {
       </div>` : ''}
     </div>`;
 }
+
+// ── Fat total tooltip ──
+document.addEventListener('mouseover', function(e) {
+  const el = e.target.closest('#fat-total-val-el');
+  if (!el) return;
+  if (el._fatTimer) return;
+  el._fatTimer = setTimeout(() => {
+    const tt = document.getElementById('vendas-tooltip');
+    const tb = document.getElementById('vendas-tt-body');
+    const ttitle = document.getElementById('vendas-tt-title');
+    if (!tt || !tb) return;
+    // Get current indDate month/year
+    const mesKey = indDate.getFullYear() + '-' + String(indDate.getMonth()+1).padStart(2,'0');
+    const doMesFat = vendas.filter(v => parseDateToMesKey(v.data) === mesKey)
+      .sort((a,b) => b.data > a.data ? 1 : -1);
+    ttitle.textContent = 'Vendas do mês';
+    tb.innerHTML = doMesFat.length
+      ? doMesFat.map(v =>
+          '<div class="vendas-tt-item"><div class="vendas-tt-lead">' + (v.lead||'—') + '</div>' +
+          '<div class="vendas-tt-val">' + (v.closer||'') + ' · ' + fmtCurrency(v.valor) + '</div></div>'
+        ).join('')
+      : '<div style="font-size:.73rem;color:#555;font-style:italic">Sem vendas</div>';
+    const rect = el.getBoundingClientRect();
+    tt.style.left = (rect.left + rect.width / 2) + 'px';
+    tt.style.top  = (rect.top - 12) + 'px';
+    tt.style.transform = 'translate(-50%, -100%)';
+    tt.classList.add('visible');
+  }, 1000);
+});
+document.addEventListener('mouseout', function(e) {
+  const el = e.target.closest('#fat-total-val-el');
+  if (!el) return;
+  clearTimeout(el._fatTimer);
+  el._fatTimer = null;
+  const tt = document.getElementById('vendas-tooltip');
+  if (tt) tt.classList.remove('visible');
+});
+
+// ── Fat total tooltip ──
+document.addEventListener('mouseover', function(e) {
+  const el = e.target.closest('#fat-total-val-el');
+  if (!el) return;
+  if (el._fatTimer) return;
+  el._fatTimer = setTimeout(() => {
+    const tt = document.getElementById('vendas-tooltip');
+    const tb = document.getElementById('vendas-tt-body');
+    const ttitle = document.getElementById('vendas-tt-title');
+    if (!tt || !tb) return;
+    const mesKey = indDate.getFullYear() + '-' + String(indDate.getMonth()+1).padStart(2,'0');
+    const doMesFat = vendas.filter(v => parseDateToMesKey(v.data) === mesKey)
+      .sort((a,b) => b.data > a.data ? 1 : -1);
+    ttitle.textContent = 'Vendas do mês';
+    tb.innerHTML = doMesFat.length
+      ? doMesFat.map(v =>
+          '<div class="vendas-tt-item"><div class="vendas-tt-lead">' + (v.lead||'—') + '</div>' +
+          '<div class="vendas-tt-val">' + (v.closer||'') + ' · ' + fmtCurrency(v.valor) + '</div></div>'
+        ).join('')
+      : '<div style="font-size:.73rem;color:#555;font-style:italic">Sem vendas</div>';
+    const rect = el.getBoundingClientRect();
+    tt.style.left = (rect.left + rect.width / 2) + 'px';
+    tt.style.top  = (rect.top - 12) + 'px';
+    tt.style.transform = 'translate(-50%, -100%)';
+    tt.classList.add('visible');
+  }, 1000);
+});
+document.addEventListener('mouseout', function(e) {
+  const el = e.target.closest('#fat-total-val-el');
+  if (!el) return;
+  clearTimeout(el._fatTimer);
+  el._fatTimer = null;
+  const tt = document.getElementById('vendas-tooltip');
+  if (tt) tt.classList.remove('visible');
+});
 
 // ── REAGENDAR ──
 let pendingReagendarId   = null;
