@@ -425,6 +425,52 @@
     .sum-ns   { background: rgba(255,107,107,0.15); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
     .sum-pend { background: rgba(255,209,102,0.12); color: #FFD166; border: 1px solid rgba(255,209,102,0.3); }
     #agend-closer-filter option { background: #1a1a1a; }
+
+    /* ── PLACAR EFETIVAÇÕES ── */
+    .ef-board { margin-top: 28px; }
+    .ef-board-title { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:2px; color:#6EB150; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+    .ef-date-nav { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .ef-summary-panel {
+      display:grid; grid-template-columns:1fr 1fr; gap:1px;
+      background:linear-gradient(135deg,#1a3a1a,#0f2a0f);
+      border:1px solid rgba(110,177,80,0.25); border-radius:16px;
+      overflow:hidden; margin-bottom:20px;
+    }
+    .ef-sum-cell {
+      padding:20px 24px; text-align:center;
+      background:rgba(0,0,0,0.2);
+    }
+    .ef-sum-num  { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:#6EB150; line-height:1; }
+    .ef-sum-label{ font-size:.62rem; color:#888; letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+    .ef-sum-sub  { font-size:.72rem; color:#555; margin-top:4px; }
+    .ef-cards-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap:14px;
+    }
+    .ef-card {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+      border-radius:14px; padding:18px 14px; text-align:center;
+      transition: border-color .2s;
+    }
+    .ef-card:hover { border-color: rgba(110,177,80,0.3); }
+    .ef-card-avatar {
+      width:52px; height:52px; border-radius:50%;
+      background:linear-gradient(135deg,#3a7a30,#2a5a22);
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Bebas Neue',sans-serif; font-size:1.3rem; color:#fff;
+      margin:0 auto 10px; letter-spacing:1px;
+    }
+    .ef-card-name { font-size:.82rem; font-weight:900; color:#ddd; margin-bottom:12px; }
+    .ef-card-divider { border:none; border-top:1px solid rgba(255,255,255,0.06); margin:10px 0; }
+    .ef-stat-row { display:flex; justify-content:space-between; align-items:center; margin:5px 0; }
+    .ef-stat-label { font-size:.6rem; color:#555; letter-spacing:.5px; text-transform:uppercase; }
+    .ef-stat-val { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; }
+    .ef-stat-pct { font-size:.7rem; font-weight:800; padding:1px 7px; border-radius:99px; }
+    .ef-pct-good { background:rgba(110,177,80,0.15); color:#6EB150; }
+    .ef-pct-mid  { background:rgba(255,209,102,0.15); color:#FFD166; }
+    .ef-pct-bad  { background:rgba(255,107,107,0.15); color:#ff6b6b; }
+    .ef-pct-zero { background:rgba(255,255,255,0.05); color:#555; }
     /* ── AGENDAMENTOS TABLE ── */
     .date-nav {
       display: flex;
@@ -1912,6 +1958,35 @@
       </div>
     </div>
 
+
+    <!-- ══ PLACAR DE EFETIVAÇÕES ══ -->
+    <div class="card ef-board" style="margin-top:24px">
+      <div class="ef-board-title">✅ Placar de Efetivações</div>
+      <div class="ef-date-nav">
+        <button class="nav-btn" onclick="efPrevDay()">◀</button>
+        <div style="text-align:center;cursor:pointer;position:relative" onclick="document.getElementById('ef-date-picker').showPicker()" title="Clique para selecionar">
+          <div class="date-display" id="ef-date-label" style="min-width:130px;text-decoration:underline dotted rgba(110,177,80,0.4)"></div>
+          <span id="ef-dow-label" style="font-size:.65rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block"></span>
+          <input type="date" id="ef-date-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;top:0;left:50%" onchange="efPickDate(this.value)" />
+        </div>
+        <button class="nav-btn" onclick="efNextDay()">▶</button>
+      </div>
+      <!-- Painel resumo -->
+      <div class="ef-summary-panel" id="ef-summary-panel">
+        <div class="ef-sum-cell">
+          <div class="ef-sum-num" id="ef-sum-day-total">0</div>
+          <div class="ef-sum-label">Reuniões no dia</div>
+          <div class="ef-sum-sub" id="ef-sum-day-sub"></div>
+        </div>
+        <div class="ef-sum-cell">
+          <div class="ef-sum-num" id="ef-sum-mes-total">0</div>
+          <div class="ef-sum-label">Total do Mês</div>
+          <div class="ef-sum-sub" id="ef-sum-mes-sub"></div>
+        </div>
+      </div>
+      <!-- Cards por closer -->
+      <div class="ef-cards-grid" id="ef-cards-grid"></div>
+    </div>
   </div><!-- /agend-full -->
 </div>
 </div><!-- /screen-agendamento -->
@@ -2635,6 +2710,7 @@ async function loadAgendamentos() {
     updateNextCloserDisplay();
     renderScoreboard();
     renderTable();
+    renderEfBoard();
   } catch(e) {
     console.error('Agend:', e);
     document.getElementById('table-body').innerHTML =
@@ -3000,6 +3076,7 @@ document.getElementById('btn-schedule').addEventListener('click', async () => {
     updateNextCloserDisplay();
     renderScoreboard();
     renderTable();
+    renderEfBoard();
   } catch(e) {
     toast('Erro ao enviar. Verifique a conexão.', false);
   } finally {
@@ -5616,6 +5693,90 @@ async function confirmarMais() {
     if (e.target === this) fecharPopupMais();
   });
 });
+
+// ══════════════════════════════════════════════════════════
+//  PLACAR DE EFETIVAÇÕES
+// ══════════════════════════════════════════════════════════
+let efDate = new Date();
+
+function efPrevDay() { efDate.setDate(efDate.getDate()-1); renderEfBoard(); }
+function efNextDay() { efDate.setDate(efDate.getDate()+1); renderEfBoard(); }
+function efPickDate(val) {
+  if (!val) return;
+  const [y,m,d] = val.split('-');
+  efDate = new Date(+y, +m-1, +d);
+  renderEfBoard();
+}
+
+function renderEfBoard() {
+  const dataBR   = fmtDate(efDate);
+  const month    = efDate.getMonth();
+  const year     = efDate.getFullYear();
+  const mesLabel = efDate.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  document.getElementById('ef-date-label').textContent = dataBR;
+  const _dow = document.getElementById('ef-dow-label');
+  if (_dow) _dow.textContent = getDOW(efDate);
+  const _picker = document.getElementById('ef-date-picker');
+  if (_picker) _picker.value = isoDate(efDate);
+
+  const grid = document.getElementById('ef-cards-grid');
+  if (!closers.length || !grid) return;
+
+  // Totais gerais do dia e mês
+  let totalDia=0, efDia=0, totalMes=0, efMes=0;
+
+  grid.innerHTML = '';
+  closers.forEach(c => {
+    // Reuniões do dia (dataReun = dataBR)
+    const doDia = agendamentos.filter(r =>
+      r.closer === c.name &&
+      (extractDatePart(r.dataReun) || isoToBR(r.dataReun)) === dataBR
+    );
+    // Reuniões do mês (dataReun no mês)
+    const doMes = agendamentos.filter(r => {
+      if (r.closer !== c.name) return false;
+      const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+      if (!dp) return false;
+      const dt = parseBRDate(dp);
+      return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+    });
+
+    const diaTotal = doDia.length;
+    const diaEf    = doDia.filter(r => r.status === 'Efetivada').length;
+    const mesTotal = doMes.length;
+    const mesEf    = doMes.filter(r => r.status === 'Efetivada').length;
+    const diaPct   = diaTotal > 0 ? Math.round(diaEf/diaTotal*100) : 0;
+    const mesPct   = mesTotal > 0 ? Math.round(mesEf/mesTotal*100) : 0;
+
+    totalDia += diaTotal; efDia += diaEf;
+    totalMes += mesTotal; efMes += mesEf;
+
+    const pctClass = p => p >= 70 ? 'ef-pct-good' : p >= 40 ? 'ef-pct-mid' : p > 0 ? 'ef-pct-bad' : 'ef-pct-zero';
+
+    const card = document.createElement('div');
+    card.className = 'ef-card';
+    card.innerHTML =
+      '<div class="ef-card-avatar">' + c.initials + '</div>' +
+      '<div class="ef-card-name">' + c.name + '</div>' +
+      '<div class="ef-stat-row"><span class="ef-stat-label">Reuniões hoje</span><span class="ef-stat-val" style="color:#aaa">' + diaTotal + '</span></div>' +
+      '<div class="ef-stat-row"><span class="ef-stat-label">Efetivadas</span><span class="ef-stat-val" style="color:#6EB150">' + diaEf + '</span></div>' +
+      '<div class="ef-stat-row"><span class="ef-stat-label">Taxa</span><span class="ef-stat-pct ' + pctClass(diaPct) + '">' + (diaTotal > 0 ? diaPct + '%' : '—') + '</span></div>' +
+      '<hr class="ef-card-divider">' +
+      '<div class="ef-stat-row"><span class="ef-stat-label">Mês · total</span><span class="ef-stat-val" style="color:#aaa">' + mesTotal + '</span></div>' +
+      '<div class="ef-stat-row"><span class="ef-stat-label">Efetivadas</span><span class="ef-stat-val" style="color:#6EB150">' + mesEf + '</span></div>' +
+      '<div class="ef-stat-row"><span class="ef-stat-label">Taxa mês</span><span class="ef-stat-pct ' + pctClass(mesPct) + '">' + (mesTotal > 0 ? mesPct + '%' : '—') + '</span></div>';
+    grid.appendChild(card);
+  });
+
+  // Painel resumo
+  const dTotalPct = totalDia > 0 ? Math.round(efDia/totalDia*100) : 0;
+  const mTotalPct = totalMes > 0 ? Math.round(efMes/totalMes*100) : 0;
+  document.getElementById('ef-sum-day-total').textContent = totalDia;
+  document.getElementById('ef-sum-day-sub').textContent   = efDia + ' efetivadas · ' + (totalDia > 0 ? dTotalPct + '%' : '—');
+  document.getElementById('ef-sum-mes-total').textContent = totalMes;
+  document.getElementById('ef-sum-mes-sub').textContent   = mesLabel + ' · ' + efMes + ' efetivadas · ' + (totalMes > 0 ? mTotalPct + '%' : '—');
+}
 setInterval(loadAgendamentos, 30000);
 </script>
 </body>
