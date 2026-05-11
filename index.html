@@ -471,6 +471,58 @@
     .ef-pct-mid  { background:rgba(255,209,102,0.15); color:#FFD166; }
     .ef-pct-bad  { background:rgba(255,107,107,0.15); color:#ff6b6b; }
     .ef-pct-zero { background:rgba(255,255,255,0.05); color:#555; }
+
+    /* ── MODAL EFETIVAÇÕES CLOSER ── */
+    .ef-modal-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.75); z-index:1000;
+      align-items:center; justify-content:center; padding:20px;
+    }
+    .ef-modal-overlay.open { display:flex; }
+    .ef-modal-box {
+      background:#1a1a1a; border:1px solid rgba(110,177,80,0.25);
+      border-radius:20px; width:100%; max-width:600px;
+      max-height:85vh; display:flex; flex-direction:column;
+      box-shadow:0 20px 60px rgba(0,0,0,0.7);
+    }
+    .ef-modal-header {
+      padding:20px 24px 16px; border-bottom:1px solid rgba(255,255,255,0.07);
+      display:flex; align-items:center; gap:14px;
+    }
+    .ef-modal-avatar {
+      width:48px; height:48px; border-radius:50%;
+      background:linear-gradient(135deg,#3a7a30,#2a5a22);
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Bebas Neue',sans-serif; font-size:1.2rem; color:#fff;
+      flex-shrink:0;
+    }
+    .ef-modal-closer-name { font-size:1.1rem; font-weight:900; color:#fff; }
+    .ef-modal-mes { font-size:.72rem; color:#666; margin-top:2px; }
+    .ef-modal-filters {
+      padding:12px 24px; display:flex; gap:8px; flex-wrap:wrap;
+      border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+    .ef-filter-btn {
+      font-size:.72rem; font-weight:800; padding:5px 14px;
+      border-radius:99px; cursor:pointer; border:1.5px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.04); color:#666;
+      font-family:'Nunito',sans-serif; transition:all .15s;
+    }
+    .ef-filter-btn.active { background:rgba(110,177,80,0.15); color:#6EB150; border-color:rgba(110,177,80,0.4); }
+    .ef-modal-list { overflow-y:auto; flex:1; padding:12px 16px; }
+    .ef-lead-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px; border-radius:10px; margin-bottom:6px;
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+      gap:10px;
+    }
+    .ef-lead-info { flex:1; min-width:0; }
+    .ef-lead-name { font-size:.85rem; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .ef-lead-date { font-size:.68rem; color:#555; margin-top:2px; }
+    .ef-lead-badges { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+    .ef-modal-close { margin-left:auto; background:none; border:none; color:#555; font-size:1.2rem; cursor:pointer; padding:4px; }
+    .ef-modal-close:hover { color:#fff; }
+    .ef-modal-empty { text-align:center; color:#444; font-size:.85rem; padding:40px 0; font-style:italic; }
     /* ── AGENDAMENTOS TABLE ── */
     .date-nav {
       display: flex;
@@ -2497,6 +2549,28 @@
       <button class="btn btn-secondary" onclick="document.getElementById('popup-mais-data').style.display='none';document.getElementById('popup-mais-lead').style.display='flex'">← Voltar</button>
       <button class="btn btn-primary" id="popup-mais-confirm-btn" onclick="confirmarMais()" disabled style="background:rgba(251,146,60,0.2);color:#fb923c;border:1.5px solid rgba(251,146,60,0.4)">🚀 Confirmar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL EFETIVAÇÕES CLOSER -->
+<div id="ef-modal" class="ef-modal-overlay" onclick="if(event.target===this)fecharEfModal()">
+  <div class="ef-modal-box">
+    <div class="ef-modal-header">
+      <div class="ef-modal-avatar" id="ef-modal-avatar"></div>
+      <div>
+        <div class="ef-modal-closer-name" id="ef-modal-name"></div>
+        <div class="ef-modal-mes" id="ef-modal-mes"></div>
+      </div>
+      <button class="ef-modal-close" onclick="fecharEfModal()">✕</button>
+    </div>
+    <div class="ef-modal-filters">
+      <button class="ef-filter-btn active" data-filter="todos" onclick="setEfFilter('todos')">Todos</button>
+      <button class="ef-filter-btn" data-filter="Efetivada" onclick="setEfFilter('Efetivada')">✅ Efetivadas</button>
+      <button class="ef-filter-btn" data-filter="No-show" onclick="setEfFilter('No-show')">❌ No-show</button>
+      <button class="ef-filter-btn" data-filter="pendente" onclick="setEfFilter('pendente')">⏳ Pendentes</button>
+      <button class="ef-filter-btn" data-filter="Reagendado" onclick="setEfFilter('Reagendado')">🔁 Reagendadas</button>
+    </div>
+    <div class="ef-modal-list" id="ef-modal-list"></div>
   </div>
 </div>
 
@@ -5766,6 +5840,9 @@ function renderEfBoard() {
       '<div class="ef-stat-row"><span class="ef-stat-label">Mês · total</span><span class="ef-stat-val" style="color:#aaa">' + mesTotal + '</span></div>' +
       '<div class="ef-stat-row"><span class="ef-stat-label">Efetivadas</span><span class="ef-stat-val" style="color:#6EB150">' + mesEf + '</span></div>' +
       '<div class="ef-stat-row"><span class="ef-stat-label">Taxa mês</span><span class="ef-stat-pct ' + pctClass(mesPct) + '">' + (mesTotal > 0 ? mesPct + '%' : '—') + '</span></div>';
+    // Clique abre modal
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => abrirEfModal(c.name, month, year));
     grid.appendChild(card);
   });
 
@@ -5776,6 +5853,93 @@ function renderEfBoard() {
   document.getElementById('ef-sum-day-sub').textContent   = efDia + ' efetivadas · ' + (totalDia > 0 ? dTotalPct + '%' : '—');
   document.getElementById('ef-sum-mes-total').textContent = totalMes;
   document.getElementById('ef-sum-mes-sub').textContent   = mesLabel + ' · ' + efMes + ' efetivadas · ' + (totalMes > 0 ? mTotalPct + '%' : '—');
+}
+
+// ── MODAL EFETIVAÇÕES CLOSER ──
+let efModalData     = [];
+let efModalFilter   = 'todos';
+let efModalCloser   = '';
+
+function abrirEfModal(closerName, month, year) {
+  efModalCloser = closerName;
+  efModalFilter = 'todos';
+  const mesLabel = new Date(year, month, 1).toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+
+  // Iniciais
+  const ini = closerName.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  document.getElementById('ef-modal-avatar').textContent = ini;
+  document.getElementById('ef-modal-name').textContent   = closerName;
+  document.getElementById('ef-modal-mes').textContent    = mesLabel;
+
+  // Reuniões do mês
+  efModalData = agendamentos.filter(r => {
+    if (r.closer !== closerName) return false;
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp);
+    return !isNaN(dt) && dt.getMonth() === month && dt.getFullYear() === year;
+  }).sort((a,b) => {
+    const da = parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun));
+    const db = parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun));
+    return da - db;
+  });
+
+  // Reset filtros
+  document.querySelectorAll('.ef-filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.ef-filter-btn[data-filter="todos"]').classList.add('active');
+
+  renderEfModalList();
+  document.getElementById('ef-modal').classList.add('open');
+}
+
+function fecharEfModal() {
+  document.getElementById('ef-modal').classList.remove('open');
+}
+
+function setEfFilter(filter) {
+  efModalFilter = filter;
+  document.querySelectorAll('.ef-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  renderEfModalList();
+}
+
+function renderEfModalList() {
+  const list = document.getElementById('ef-modal-list');
+  let filtrados = efModalData;
+  if (efModalFilter === 'pendente') {
+    filtrados = efModalData.filter(r => r.status !== 'Efetivada' && r.status !== 'No-show' && r.status !== 'Reagendado');
+  } else if (efModalFilter !== 'todos') {
+    filtrados = efModalData.filter(r => r.status === efModalFilter);
+  }
+
+  if (!filtrados.length) {
+    list.innerHTML = '<div class="ef-modal-empty">Nenhuma reunião encontrada</div>';
+    return;
+  }
+
+  list.innerHTML = filtrados.map(r => {
+    const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+    const tipoBadge = r.tipoReun === '2º Reunião'
+      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 7px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
+      : r.tipoReun === 'Demais Reuniões'
+      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(251,146,60,0.12);color:#fb923c;padding:2px 7px;border-radius:99px;border:1px solid rgba(251,146,60,0.25)">🚀 +</span>'
+      : '<span style="font-size:.62rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 7px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>';
+    const statusBadge = r.status === 'Efetivada'
+      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(110,177,80,0.15);color:#6EB150;padding:2px 8px;border-radius:99px;border:1px solid rgba(110,177,80,0.3)">✅ Efetivada</span>'
+      : r.status === 'No-show'
+      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(255,107,107,0.15);color:#ff6b6b;padding:2px 8px;border-radius:99px;border:1px solid rgba(255,107,107,0.3)">❌ No-show</span>'
+      : r.status === 'Reagendado'
+      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(167,139,250,0.15);color:#a78bfa;padding:2px 8px;border-radius:99px;border:1px solid rgba(167,139,250,0.3)">🔁 Reagendado</span>'
+      : '<span style="font-size:.62rem;font-weight:800;background:rgba(255,209,102,0.1);color:#FFD166;padding:2px 8px;border-radius:99px;border:1px solid rgba(255,209,102,0.25)">⏳ Pendente</span>';
+    return '<div class="ef-lead-item">' +
+      '<div class="ef-lead-info">' +
+        '<div class="ef-lead-name">' + (r.lead||'—') + '</div>' +
+        '<div class="ef-lead-date">📅 ' + d + '</div>' +
+      '</div>' +
+      '<div class="ef-lead-badges">' + tipoBadge + statusBadge + '</div>' +
+      '</div>';
+  }).join('');
 }
 setInterval(loadAgendamentos, 30000);
 </script>
