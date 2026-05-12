@@ -5823,6 +5823,11 @@ function renderEfBoard() {
     const diaPct   = diaTotal > 0 ? Math.round(diaEf/diaTotal*100) : 0;
     const mesPct   = mesTotal > 0 ? Math.round(mesEf/mesTotal*100) : 0;
 
+    // Taxa 1ª Reunião — só conta tipoReun === '1º Reunião' (ou vazio = legado)
+    const mes1a      = doMes.filter(r => r.tipoReun !== '2º Reunião' && r.tipoReun !== 'Demais Reuniões');
+    const mes1aEf    = mes1a.filter(r => r.status === 'Efetivada').length;
+    const mes1aPct   = mes1a.length > 0 ? Math.round(mes1aEf / mes1a.length * 100) : 0;
+
     totalDia += diaTotal; efDia += diaEf;
     totalMes += mesTotal; efMes += mesEf;
 
@@ -5839,7 +5844,7 @@ function renderEfBoard() {
       '<hr class="ef-card-divider">' +
       '<div class="ef-stat-row"><span class="ef-stat-label">Mês · total</span><span class="ef-stat-val" style="color:#aaa">' + mesTotal + '</span></div>' +
       '<div class="ef-stat-row"><span class="ef-stat-label">Efetivadas</span><span class="ef-stat-val" style="color:#6EB150">' + mesEf + '</span></div>' +
-      '<div class="ef-stat-row"><span class="ef-stat-label">Taxa mês</span><span class="ef-stat-pct ' + pctClass(mesPct) + '">' + (mesTotal > 0 ? mesPct + '%' : '—') + '</span></div>';
+      '<div class="ef-stat-row"><span class="ef-stat-label">Taxa 1ª Reunião</span><span class="ef-stat-pct ' + pctClass(mes1aPct) + '">' + (mes1a.length > 0 ? mes1aPct + '%' : '—') + '</span></div>';
     // Clique abre modal
     card.style.cursor = 'pointer';
     card.addEventListener('click', () => abrirEfModal(c.name, month, year));
