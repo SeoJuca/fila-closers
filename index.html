@@ -523,6 +523,57 @@
     .ef-modal-close { margin-left:auto; background:none; border:none; color:#555; font-size:1.2rem; cursor:pointer; padding:4px; }
     .ef-modal-close:hover { color:#fff; }
     .ef-modal-empty { text-align:center; color:#444; font-size:.85rem; padding:40px 0; font-style:italic; }
+
+    /* ── PENDÊNCIAS BLOQUEANTE ── */
+    .pend-block-wrap {
+      padding: 32px 40px; max-width: 700px; margin: 0 auto;
+    }
+    .pend-block-title {
+      font-family:'Bebas Neue',sans-serif; font-size:1.5rem;
+      letter-spacing:2px; color:#ff6b6b; margin-bottom:8px;
+    }
+    .pend-block-sub { font-size:.82rem; color:#666; margin-bottom:24px; }
+    .pend-block-item {
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px; padding:14px 16px; margin-bottom:10px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .pend-block-info { flex:1; min-width:0; }
+    .pend-block-lead { font-weight:800; color:#fff; font-size:.88rem; }
+    .pend-block-date { font-size:.7rem; color:#555; margin-top:2px; }
+    .pend-block-btns { display:flex; gap:8px; flex-shrink:0; }
+
+    /* ── ACCOUNTABILITY POPUP ── */
+    .acc-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.8); z-index:2000;
+      align-items:center; justify-content:center; padding:20px;
+    }
+    .acc-overlay.open { display:flex; }
+    .acc-box {
+      background:#1a1a1a; border:1px solid rgba(110,177,80,0.3);
+      border-radius:20px; width:100%; max-width:480px;
+      padding:32px; box-shadow:0 20px 60px rgba(0,0,0,0.8);
+    }
+    .acc-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px; color:#6EB150; margin-bottom:4px; }
+    .acc-sub   { font-size:.78rem; color:#666; margin-bottom:24px; }
+    .acc-label { font-size:.68rem; color:#888; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; display:block; }
+    .acc-stars { display:flex; gap:8px; margin-bottom:20px; }
+    .acc-star  { font-size:2rem; cursor:pointer; opacity:.3; transition:opacity .15s, transform .15s; }
+    .acc-star.active { opacity:1; transform:scale(1.1); }
+    .acc-textarea {
+      width:100%; padding:12px 14px; background:rgba(255,255,255,0.05);
+      border:1.5px solid rgba(255,255,255,0.1); border-radius:10px;
+      color:#fff; font-family:'Nunito',sans-serif; font-size:.88rem;
+      resize:none; outline:none; box-sizing:border-box; margin-bottom:16px;
+    }
+    .acc-textarea:focus { border-color:rgba(110,177,80,0.4); }
+    .acc-char { font-size:.65rem; color:#555; text-align:right; margin-top:-12px; margin-bottom:16px; }
+    .acc-meta-box {
+      background:rgba(255,107,107,0.08); border:1px solid rgba(255,107,107,0.2);
+      border-radius:10px; padding:14px; margin-bottom:16px;
+    }
+    .acc-meta-label { font-size:.72rem; color:#ff6b6b; font-weight:800; margin-bottom:8px; }
     /* ── AGENDAMENTOS TABLE ── */
     .date-nav {
       display: flex;
@@ -2100,6 +2151,24 @@
 <div id="screen-closer" class="screen">
 
   <!-- STEP 1: Grid de cards dos closers -->
+  <!-- STEP: PENDÊNCIAS BLOQUEANTE -->
+  <div id="closer-pendencias" style="display:none">
+    <div class="pend-block-wrap">
+      <div class="pend-block-title">⚠️ Reuniões Pendentes</div>
+      <div class="pend-block-sub">Você precisa concluir o status de todas as reuniões anteriores antes de continuar.</div>
+      <div id="pend-block-list"></div>
+    </div>
+  </div>
+
+  <!-- STEP: PENDÊNCIAS BLOQUEANTE -->
+  <div id="closer-pendencias" style="display:none">
+    <div class="pend-block-wrap">
+      <div class="pend-block-title">⚠️ Reuniões Pendentes</div>
+      <div class="pend-block-sub">Você precisa concluir o status de todas as reuniões anteriores antes de continuar.</div>
+      <div id="pend-block-list"></div>
+    </div>
+  </div>
+
   <div id="closer-login" class="closer-login-wrap">
     <div class="closer-login-title">👤 Selecione seu perfil</div>
     <div class="closer-cards-grid" id="closer-cards-grid"><!-- gerado via JS --></div>
@@ -2600,6 +2669,31 @@
       <button class="ef-filter-btn" data-filter="Reagendado" onclick="setEfFilter('Reagendado')">🔁 Reagendadas</button>
     </div>
     <div class="ef-modal-list" id="ef-modal-list"></div>
+  </div>
+</div>
+
+<!-- ACCOUNTABILITY POPUP -->
+<div id="acc-overlay" class="acc-overlay">
+  <div class="acc-box">
+    <div class="acc-title">📊 Como foi seu dia?</div>
+    <div class="acc-sub" id="acc-sub"></div>
+    <span class="acc-label">Sua nota do dia (0 a 5 estrelas)</span>
+    <div class="acc-stars" id="acc-stars">
+      <span class="acc-star" data-val="1">⭐</span>
+      <span class="acc-star" data-val="2">⭐</span>
+      <span class="acc-star" data-val="3">⭐</span>
+      <span class="acc-star" data-val="4">⭐</span>
+      <span class="acc-star" data-val="5">⭐</span>
+    </div>
+    <span class="acc-label">Comentário sobre o dia</span>
+    <textarea id="acc-comentario" class="acc-textarea" rows="3" maxlength="200" placeholder="Como foi o dia? O que aconteceu?" oninput="document.getElementById('acc-char').textContent=this.value.length+'/200'"></textarea>
+    <div class="acc-char" id="acc-char">0/200</div>
+    <div id="acc-meta-box" class="acc-meta-box" style="display:none">
+      <div class="acc-meta-label">❗ Por que não atingiu a meta de 4 efetivações?</div>
+      <textarea id="acc-motivo" class="acc-textarea" rows="2" maxlength="200" placeholder="Explique o motivo..." oninput="document.getElementById('acc-motivo-char').textContent=this.value.length+'/200'"></textarea>
+      <div class="acc-char" id="acc-motivo-char">0/200</div>
+    </div>
+    <button id="acc-btn" onclick="enviarAccountability()" style="width:100%;padding:14px;background:rgba(110,177,80,0.2);border:1.5px solid rgba(110,177,80,0.4);border-radius:10px;color:#6EB150;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer">✅ Concluir e Entrar</button>
   </div>
 </div>
 
@@ -3715,9 +3809,10 @@ function showScreen(screen) {
 }
 
 function showCloserStep(step) {
-  document.getElementById('closer-login').style.display     = step === 'login'     ? 'block' : 'none';
-  document.getElementById('closer-auth').style.display      = step === 'auth'      ? 'flex'  : 'none';
-  document.getElementById('closer-dashboard').style.display = step === 'dashboard' ? 'block' : 'none';
+  document.getElementById('closer-pendencias').style.display = step === 'pendencias' ? 'block' : 'none';
+  document.getElementById('closer-login').style.display      = step === 'login'      ? 'block' : 'none';
+  document.getElementById('closer-auth').style.display       = step === 'auth'       ? 'flex'  : 'none';
+  document.getElementById('closer-dashboard').style.display  = step === 'dashboard'  ? 'block' : 'none';
 }
 
 function renderCloserCards() {
@@ -3924,8 +4019,84 @@ function enterDashboard() {
   dashDate = new Date();
   document.getElementById('dash-avatar').textContent = loggedCloser.initials;
   document.getElementById('dash-name').textContent   = loggedCloser.name;
-  showCloserStep('dashboard');
-  renderDashboard();
+  // Verifica pendências antes de entrar
+  const pends = getPendenciasAnteriores();
+  if (pends.length > 0) {
+    renderPendenciasBlock(pends);
+    showCloserStep('pendencias');
+  } else {
+    verificarAccountability();
+  }
+}
+
+function getPendenciasAnteriores() {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  return agendamentos.filter(r => {
+    if (r.closer !== loggedCloser.name) return false;
+    if (r.status === 'Efetivada' || r.status === 'No-show' || r.status === 'Reagendado') return false;
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
+    return dt < hoje;
+  }).sort((a,b) => {
+    const da = parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun));
+    const db = parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun));
+    return da - db;
+  });
+}
+
+function renderPendenciasBlock(pends) {
+  const list = document.getElementById('pend-block-list');
+  list.innerHTML = '';
+  pends.forEach(r => {
+    const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+    const safeId  = (r.id||'').replace(/'/g,"\'");
+    const safeLead = (r.lead||'').replace(/'/g,"\'");
+    const tipoBadge = r.tipoReun === '2º Reunião'
+      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 7px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
+      : r.tipoReun === 'Demais Reuniões'
+      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(251,146,60,0.12);color:#fb923c;padding:2px 7px;border-radius:99px;border:1px solid rgba(251,146,60,0.25)">🚀 +</span>'
+      : '<span style="font-size:.62rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 7px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>';
+    const item = document.createElement('div');
+    item.className = 'pend-block-item';
+    item.id = 'pbi-' + (r.id||'');
+    item.innerHTML =
+      '<div class="pend-block-info">' +
+        '<div class="pend-block-lead">' + (r.lead||'—') + ' ' + tipoBadge + '</div>' +
+        '<div class="pend-block-date">📅 Reunião em ' + d + '</div>' +
+      '</div>' +
+      '<div class="pend-block-btns">' +
+        '<button onclick="pendBlockStatus('' + safeId + '','' + safeLead + '','Efetivada')" style="padding:6px 12px;background:rgba(110,177,80,0.15);color:#6EB150;border:1px solid rgba(110,177,80,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">✅ Efetivada</button>' +
+        '<button onclick="pendBlockStatus('' + safeId + '','' + safeLead + '','No-show')" style="padding:6px 12px;background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">❌ No-show</button>' +
+        (r.tipoReun === '2º Reunião' || r.tipoReun === 'Demais Reuniões' ? '<button onclick="pendBlockReagendar('' + safeId + '','' + safeLead + '')" style="padding:6px 12px;background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">🔁 Reagendar</button>' : '') +
+      '</div>';
+    list.appendChild(item);
+  });
+}
+
+async function pendBlockStatus(id, lead, status) {
+  const fd = new FormData();
+  fd.append('id', id); fd.append('status', status);
+  fd.append('timestamp', new Date().toLocaleString('pt-BR')); fd.append('caminho', 'Closer');
+  try {
+    await fetch(WEBHOOK, { method:'POST', mode:'no-cors', body:fd });
+    const agend = agendamentos.find(r => r.id === id);
+    if (agend) agend.status = status;
+    const el = document.getElementById('pbi-' + id);
+    if (el) el.remove();
+    const pends = getPendenciasAnteriores();
+    if (pends.length === 0) verificarAccountability();
+  } catch(e) { toast('Erro ao atualizar.', false); }
+}
+
+let pendReagendarId = null, pendReagendarLead = null;
+function pendBlockReagendar(id, lead) {
+  pendReagendarId = id; pendReagendarLead = lead;
+  document.getElementById('reagendar-lead-sub').textContent = lead;
+  document.getElementById('reagendar-data').value = '';
+  document.getElementById('reagendar-confirm-btn').disabled = true;
+  document.getElementById('popup-reagendar').style.display = 'flex';
+  setTimeout(() => { const inp = document.getElementById('reagendar-data'); if (inp && inp.showPicker) inp.showPicker(); }, 150);
 }
 
 function dashPickDate(val) {
@@ -6215,6 +6386,115 @@ function drawCtrlChart(efSemana) {
   el.innerHTML = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="min-width:480px">' +
     '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT+chartH) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
     gridLines + metaLine + bars + '</svg>';
+}
+
+
+// ── ACCOUNTABILITY ──
+let accNota = 0;
+
+function verificarAccountability() {
+  // Verifica se tem reuniões no dia anterior (ou últimos dias com reuniões)
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  // Encontra o dia anterior mais recente com reuniões
+  let diaRef = null;
+  const reunDoCloser = agendamentos.filter(r => r.closer === loggedCloser.name);
+  const diasComReuniao = [...new Set(reunDoCloser.map(r => {
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    return dp;
+  }).filter(Boolean))].map(dp => { const d = parseBRDate(dp); d.setHours(0,0,0,0); return d; })
+   .filter(d => d < hoje).sort((a,b) => b-a);
+
+  if (diasComReuniao.length === 0) {
+    // Sem reuniões anteriores — entra direto
+    showCloserStep('dashboard');
+    renderDashboard();
+    return;
+  }
+
+  diaRef = diasComReuniao[0];
+  const diaRefBR = fmtDate(diaRef);
+  const efDia = reunDoCloser.filter(r => {
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    return dp === diaRefBR && r.status === 'Efetivada';
+  }).length;
+
+  // Mostra popup de accountability
+  accNota = 0;
+  document.getElementById('acc-sub').textContent = 'Avalie seu dia de ' + diaRefBR;
+  document.getElementById('acc-comentario').value = '';
+  document.getElementById('acc-char').textContent = '0/200';
+  document.getElementById('acc-motivo').value = '';
+  document.getElementById('acc-motivo-char').textContent = '0/200';
+  document.getElementById('acc-meta-box').style.display = efDia < 4 ? 'block' : 'none';
+
+  // Reset estrelas
+  document.querySelectorAll('.acc-star').forEach(s => s.classList.remove('active'));
+
+  // Salva dados para envio
+  document.getElementById('acc-overlay').dataset.diaRef    = diaRefBR;
+  document.getElementById('acc-overlay').dataset.efetivadas = efDia;
+
+  document.getElementById('acc-overlay').classList.add('open');
+}
+
+// Estrelas clicáveis
+document.querySelectorAll('.acc-star').forEach(star => {
+  star.addEventListener('click', () => {
+    accNota = parseInt(star.dataset.val);
+    document.querySelectorAll('.acc-star').forEach(s => {
+      s.classList.toggle('active', parseInt(s.dataset.val) <= accNota);
+    });
+  });
+  star.addEventListener('mouseenter', () => {
+    const val = parseInt(star.dataset.val);
+    document.querySelectorAll('.acc-star').forEach(s => {
+      s.style.opacity = parseInt(s.dataset.val) <= val ? '0.8' : '0.3';
+    });
+  });
+  star.addEventListener('mouseleave', () => {
+    document.querySelectorAll('.acc-star').forEach(s => {
+      s.style.opacity = parseInt(s.dataset.val) <= accNota ? '1' : '0.3';
+    });
+  });
+});
+
+async function enviarAccountability() {
+  const comentario = document.getElementById('acc-comentario').value.trim();
+  const overlay    = document.getElementById('acc-overlay');
+  const diaRef     = overlay.dataset.diaRef;
+  const efetivadas = parseInt(overlay.dataset.efetivadas||'0');
+  const metaAting  = efetivadas >= 4;
+  const motivo     = document.getElementById('acc-motivo').value.trim();
+
+  if (accNota === 0) { toast('Selecione uma nota!', false); return; }
+  if (!comentario)   { toast('Adicione um comentário!', false); return; }
+  if (!metaAting && !motivo) { toast('Explique por que não atingiu a meta!', false); return; }
+
+  const btn = document.getElementById('acc-btn');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+  const fd = new FormData();
+  fd.append('caminho',      'accountability');
+  fd.append('closer',       loggedCloser.name);
+  fd.append('data_ref',     diaRef);
+  fd.append('nota',         accNota);
+  fd.append('comentario',   comentario);
+  fd.append('meta_atingida', metaAting ? 'SIM' : 'NÃO');
+  fd.append('motivo',       motivo);
+  fd.append('efetivadas',   efetivadas);
+  fd.append('timestamp',    new Date().toLocaleString('pt-BR'));
+
+  try {
+    await fetch(WEBHOOK, { method:'POST', mode:'no-cors', body:fd });
+    overlay.classList.remove('open');
+    showCloserStep('dashboard');
+    renderDashboard();
+    toast('✅ Avaliação enviada! Bom trabalho!');
+  } catch(e) {
+    toast('Erro ao enviar avaliação.', false);
+  } finally {
+    btn.disabled = false; btn.textContent = '✅ Concluir e Entrar';
+  }
 }
 
 setInterval(loadAgendamentos, 30000);
