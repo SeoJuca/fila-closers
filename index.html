@@ -1834,6 +1834,7 @@
     <button class="nav-tab" id="tab-sdr" onclick="showScreen('sdr')">🎯 SDR</button>
     <button class="nav-tab" id="tab-closer" onclick="showScreen('closer')">🏆 Closers</button>
     <button class="nav-tab" id="tab-indicadores" onclick="showScreen('indicadores')">📈 Indicadores</button>
+    <button class="nav-tab" id="tab-controle" onclick="showScreen('controle')">🎛️ Controle</button>
   </div>
 </header>
 
@@ -2042,6 +2043,44 @@
   </div><!-- /agend-full -->
 </div>
 </div><!-- /screen-agendamento -->
+<!-- ══ TELA CONTROLE ══ -->
+<div id="screen-controle" class="screen">
+
+  <!-- LOGIN -->
+  <div id="controle-login" style="display:flex;align-items:center;justify-content:center;min-height:60vh">
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:40px;width:100%;max-width:380px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:8px">🎛️</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;color:#6EB150;margin-bottom:24px">Controle</div>
+      <input id="controle-user" type="text" placeholder="Login" style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:.95rem;outline:none;box-sizing:border-box;margin-bottom:12px" />
+      <input id="controle-pass" type="password" placeholder="Senha" style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-family:'Nunito',sans-serif;font-size:.95rem;outline:none;box-sizing:border-box;margin-bottom:16px" onkeydown="if(event.key==='Enter')doControleLogin()" />
+      <div id="controle-err" style="color:#ff6b6b;font-size:.8rem;margin-bottom:12px;display:none">Login ou senha incorretos</div>
+      <button onclick="doControleLogin()" style="width:100%;padding:13px;background:rgba(110,177,80,0.2);border:1.5px solid rgba(110,177,80,0.4);border-radius:10px;color:#6EB150;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer">Entrar</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="controle-dashboard" style="display:none;padding:32px 40px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:#6EB150">🎛️ Controle de Efetivações</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <select id="ctrl-year" style="padding:8px 14px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;outline:none;cursor:pointer"></select>
+        <select id="ctrl-week" style="padding:8px 14px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;outline:none;cursor:pointer;min-width:220px"></select>
+        <button onclick="showScreen('agendamento')" style="padding:8px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#888;font-family:'Nunito',sans-serif;font-size:.8rem;cursor:pointer">← Sair</button>
+      </div>
+    </div>
+
+    <!-- Cards closers -->
+    <div id="ctrl-cards" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px"></div>
+
+    <!-- Gráfico -->
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px">
+      <div style="font-size:.75rem;color:#666;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px" id="ctrl-chart-title">Efetivadas por dia — todos os closers</div>
+      <div style="overflow-x:auto" id="ctrl-chart"></div>
+    </div>
+  </div>
+
+</div><!-- /screen-controle -->
+
 
 <!-- ══ TELA SDR ══ -->
 <div id="screen-sdr" class="screen">
@@ -2583,6 +2622,7 @@ const GID_AGEND   = '1127809379';
 const GID_SDR     = '1360192723';
 const GID_META    = '731667161';
 const GID_VENDAS  = '895875585';
+const GID_CONTROLE = '1249894355';
 const WEBHOOK     = 'https://hook.us2.make.com/yqq8trpp0gk9sv2ope7lt918y6ffu3x1';
 
 let closers       = [];
@@ -3653,7 +3693,7 @@ document.getElementById('popup-confirma-data').addEventListener('click', functio
 
 // ── INIT ──
 (async () => {
-  await Promise.all([loadSDRs(), loadClosers(), loadSDRList(), loadMeta(), loadVendas()]);
+  await Promise.all([loadSDRs(), loadClosers(), loadSDRList(), loadMeta(), loadVendas(), loadControleAccess(), loadCtrlMeta()]);
   loadCloserPasswords(); // depende de closers[] já carregado
   await loadAgendamentos();
 })();
@@ -3675,6 +3715,13 @@ function showScreen(screen) {
   if (screen === 'closer')      { renderCloserCards(); showCloserStep('login'); }
   if (screen === 'sdr')         { renderSDRCards(sdrDate); }
   if (screen === 'indicadores') { renderIndicadores(); }
+  if (screen === 'controle')    {
+    document.getElementById('controle-login').style.display = 'flex';
+    document.getElementById('controle-dashboard').style.display = 'none';
+    document.getElementById('controle-user').value = '';
+    document.getElementById('controle-pass').value = '';
+    document.getElementById('controle-err').style.display = 'none';
+  }
 }
 
 function showCloserStep(step) {
@@ -5945,6 +5992,253 @@ function renderEfModalList() {
       '<div class="ef-lead-badges">' + tipoBadge + statusBadge + '</div>' +
       '</div>';
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  TELA CONTROLE
+// ══════════════════════════════════════════════════════════
+const GID_CTRL_ACCESS = '1249894355';
+let controleUsers  = {}; // { login: senha }
+let ctrlMetaMap    = {}; // { closerName: metaDiaria }
+let ctrlCloser     = null; // null = todos
+let ctrlWeekStart  = null; // Date (segunda)
+
+// ── Load access list ──
+async function loadControleAccess() {
+  try {
+    const rows = parseCSVRaw(await fetchRaw(GID_CTRL_ACCESS));
+    rows.slice(1).forEach(cols => {
+      const login = (cols[0]||'').trim();
+      const senha = (cols[1]||'').trim();
+      if (login) controleUsers[login] = senha;
+    });
+  } catch(e) { console.error('Controle access:', e); }
+}
+
+// ── Load meta por closer (gid=731667161 col A=nome, col B=meta) ──
+async function loadCtrlMeta() {
+  try {
+    const rows = parseCSVRaw(await fetchRaw(GID_META));
+    rows.slice(1).forEach(cols => {
+      const nome = (cols[0]||'').trim();
+      const meta = parseFloat((cols[1]||'0').replace(',','.')) || 0;
+      if (nome && meta > 0) ctrlMetaMap[nome] = meta;
+    });
+  } catch(e) { console.error('CtrlMeta:', e); }
+}
+
+// ── Login ──
+function doControleLogin() {
+  const user = document.getElementById('controle-user').value.trim();
+  const pass = document.getElementById('controle-pass').value.trim();
+  const err  = document.getElementById('controle-err');
+  if (controleUsers[user] !== undefined && controleUsers[user] === pass) {
+    err.style.display = 'none';
+    document.getElementById('controle-login').style.display     = 'none';
+    document.getElementById('controle-dashboard').style.display = 'block';
+    initCtrlWeek();
+    renderControle();
+  } else {
+    err.style.display = 'block';
+  }
+}
+
+// ── Week helpers ──
+// Returns Monday of the ISO week (Mon-Sun) for a given date
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun
+  const diff = (day === 0) ? -6 : 1 - day; // adjust to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+// ISO week number (Mon start)
+function getISOWeek(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+function weeksInYear(year) {
+  const dec28 = new Date(year, 11, 28);
+  return getISOWeek(dec28);
+}
+
+function getWeekStartFromYW(year, week) {
+  // Jan 4 is always in week 1
+  const jan4 = new Date(year, 0, 4);
+  const mon1 = getWeekStart(jan4);
+  const d = new Date(mon1);
+  d.setDate(d.getDate() + (week - 1) * 7);
+  return d;
+}
+
+function initCtrlWeek() {
+  ctrlWeekStart = getWeekStart(new Date());
+  const year    = ctrlWeekStart.getFullYear();
+  const week    = getISOWeek(ctrlWeekStart);
+
+  // Populate year selector (current year ± 2)
+  const ysel = document.getElementById('ctrl-year');
+  ysel.innerHTML = '';
+  for (let y = year - 2; y <= year + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    if (y === year) opt.selected = true;
+    ysel.appendChild(opt);
+  }
+  ysel.addEventListener('change', () => { populateWeeks(); renderControle(); });
+
+  populateWeeks();
+  document.getElementById('ctrl-week').addEventListener('change', () => {
+    const w = parseInt(document.getElementById('ctrl-week').value);
+    const y = parseInt(document.getElementById('ctrl-year').value);
+    ctrlWeekStart = getWeekStartFromYW(y, w);
+    renderControle();
+  });
+}
+
+function populateWeeks() {
+  const y    = parseInt(document.getElementById('ctrl-year').value);
+  const wsel = document.getElementById('ctrl-week');
+  const curW = getISOWeek(ctrlWeekStart);
+  const total = weeksInYear(y);
+  wsel.innerHTML = '';
+  for (let w = 1; w <= total; w++) {
+    const ws  = getWeekStartFromYW(y, w);
+    const we  = new Date(ws); we.setDate(we.getDate() + 6);
+    const fmt = d => d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+    const opt = document.createElement('option');
+    opt.value = w;
+    opt.textContent = 'Sem ' + String(w).padStart(2,'0') + ' · ' + fmt(ws) + ' – ' + fmt(we);
+    if (w === curW) opt.selected = true;
+    wsel.appendChild(opt);
+  }
+}
+
+// ── Render ──
+function renderControle() {
+  if (!ctrlWeekStart) return;
+  const weekEnd = new Date(ctrlWeekStart); weekEnd.setDate(weekEnd.getDate() + 6);
+
+  // Filter agendamentos: efetivadas (1ª + 2ª) na semana (dataReun)
+  const efSemana = agendamentos.filter(r => {
+    if (r.status !== 'Efetivada') return false;
+    if (r.tipoReun === 'Demais Reuniões') return false;
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (!dp) return false;
+    const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
+    return dt >= ctrlWeekStart && dt <= weekEnd;
+  });
+
+  // ── Cards ──
+  const cards = document.getElementById('ctrl-cards');
+  cards.innerHTML = '';
+
+  // Card "Todos"
+  const todosCard = document.createElement('div');
+  todosCard.style.cssText = 'padding:12px 18px;border-radius:12px;cursor:pointer;border:2px solid ' +
+    (ctrlCloser === null ? 'rgba(110,177,80,0.6)' : 'rgba(255,255,255,0.1)') +
+    ';background:' + (ctrlCloser === null ? 'rgba(110,177,80,0.12)' : 'rgba(255,255,255,0.03)') +
+    ';text-align:center;font-weight:800;color:' + (ctrlCloser === null ? '#6EB150' : '#666') + ';font-size:.85rem';
+  todosCard.textContent = '🌐 Todos';
+  todosCard.addEventListener('click', () => { ctrlCloser = null; renderControle(); });
+  cards.appendChild(todosCard);
+
+  // Cards por closer ativo
+  const ativos = closers.filter(c => c.emFila !== false);
+  ativos.forEach(c => {
+    const ef    = efSemana.filter(r => r.closer === c.name).length;
+    const media = (ef / 5).toFixed(1);
+    const isSelected = ctrlCloser === c.name;
+    const card = document.createElement('div');
+    card.style.cssText = 'padding:12px 16px;border-radius:12px;cursor:pointer;border:2px solid ' +
+      (isSelected ? 'rgba(110,177,80,0.6)' : 'rgba(255,255,255,0.08)') +
+      ';background:' + (isSelected ? 'rgba(110,177,80,0.1)' : 'rgba(255,255,255,0.03)') +
+      ';text-align:center;min-width:120px;transition:all .15s';
+    card.innerHTML =
+      '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3a7a30,#2a5a22);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:#fff;margin:0 auto 6px">' + c.initials + '</div>' +
+      '<div style="font-size:.75rem;font-weight:800;color:#ddd;margin-bottom:4px">' + c.name.split(' ')[0] + '</div>' +
+      '<div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#6EB150">' + ef + '</div>' +
+      '<div style="font-size:.6rem;color:#555;letter-spacing:.5px">efetivadas</div>' +
+      '<div style="font-size:.68rem;color:#888;margin-top:2px">média ' + media + '/dia</div>';
+    card.addEventListener('click', () => { ctrlCloser = c.name; renderControle(); });
+    cards.appendChild(card);
+  });
+
+  // ── Chart ──
+  const title = document.getElementById('ctrl-chart-title');
+  title.textContent = ctrlCloser
+    ? 'Efetivadas por dia — ' + ctrlCloser
+    : 'Efetivadas por dia — todos os closers';
+
+  drawCtrlChart(efSemana);
+}
+
+function drawCtrlChart(efSemana) {
+  const el = document.getElementById('ctrl-chart');
+  const DAYS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ctrlWeekStart);
+    d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+
+  // Count efetivadas per day
+  const counts = days.map(d => {
+    const br = fmtDate(d);
+    return efSemana.filter(r => {
+      const dr = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+      if (dr !== br) return false;
+      if (ctrlCloser && r.closer !== ctrlCloser) return false;
+      return true;
+    }).length;
+  });
+
+  const meta = ctrlCloser ? (ctrlMetaMap[ctrlCloser] || 0) : 0;
+  const maxVal = Math.max(...counts, meta, 1);
+
+  const W = 700, H = 220;
+  const barW = 56, padL = 36, padB = 40, padT = 20;
+  const chartH = H - padB - padT;
+  const gap = (W - padL - barW * 7) / 8;
+
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(p => {
+    const y   = padT + chartH - p * chartH;
+    const val = Math.round(p * maxVal * 10) / 10;
+    return '<line x1="' + padL + '" y1="' + y + '" x2="' + W + '" y2="' + y + '" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>' +
+           '<text x="' + (padL-6) + '" y="' + (y+4) + '" fill="#555" font-size="9" text-anchor="end" font-family="Nunito">' + val + '</text>';
+  }).join('');
+
+  const bars = days.map((d, i) => {
+    const x   = padL + gap + i * (barW + gap);
+    const val = counts[i];
+    const bh  = Math.max(val / maxVal * chartH, val > 0 ? 3 : 0);
+    const y   = padT + chartH - bh;
+    const isToday = fmtDate(d) === fmtDate(new Date());
+    const col = val >= meta && meta > 0 ? '#6EB150' : val > 0 ? '#7eb8ff' : 'rgba(255,255,255,0.08)';
+    const dd  = DAYS[i] + ' ' + d.getDate() + '/' + String(d.getMonth()+1).padStart(2,'0');
+    return '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + bh + '" rx="6" fill="' + col + '" opacity="' + (isToday ? '1' : '0.8') + '"/>' +
+           (val > 0 ? '<text x="' + (x+barW/2) + '" y="' + (y-5) + '" fill="' + col + '" font-size="11" text-anchor="middle" font-family="Nunito" font-weight="800">' + val + '</text>' : '') +
+           '<text x="' + (x+barW/2) + '" y="' + (H-10) + '" fill="' + (isToday ? '#6EB150' : '#555') + '" font-size="9" text-anchor="middle" font-family="Nunito">' + dd + '</text>';
+  }).join('');
+
+  // Meta line
+  const metaLine = (meta > 0 && ctrlCloser) ? (() => {
+    const my = padT + chartH - (meta / maxVal * chartH);
+    const x0 = padL + gap;
+    const x1 = padL + gap + 6 * (barW + gap) + barW;
+    return '<line x1="' + x0 + '" y1="' + my + '" x2="' + x1 + '" y2="' + my + '" stroke="#FFD166" stroke-width="2" stroke-dasharray="6,4"/>' +
+           '<text x="' + (x1+4) + '" y="' + (my+4) + '" fill="#FFD166" font-size="9" font-family="Nunito" font-weight="800">meta ' + meta + '</text>';
+  })() : '';
+
+  el.innerHTML = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="min-width:500px">' +
+    gridLines + metaLine + bars + '</svg>';
 }
 setInterval(loadAgendamentos, 30000);
 </script>
