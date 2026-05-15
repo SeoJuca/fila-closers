@@ -523,15 +523,6 @@
     .ef-modal-close { margin-left:auto; background:none; border:none; color:#555; font-size:1.2rem; cursor:pointer; padding:4px; }
     .ef-modal-close:hover { color:#fff; }
     .ef-modal-empty { text-align:center; color:#444; font-size:.85rem; padding:40px 0; font-style:italic; }
-
-    .pend-block-wrap { padding:32px 40px; max-width:700px; margin:0 auto; }
-    .pend-block-title { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:2px; color:#ff6b6b; margin-bottom:8px; }
-    .pend-block-sub { font-size:.82rem; color:#666; margin-bottom:24px; }
-    .pend-block-item { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    .pend-block-info { flex:1; min-width:0; }
-    .pend-block-lead { font-weight:800; color:#fff; font-size:.88rem; }
-    .pend-block-date { font-size:.7rem; color:#555; margin-top:2px; }
-    .pend-block-btns { display:flex; gap:8px; flex-shrink:0; }
     /* ── AGENDAMENTOS TABLE ── */
     .date-nav {
       display: flex;
@@ -2108,8 +2099,14 @@
 <!-- ══ TELA CLOSER ══ -->
 <div id="screen-closer" class="screen">
 
+  <!-- STEP 0: Pendências bloqueantes -->
+  <div id="closer-pendencias" style="display:none;padding:32px 40px;max-width:700px;margin:0 auto">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:#ff6b6b;margin-bottom:8px">⚠️ Reuniões Pendentes</div>
+    <div style="font-size:.82rem;color:#666;margin-bottom:24px">Conclua o status de todas as reuniões anteriores antes de continuar.</div>
+    <div id="pend-block-list"></div>
+  </div>
+
   <!-- STEP 1: Grid de cards dos closers -->
-  <div id="closer-pendencias" style="display:none"><div class="pend-block-wrap"><div class="pend-block-title">⚠️ Reuniões Pendentes</div><div class="pend-block-sub">Conclua o status de todas as reuniões anteriores antes de continuar.</div><div id="pend-block-list"></div></div></div>
   <div id="closer-login" class="closer-login-wrap">
     <div class="closer-login-title">👤 Selecione seu perfil</div>
     <div class="closer-cards-grid" id="closer-cards-grid"><!-- gerado via JS --></div>
@@ -3936,73 +3933,56 @@ function enterDashboard() {
   document.getElementById('dash-avatar').textContent = loggedCloser.initials;
   document.getElementById('dash-name').textContent   = loggedCloser.name;
   const pends = getPendenciasAnteriores();
-  if (pends.length > 0) {
-    renderPendenciasBlock(pends);
-    showCloserStep('pendencias');
-  } else {
-    showCloserStep('dashboard');
-    renderDashboard();
-  }
+  if (pends.length > 0) { renderPendenciasBlock(pends); showCloserStep('pendencias'); }
+  else { showCloserStep('dashboard'); renderDashboard(); }
 }
 
 function getPendenciasAnteriores() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
-  return agendamentos.filter(function(r) {
+  return agendamentos.filter(r => {
     if (r.closer !== loggedCloser.name) return false;
     if (r.status === 'Efetivada' || r.status === 'No-show' || r.status === 'Reagendado') return false;
-    var dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
     if (!dp) return false;
-    var dt = parseBRDate(dp); dt.setHours(0,0,0,0);
+    const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
     return dt < hoje;
-  }).sort(function(a,b) {
-    var da = parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun));
-    var db = parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun));
-    return da - db;
-  });
+  }).sort((a,b) => parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun)) - parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun)));
 }
 
 function renderPendenciasBlock(pends) {
-  var list = document.getElementById('pend-block-list');
+  const list = document.getElementById('pend-block-list');
   list.innerHTML = '';
-  pends.forEach(function(r) {
-    var d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
-    var safeId   = (r.id||'').replace(/'/g,"\'");
-    var safeLead = (r.lead||'').replace(/'/g,"\'");
-    var tipoBadge = r.tipoReun === '2º Reunião'
-      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 7px;border-radius:99px">🔄 2ª</span>'
-      : r.tipoReun === 'Demais Reuniões'
-      ? '<span style="font-size:.62rem;font-weight:800;background:rgba(251,146,60,0.12);color:#fb923c;padding:2px 7px;border-radius:99px">🚀 +</span>'
-      : '<span style="font-size:.62rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 7px;border-radius:99px">🥇 1ª</span>';
-    var hasReag = r.tipoReun === '2º Reunião' || r.tipoReun === 'Demais Reuniões';
-    var item = document.createElement('div');
-    item.className = 'pend-block-item';
+  pends.forEach(r => {
+    const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
+    const safeId = (r.id||'').replace(/'/g, "\\'");
+    const safeLead = (r.lead||'').replace(/'/g, "\\'");
+    const hasReag = r.tipoReun === '2º Reunião' || r.tipoReun === 'Demais Reuniões';
+    const item = document.createElement('div');
     item.id = 'pbi-' + (r.id||'');
+    item.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
     item.innerHTML =
-      '<div class="pend-block-info">' +
-        '<div class="pend-block-lead">' + (r.lead||'—') + ' ' + tipoBadge + '</div>' +
-        '<div class="pend-block-date">📅 Reunião em ' + d + '</div>' +
-      '</div>' +
-      '<div class="pend-block-btns">' +
-        '<button onclick="pendBlockStatus('' + safeId + '','Efetivada')" style="padding:6px 12px;background:rgba(110,177,80,0.15);color:#6EB150;border:1px solid rgba(110,177,80,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">✅ Efetivada</button>' +
-        '<button onclick="pendBlockStatus('' + safeId + '','No-show')" style="padding:6px 12px;background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">❌ No-show</button>' +
-        (hasReag ? '<button onclick="pendBlockReagendar('' + safeId + '','' + safeLead + '')" style="padding:6px 12px;background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">🔁 Reagendar</button>' : '') +
+      '<div><div style="font-weight:800;color:#fff;font-size:.88rem">' + (r.lead||'—') + '</div>' +
+      '<div style="font-size:.7rem;color:#555;margin-top:2px">📅 Reunião em ' + d + '</div></div>' +
+      '<div style="display:flex;gap:8px;flex-shrink:0">' +
+        '<button onclick="pendBlockStatus(\'' + safeId + '\',\'Efetivada\')" style="padding:6px 12px;background:rgba(110,177,80,0.15);color:#6EB150;border:1px solid rgba(110,177,80,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">✅ Efetivada</button>' +
+        '<button onclick="pendBlockStatus(\'' + safeId + '\',\'No-show\')" style="padding:6px 12px;background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">❌ No-show</button>' +
+        (hasReag ? '<button onclick="pendBlockReagendar(\'' + safeId + '\',\'' + safeLead + '\')" style="padding:6px 12px;background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">🔁 Reagendar</button>' : '') +
       '</div>';
     list.appendChild(item);
   });
 }
 
 async function pendBlockStatus(id, status) {
-  var fd = new FormData();
+  const fd = new FormData();
   fd.append('id', id); fd.append('status', status);
   fd.append('timestamp', new Date().toLocaleString('pt-BR')); fd.append('caminho', 'Closer');
   try {
     await fetch(WEBHOOK, { method:'POST', mode:'no-cors', body:fd });
-    var agend = agendamentos.find(function(r){ return r.id === id; });
+    const agend = agendamentos.find(r => r.id === id);
     if (agend) agend.status = status;
-    var el = document.getElementById('pbi-' + id);
+    const el = document.getElementById('pbi-' + id);
     if (el) el.remove();
-    var pends = getPendenciasAnteriores();
-    if (pends.length === 0) { showCloserStep('dashboard'); renderDashboard(); }
+    if (getPendenciasAnteriores().length === 0) { showCloserStep('dashboard'); renderDashboard(); }
   } catch(e) { toast('Erro ao atualizar.', false); }
 }
 
@@ -4011,7 +3991,7 @@ function pendBlockReagendar(id, lead) {
   document.getElementById('reagendar-data').value = '';
   document.getElementById('reagendar-confirm-btn').disabled = true;
   document.getElementById('popup-reagendar').style.display = 'flex';
-  setTimeout(function(){ var inp = document.getElementById('reagendar-data'); if(inp && inp.showPicker) inp.showPicker(); }, 150);
+  setTimeout(() => { const inp = document.getElementById('reagendar-data'); if(inp && inp.showPicker) inp.showPicker(); }, 150);
 }
 
 function dashPickDate(val) {
