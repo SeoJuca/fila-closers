@@ -6177,7 +6177,7 @@ function drawCtrlChart(efSemana) {
     }).length;
   });
 
-  const meta   = ctrlCloser ? (ctrlMetaIndiv[ctrlCloser] || 0) : 0;
+  const meta   = ctrlCloser ? (ctrlMetaIndiv['Vendedor'] || 0) : 0;
   const maxVal = Math.max(...counts, meta, 1);
   const todayBR = fmtDate(new Date());
 
