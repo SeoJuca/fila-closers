@@ -6196,7 +6196,7 @@ function renderControle() {
   todosCard.onclick = () => { ctrlCloser = null; renderControle(); };
   cards.appendChild(todosCard);
 
-  closers.filter(c => c.emFila !== false).forEach(c => {
+  closers.forEach(c => {
     const ef   = efSemana.filter(r => r.closer === c.name).length;
     const isSel = ctrlCloser === c.name;
     const card  = document.createElement('div');
