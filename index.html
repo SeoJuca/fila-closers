@@ -2099,13 +2099,6 @@
 <!-- ══ TELA CLOSER ══ -->
 <div id="screen-closer" class="screen">
 
-  <!-- STEP 0: Pendências bloqueantes -->
-  <div id="closer-pendencias" style="display:none;padding:32px 40px;max-width:700px;margin:0 auto">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:#ff6b6b;margin-bottom:8px">⚠️ Reuniões Pendentes</div>
-    <div style="font-size:.82rem;color:#666;margin-bottom:24px">Conclua o status de todas as reuniões anteriores antes de continuar.</div>
-    <div id="pend-block-list"></div>
-  </div>
-
   <!-- STEP 1: Grid de cards dos closers -->
   <div id="closer-login" class="closer-login-wrap">
     <div class="closer-login-title">👤 Selecione seu perfil</div>
@@ -2607,20 +2600,6 @@
       <button class="ef-filter-btn" data-filter="Reagendado" onclick="setEfFilter('Reagendado')">🔁 Reagendadas</button>
     </div>
     <div class="ef-modal-list" id="ef-modal-list"></div>
-  </div>
-</div>
-
-<!-- CTRL BAR POPUP -->
-<div id="ctrl-bar-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
-  <div style="background:#1a1a1a;border:1px solid rgba(110,177,80,0.25);border-radius:16px;width:100%;max-width:420px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.7)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#6EB150" id="ctrl-popup-title"></div>
-        <div style="font-size:.72rem;color:#666" id="ctrl-popup-sub"></div>
-      </div>
-      <button onclick="document.getElementById('ctrl-bar-popup').style.display='none'" style="background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer">✕</button>
-    </div>
-    <div id="ctrl-popup-list" style="max-height:320px;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -3736,10 +3715,9 @@ function showScreen(screen) {
 }
 
 function showCloserStep(step) {
-  document.getElementById('closer-pendencias').style.display = step === 'pendencias' ? 'block' : 'none';
-  document.getElementById('closer-login').style.display      = step === 'login'      ? 'block' : 'none';
-  document.getElementById('closer-auth').style.display       = step === 'auth'       ? 'flex'  : 'none';
-  document.getElementById('closer-dashboard').style.display  = step === 'dashboard'  ? 'block' : 'none';
+  document.getElementById('closer-login').style.display     = step === 'login'     ? 'block' : 'none';
+  document.getElementById('closer-auth').style.display      = step === 'auth'      ? 'flex'  : 'none';
+  document.getElementById('closer-dashboard').style.display = step === 'dashboard' ? 'block' : 'none';
 }
 
 function renderCloserCards() {
@@ -3946,66 +3924,8 @@ function enterDashboard() {
   dashDate = new Date();
   document.getElementById('dash-avatar').textContent = loggedCloser.initials;
   document.getElementById('dash-name').textContent   = loggedCloser.name;
-  const pends = getPendenciasAnteriores();
-  if (pends.length > 0) { renderPendenciasBlock(pends); showCloserStep('pendencias'); }
-  else { showCloserStep('dashboard'); renderDashboard(); }
-}
-
-function getPendenciasAnteriores() {
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  return agendamentos.filter(r => {
-    if (r.closer !== loggedCloser.name) return false;
-    if (r.status === 'Efetivada' || r.status === 'No-show' || r.status === 'Reagendado') return false;
-    const dp = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
-    if (!dp) return false;
-    const dt = parseBRDate(dp); dt.setHours(0,0,0,0);
-    return dt < hoje;
-  }).sort((a,b) => parseBRDate(extractDatePart(a.dataReun)||isoToBR(a.dataReun)) - parseBRDate(extractDatePart(b.dataReun)||isoToBR(b.dataReun)));
-}
-
-function renderPendenciasBlock(pends) {
-  const list = document.getElementById('pend-block-list');
-  list.innerHTML = '';
-  pends.forEach(r => {
-    const d = extractDatePart(r.dataReun) || isoToBR(r.dataReun) || '—';
-    const safeId = (r.id||'').replace(/'/g, "\\'");
-    const safeLead = (r.lead||'').replace(/'/g, "\\'");
-    const hasReag = r.tipoReun === '2º Reunião' || r.tipoReun === 'Demais Reuniões';
-    const item = document.createElement('div');
-    item.id = 'pbi-' + (r.id||'');
-    item.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
-    item.innerHTML =
-      '<div><div style="font-weight:800;color:#fff;font-size:.88rem">' + (r.lead||'—') + '</div>' +
-      '<div style="font-size:.7rem;color:#555;margin-top:2px">📅 Reunião em ' + d + '</div></div>' +
-      '<div style="display:flex;gap:8px;flex-shrink:0">' +
-        '<button onclick="pendBlockStatus(\'' + safeId + '\',\'Efetivada\')" style="padding:6px 12px;background:rgba(110,177,80,0.15);color:#6EB150;border:1px solid rgba(110,177,80,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">✅ Efetivada</button>' +
-        '<button onclick="pendBlockStatus(\'' + safeId + '\',\'No-show\')" style="padding:6px 12px;background:rgba(255,107,107,0.12);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">❌ No-show</button>' +
-        (hasReag ? '<button onclick="pendBlockReagendar(\'' + safeId + '\',\'' + safeLead + '\')" style="padding:6px 12px;background:rgba(167,139,250,0.12);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);border-radius:8px;cursor:pointer;font-size:.75rem;font-weight:800;font-family:Nunito,sans-serif">🔁 Reagendar</button>' : '') +
-      '</div>';
-    list.appendChild(item);
-  });
-}
-
-async function pendBlockStatus(id, status) {
-  const fd = new FormData();
-  fd.append('id', id); fd.append('status', status);
-  fd.append('timestamp', new Date().toLocaleString('pt-BR')); fd.append('caminho', 'Closer');
-  try {
-    await fetch(WEBHOOK, { method:'POST', mode:'no-cors', body:fd });
-    const agend = agendamentos.find(r => r.id === id);
-    if (agend) agend.status = status;
-    const el = document.getElementById('pbi-' + id);
-    if (el) el.remove();
-    if (getPendenciasAnteriores().length === 0) { showCloserStep('dashboard'); renderDashboard(); }
-  } catch(e) { toast('Erro ao atualizar.', false); }
-}
-
-function pendBlockReagendar(id, lead) {
-  document.getElementById('reagendar-lead-sub').textContent = lead;
-  document.getElementById('reagendar-data').value = '';
-  document.getElementById('reagendar-confirm-btn').disabled = true;
-  document.getElementById('popup-reagendar').style.display = 'flex';
-  setTimeout(() => { const inp = document.getElementById('reagendar-data'); if(inp && inp.showPicker) inp.showPicker(); }, 150);
+  showCloserStep('dashboard');
+  renderDashboard();
 }
 
 function dashPickDate(val) {
@@ -6210,7 +6130,7 @@ function renderControle() {
   todosCard.onclick = () => { ctrlCloser = null; renderControle(); };
   cards.appendChild(todosCard);
 
-  closers.forEach(c => {
+  closers.filter(c => c.emFila !== false).forEach(c => {
     const ef   = efSemana.filter(r => r.closer === c.name).length;
     const isSel = ctrlCloser === c.name;
     const card  = document.createElement('div');
@@ -6280,10 +6200,9 @@ function drawCtrlChart(efSemana) {
     const isToday = fmtDate(d) === todayBR;
     const col  = meta > 0 && val >= meta ? '#6EB150' : val > 0 ? '#7eb8ff' : 'rgba(255,255,255,0.06)';
     const dd   = DAYS[i] + ' ' + String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
-    const clickable = val > 0 ? ' style="cursor:pointer" onclick="openCtrlBarPopup('' + fmtDate(d) + '')"' : '';
-    return '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + bh + '" rx="6" fill="' + col + '" opacity="' + (isToday ? '1' : '0.8') + '"' + (val > 0 ? ' style="cursor:pointer" onclick="openCtrlBarPopup('' + fmtDate(d) + '')"' : '') + '/>' +
-           (val > 0 ? '<text x="' + (x+barW/2) + '" y="' + (y-5) + '" fill="' + col + '" font-size="12" text-anchor="middle" font-family="Nunito" font-weight="800" style="pointer-events:none">' + val + '</text>' : '') +
-           '<text x="' + (x+barW/2) + '" y="' + (H-8) + '" fill="' + (isToday ? '#6EB150' : '#555') + '" font-size="9" text-anchor="middle" font-family="Nunito" style="pointer-events:none">' + dd + '</text>';
+    return '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + bh + '" rx="6" fill="' + col + '" opacity="' + (isToday ? '1' : '0.8') + '"/>' +
+           (val > 0 ? '<text x="' + (x+barW/2) + '" y="' + (y-5) + '" fill="' + col + '" font-size="12" text-anchor="middle" font-family="Nunito" font-weight="800">' + val + '</text>' : '') +
+           '<text x="' + (x+barW/2) + '" y="' + (H-8) + '" fill="' + (isToday ? '#6EB150' : '#555') + '" font-size="9" text-anchor="middle" font-family="Nunito">' + dd + '</text>';
   }).join('');
 
   const metaLine = (meta > 0 && ctrlCloser) ? (() => {
@@ -6296,45 +6215,6 @@ function drawCtrlChart(efSemana) {
   el.innerHTML = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="min-width:480px">' +
     '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT+chartH) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
     gridLines + metaLine + bars + '</svg>';
-}
-
-
-function openCtrlBarPopup(dataBR) {
-  const popup = document.getElementById('ctrl-bar-popup');
-  const title = document.getElementById('ctrl-popup-title');
-  const sub   = document.getElementById('ctrl-popup-sub');
-  const list  = document.getElementById('ctrl-popup-list');
-
-  const leads = agendamentos.filter(r => {
-    if (r.status !== 'Efetivada') return false;
-    if (r.tipoReun === 'Demais Reuniões') return false;
-    const dr = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
-    if (dr !== dataBR) return false;
-    if (ctrlCloser && r.closer !== ctrlCloser) return false;
-    return true;
-  });
-
-  title.textContent = '✅ Efetivadas — ' + dataBR;
-  sub.textContent   = ctrlCloser ? ctrlCloser : 'Todos os closers' + ' · ' + leads.length + ' reunião' + (leads.length !== 1 ? 'ões' : '');
-
-  if (!leads.length) {
-    list.innerHTML = '<div style="text-align:center;color:#444;font-size:.85rem;padding:20px;font-style:italic">Nenhuma efetivada neste dia</div>';
-  } else {
-    list.innerHTML = leads.map(r => {
-      const tipoBadge = r.tipoReun === '2º Reunião'
-        ? '<span style="font-size:.6rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 7px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
-        : '<span style="font-size:.6rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 7px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>';
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)">' +
-        '<div>' +
-          '<div style="font-weight:800;color:#fff;font-size:.85rem">' + (r.lead||'—') + '</div>' +
-          '<div style="font-size:.68rem;color:#555;margin-top:2px">👤 ' + (r.closer||'—') + '</div>' +
-        '</div>' +
-        tipoBadge +
-        '</div>';
-    }).join('');
-  }
-
-  popup.style.display = 'flex';
 }
 
 setInterval(loadAgendamentos, 30000);
