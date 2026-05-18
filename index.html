@@ -2610,6 +2610,20 @@
   </div>
 </div>
 
+<!-- CTRL BAR POPUP -->
+<div id="ctrl-bar-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#1a1a1a;border:1px solid rgba(110,177,80,0.25);border-radius:16px;width:100%;max-width:420px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.7)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#6EB150" id="ctrl-popup-title"></div>
+        <div style="font-size:.72rem;color:#666" id="ctrl-popup-sub"></div>
+      </div>
+      <button onclick="document.getElementById('ctrl-bar-popup').style.display='none'" style="background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer">✕</button>
+    </div>
+    <div id="ctrl-popup-list" style="max-height:320px;overflow-y:auto"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -6266,9 +6280,10 @@ function drawCtrlChart(efSemana) {
     const isToday = fmtDate(d) === todayBR;
     const col  = meta > 0 && val >= meta ? '#6EB150' : val > 0 ? '#7eb8ff' : 'rgba(255,255,255,0.06)';
     const dd   = DAYS[i] + ' ' + String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
-    return '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + bh + '" rx="6" fill="' + col + '" opacity="' + (isToday ? '1' : '0.8') + '"/>' +
-           (val > 0 ? '<text x="' + (x+barW/2) + '" y="' + (y-5) + '" fill="' + col + '" font-size="12" text-anchor="middle" font-family="Nunito" font-weight="800">' + val + '</text>' : '') +
-           '<text x="' + (x+barW/2) + '" y="' + (H-8) + '" fill="' + (isToday ? '#6EB150' : '#555') + '" font-size="9" text-anchor="middle" font-family="Nunito">' + dd + '</text>';
+    const clickable = val > 0 ? ' style="cursor:pointer" onclick="openCtrlBarPopup('' + fmtDate(d) + '')"' : '';
+    return '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + bh + '" rx="6" fill="' + col + '" opacity="' + (isToday ? '1' : '0.8') + '"' + (val > 0 ? ' style="cursor:pointer" onclick="openCtrlBarPopup('' + fmtDate(d) + '')"' : '') + '/>' +
+           (val > 0 ? '<text x="' + (x+barW/2) + '" y="' + (y-5) + '" fill="' + col + '" font-size="12" text-anchor="middle" font-family="Nunito" font-weight="800" style="pointer-events:none">' + val + '</text>' : '') +
+           '<text x="' + (x+barW/2) + '" y="' + (H-8) + '" fill="' + (isToday ? '#6EB150' : '#555') + '" font-size="9" text-anchor="middle" font-family="Nunito" style="pointer-events:none">' + dd + '</text>';
   }).join('');
 
   const metaLine = (meta > 0 && ctrlCloser) ? (() => {
@@ -6281,6 +6296,45 @@ function drawCtrlChart(efSemana) {
   el.innerHTML = '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="min-width:480px">' +
     '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT+chartH) + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
     gridLines + metaLine + bars + '</svg>';
+}
+
+
+function openCtrlBarPopup(dataBR) {
+  const popup = document.getElementById('ctrl-bar-popup');
+  const title = document.getElementById('ctrl-popup-title');
+  const sub   = document.getElementById('ctrl-popup-sub');
+  const list  = document.getElementById('ctrl-popup-list');
+
+  const leads = agendamentos.filter(r => {
+    if (r.status !== 'Efetivada') return false;
+    if (r.tipoReun === 'Demais Reuniões') return false;
+    const dr = extractDatePart(r.dataReun) || isoToBR(r.dataReun);
+    if (dr !== dataBR) return false;
+    if (ctrlCloser && r.closer !== ctrlCloser) return false;
+    return true;
+  });
+
+  title.textContent = '✅ Efetivadas — ' + dataBR;
+  sub.textContent   = ctrlCloser ? ctrlCloser : 'Todos os closers' + ' · ' + leads.length + ' reunião' + (leads.length !== 1 ? 'ões' : '');
+
+  if (!leads.length) {
+    list.innerHTML = '<div style="text-align:center;color:#444;font-size:.85rem;padding:20px;font-style:italic">Nenhuma efetivada neste dia</div>';
+  } else {
+    list.innerHTML = leads.map(r => {
+      const tipoBadge = r.tipoReun === '2º Reunião'
+        ? '<span style="font-size:.6rem;font-weight:800;background:rgba(126,184,255,0.12);color:#7eb8ff;padding:2px 7px;border-radius:99px;border:1px solid rgba(126,184,255,0.25)">🔄 2ª</span>'
+        : '<span style="font-size:.6rem;font-weight:800;background:rgba(110,177,80,0.12);color:#6EB150;padding:2px 7px;border-radius:99px;border:1px solid rgba(110,177,80,0.25)">🥇 1ª</span>';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)">' +
+        '<div>' +
+          '<div style="font-weight:800;color:#fff;font-size:.85rem">' + (r.lead||'—') + '</div>' +
+          '<div style="font-size:.68rem;color:#555;margin-top:2px">👤 ' + (r.closer||'—') + '</div>' +
+        '</div>' +
+        tipoBadge +
+        '</div>';
+    }).join('');
+  }
+
+  popup.style.display = 'flex';
 }
 
 setInterval(loadAgendamentos, 30000);
